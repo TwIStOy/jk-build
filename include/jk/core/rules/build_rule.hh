@@ -30,6 +30,10 @@ struct BuildRule {
   //! and build result of this rule can be cached.
   virtual bool IsStable() const = 0;
 
+  //! Extract fields from arguments
+  virtual void ExtractFieldFromArguments(
+      const std::unordered_map<std::string, pybind11::object>& kwargs) = 0;
+
   //! Which package where this build-rule is inside
   BuildPackage* Package;
   std::string Name;
