@@ -58,7 +58,15 @@ TARGET_LINK_LIBRARIES(libjk PUBLIC pybind11::module)
 target_link_libraries(jk PRIVATE libjk)
 target_link_libraries(jk_test PRIVATE libjk)
 
-set(JK_SOURCE_FILES src/jk/tmp.cc src/jk/core/rules/build_rule.cc)
+set(JK_SOURCE_FILES src/jk/core/rules/build_rule.cc
+                    src/jk/core/rules/dependent.cc
+                    src/jk/core/rules/package.cc
+                    src/jk/core/script/script.cc
+                    src/jk/utils/kwargs.cc
+                    src/jk/utils/stack.cc
+                    src/jk/lang/cc/cc_library.cc
+                    src/main.cc
+)
 set(JK_TEST_FILES test/test.cc)
 
 target_sources(libjk PRIVATE ${JK_SOURCE_FILES})
