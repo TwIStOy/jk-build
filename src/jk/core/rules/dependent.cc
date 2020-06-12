@@ -52,9 +52,11 @@ BuildRuleId ParseIdString(std::string_view str) {
     st += 2;
   } else if (str.find_first_of("##") == 0) {
     res.Position = RuleRelativePosition::kBuiltin;
-    st += 3;
+    st += 2;
   } else if (str.find_first_of(":") == 0) {
     res.Position = RuleRelativePosition::kThis;
+  } else {
+    res.Position = RuleRelativePosition::kRelative;
   }
 
   std::string package_name;

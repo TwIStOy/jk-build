@@ -9,66 +9,20 @@
 #include <utility>
 
 #include "jk/core/error.h"
+#include "jk/core/filesystem/project.hh"
+#include "jk/utils/stack.hh"
 
 namespace jk {
 namespace core {
 namespace rules {
 
-void PackageNameStack::Pop() {
-  if (packages_.size()) {
-    auto pkg = packages_.back();
-    packages_.pop_back();
-    visited_.erase(pkg->Name);
-  }
-}
-
-bool PackageNameStack::Push(BuildPackage* pkg, std::list<BuildPackage*>* stk) {
-  auto it = visited_.find(pkg->Name);
-  if (it != visited_.end()) {
-    if (stk != nullptr) {
-      stk->clear();
-      for (auto pos = it->second; pos != packages_.end(); ++pos) {
-        stk->push_back(*pos);
-      }
-    }
-
-    return false;
-  }
-
-  auto pit = packages_.insert(packages_.end(), pkg);
-  visited_[pkg->Name] = pit;
-
-  return true;
-}
-
-void PackageNameStack::Clear() {
-  packages_.clear();
-  visited_.clear();
-}
-
-std::string PackageNameStack::DumpStack() const {
-  std::ostringstream oss;
-  bool first = true;
-  for (auto pkg : packages_) {
-    if (first) {
-      first = false;
-      oss << "    ";
-    } else {
-      oss << " -> ";
-    }
-    oss << pkg->Name << "\n";
-  }
-  return oss.str();
-}
-
-void BuildPackage::Initialize(const std::string_view& filename,
-                              PackageNameStack* stk) {
+void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
   if (initialized_) {
     return;
   }
 
   if (stk != nullptr) {
-    if (!stk->Push(this)) {
+    if (!stk->Push(this->Name)) {
       throw JKBuildError(
           "Initialize pacakged {} failed, this package has been initialized "
           "before in ths stage. It may be a circle. {}",
@@ -77,12 +31,13 @@ void BuildPackage::Initialize(const std::string_view& filename,
   }
 
   // TODO(hawtian): load python script
+  auto filename = filesystem::ProjectRoot() / "BUILD";
 
   // Initialize done.
   initialized_ = true;
 }
 
-BuildPackage* BuildPackageFactory::CreatePackage(const std::string& name) {
+BuildPackage *BuildPackageFactory::CreatePackage(const std::string &name) {
   auto it = packages_.find(name);
   if (it == packages_.end()) {
     it = packages_

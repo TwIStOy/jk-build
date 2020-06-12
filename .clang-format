@@ -1,0 +1,19 @@
+---
+BasedOnStyle: Google
+IndentWidth: 2
+---
+Language: Cpp
+AlwaysBreakTemplateDeclarations: true
+SpaceAfterTemplateKeyword: false
+
+DerivePointerAlignment: false
+PointerAlignment: Right
+UseTab: Never
+
+AlignConsecutiveMacros: true
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+...
+

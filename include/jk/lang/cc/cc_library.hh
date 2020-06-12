@@ -3,6 +3,8 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <initializer_list>
+#include <list>
 #include <unordered_map>
 #include <vector>
 
@@ -13,12 +15,18 @@ namespace jk {
 namespace core {
 namespace rules {
 
+/// cpp static library
 class CCLibrary : public BuildRule {
+ public:
+  CCLibrary(BuildPackage *package, std::string name,
+            std::initializer_list<RuleTypeEnum> types = {
+                RuleTypeEnum::kLibrary});
+
   bool IsStable() const override;
 
-  void ExtractFieldFromArguments(
-      const std::unordered_map<std::string, pybind11::object>& kwargs) override;
+  void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
+  // --- Fields Start ---
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;
   std::vector<std::string> CxxFlags;
@@ -27,6 +35,10 @@ class CCLibrary : public BuildRule {
   std::vector<std::string> Excludes;
   std::vector<std::string> Includes;
   std::vector<std::string> Defines;
+  std::vector<std::string> Headers;
+  // --- Fields End ---
+
+  const std::string ExportedFileName;
 };
 
 }  // namespace rules

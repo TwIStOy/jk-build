@@ -1,6 +1,8 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
+#pragma once  // NOLINT(build/header_guard)
+
 #include <stdexcept>
 #include <string_view>
 

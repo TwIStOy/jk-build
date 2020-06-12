@@ -24,17 +24,19 @@ class ScriptInterpreter {
  public:
   using Kwargs = std::unordered_map<std::string, pybind11::object>;
   using HookFunctionType =
-      std::function<void(rules::BuildPackage*, const Kwargs&)>;
+      std::function<void(rules::BuildPackage *, const Kwargs &)>;
 
-  void EvalScript(rules::BuildPackage* pkg, std::string_view filename);
+  void EvalScript(rules::BuildPackage *pkg, std::string_view filename);
 
-  void RegHook(const std::string& name, HookFunctionType func);
+  void RegHook(const std::string &name, HookFunctionType func);
 
  private:
   ScriptInterpreter();
 
-  pybind11::dict Initialize(rules::BuildPackage* pkg);
-  void AddConnomLocals(pybind11::dict*);
+  void HookFunctions();
+
+  pybind11::dict Initialize(rules::BuildPackage *pkg);
+  void AddConnomLocals(pybind11::dict *);
 
  private:
   pybind11::scoped_interpreter interpreter_;
