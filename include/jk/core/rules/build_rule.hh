@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <list>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -60,7 +61,8 @@ struct RuleType {
 /// BuildRule indicates a build-rule in process stage.
 struct BuildRule {
   BuildRule(BuildPackage *package, std::string name,
-            std::initializer_list<RuleTypeEnum> types);
+            std::initializer_list<RuleTypeEnum> types,
+            std::string_view type_name);
 
   virtual ~BuildRule() = default;
 
@@ -75,6 +77,18 @@ struct BuildRule {
                          utils::CollisionNameStack *pstk,
                          utils::CollisionNameStack *rstk);
 
+  //! Downcast
+  template<typename T>
+  T *Downcast() {
+    return dynamic_cast<T *>(this);
+  }
+
+  //! Downcast
+  template<typename T>
+  T *const Downcast() const {
+    return dynamic_cast<T *const>(this);
+  }
+
   //! Check if this rule is *stable*. *Stable* means that the generated result
   //! and build result of this rule can be cached.
   virtual bool IsStable() const = 0;
@@ -86,7 +100,8 @@ struct BuildRule {
   BuildPackage *Package;
   std::string Name;
   std::list<BuildRule *> Dependencies;
-  RuleType Type;
+  const RuleType Type;
+  const std::string_view TypeName;
 
  private:
   bool dependencies_has_built_{false};

@@ -19,7 +19,8 @@ namespace rules {
 class CCTest : public CCBinary {
  public:
   CCTest(BuildPackage *package, std::string name)
-      : CCBinary(package, name, {RuleTypeEnum::kBinary, RuleTypeEnum::kTest}) {
+      : CCBinary(package, name, {RuleTypeEnum::kBinary, RuleTypeEnum::kTest},
+                 "cc_test") {
   }
 };
 

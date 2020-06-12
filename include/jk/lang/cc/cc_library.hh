@@ -5,6 +5,7 @@
 
 #include <initializer_list>
 #include <list>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -18,9 +19,10 @@ namespace rules {
 /// cpp static library
 class CCLibrary : public BuildRule {
  public:
-  CCLibrary(BuildPackage *package, std::string name,
-            std::initializer_list<RuleTypeEnum> types = {
-                RuleTypeEnum::kLibrary});
+  CCLibrary(
+      BuildPackage *package, std::string name,
+      std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kLibrary},
+      std::string_view type_name = "cc_library");
 
   bool IsStable() const override;
 

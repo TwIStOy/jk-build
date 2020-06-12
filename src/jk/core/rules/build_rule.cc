@@ -5,6 +5,7 @@
 
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "fmt/core.h"
@@ -18,13 +19,22 @@ namespace jk {
 namespace core {
 namespace rules {
 
-BuildRule::BuildRule(BuildPackage *package, std::string name,
-                     std::initializer_list<RuleTypeEnum> types)
-    : Package(package), Name(std::move(name)) {
-  package->Rules[Name].reset(this);
+RuleType MergeType(std::initializer_list<RuleTypeEnum> types) {
+  RuleType rtp;
   for (auto tp : types) {
-    Type.SetType(tp);
+    rtp.SetType(tp);
   }
+  return rtp;
+}
+
+BuildRule::BuildRule(BuildPackage *package, std::string name,
+                     std::initializer_list<RuleTypeEnum> types,
+                     std::string_view type_name)
+    : Package(package),
+      Name(std::move(name)),
+      Type(MergeType(types)),
+      TypeName(type_name) {
+  package->Rules[Name].reset(this);
 }
 
 std::string BuildRule::FullQualifiedName() const {

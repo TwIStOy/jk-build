@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <list>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -18,8 +19,9 @@ namespace rules {
 class CCBinary : public CCLibrary {
  public:
   CCBinary(BuildPackage *package, std::string name,
-           std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kBinary})
-      : CCLibrary(package, name, types) {
+           std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kBinary},
+           std::string_view type_name = "cc_binary")
+      : CCLibrary(package, name, types, type_name) {
   }
 };
 
