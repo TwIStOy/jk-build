@@ -12,6 +12,14 @@ namespace utils {
 
 class CollisionNameStack {
  public:
+  struct ScopedElement {
+    ScopedElement();
+    ScopedElement(ScopedElement &&);
+    ~ScopedElement();
+
+    CollisionNameStack *stk = nullptr;
+  };
+
   //! Pop the last name from stack. It is safe if the stack is empty.
   void Pop();
 
@@ -27,6 +35,10 @@ class CollisionNameStack {
   //! Dump all elements in this stack into a string, formatted:
   //!   {NAME} -> {NAME} -> ...
   std::string DumpStack() const;
+
+  //! RAII Element
+  ScopedElement ScopedPush(const std::string &,
+                           std::list<std::string> *stk = nullptr);
 
  private:
   std::list<std::string> ordered_names_;

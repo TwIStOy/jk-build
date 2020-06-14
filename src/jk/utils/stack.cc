@@ -3,6 +3,7 @@
 
 #include "jk/utils/stack.hh"
 
+#include <iostream>
 #include <sstream>
 
 namespace jk {
@@ -54,6 +55,29 @@ std::string CollisionNameStack::DumpStack() const {
     oss << name << "\n";
   }
   return oss.str();
+}
+
+CollisionNameStack::ScopedElement::ScopedElement() {
+  stk = nullptr;
+}
+
+CollisionNameStack::ScopedElement::ScopedElement(ScopedElement &&rhs)
+    : stk(rhs.stk) {
+  rhs.stk = nullptr;
+}
+
+CollisionNameStack::ScopedElement::~ScopedElement() {
+  if (stk) {
+    stk->Pop();
+  }
+}
+
+CollisionNameStack::ScopedElement CollisionNameStack::ScopedPush(
+    const std::string &name, std::list<std::string> *stk) {
+  ScopedElement s;
+  s.stk = this;
+  Push(name, stk);
+  return s;
 }
 
 }  // namespace utils

@@ -97,6 +97,8 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
     }
   }
 
+  rstk->Pop();
+
   dependencies_has_built_ = true;
 }
 

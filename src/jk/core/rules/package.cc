@@ -35,6 +35,8 @@ void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
 
   // Initialize done.
   initialized_ = true;
+
+  stk->Pop();
 }
 
 BuildPackage *BuildPackageFactory::CreatePackage(const std::string &name) {
