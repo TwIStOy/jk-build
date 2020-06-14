@@ -13,7 +13,12 @@
 #include "jk/core/error.h"
 #include "jk/utils/kwargs.hh"
 #include "jk/utils/stack.hh"
+#include "pybind11/embed.h"
+#include "pybind11/eval.h"
+#include "pybind11/pybind11.h"
 #include "pybind11/pytypes.h"
+#include "pybind11/stl.h"
+#include "pybind11/stl_bind.h"
 
 namespace jk {
 namespace core {
@@ -120,7 +125,8 @@ void NewRuleFromScript(
   if (it->second.get_type().is(pybind11::str().get_type())) {
     auto name = it->second.cast<std::string>();
     // construct a new rule
-    new RuleType(pkg, name);
+    auto rule = new RuleType(pkg, name);
+    rule->ExtractFieldFromArguments(utils::Kwargs{kwargs});
   } else {
     throw JKBuildError(
         "field 'name' expect str but {} found",

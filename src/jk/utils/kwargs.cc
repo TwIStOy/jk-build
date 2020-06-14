@@ -3,17 +3,32 @@
 
 #include "jk/utils/kwargs.hh"
 
+#include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "jk/core/error.h"
+#include "pybind11/cast.h"
 #include "pybind11/pytypes.h"
+#include "pybind11/stl.h"
 
 namespace jk {
 namespace utils {
 
-Kwargs::Kwargs(MapType mp) : value_(std::move(mp)) {}
+Kwargs::Kwargs(MapType mp) : value_(std::move(mp)) {
+}
 
-Kwargs::StringType Kwargs::StringRequired(const std::string& name) const {
+// static std::vector<std::string> CastList(const pybind11::object &obj) {
+//   std::vector<std::string> res;
+//   std::vector<pybind11::object> lst =
+//   obj.cast<std::vector<pybind11::object>>(); for (const auto &it : lst) {
+//     res.push_back(it.cast<std::string>());
+//   }
+//   return res;
+// }
+//
+Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     throw core::JKBuildError("expect field '{}' but not found", name);
@@ -26,7 +41,7 @@ Kwargs::StringType Kwargs::StringRequired(const std::string& name) const {
   return it->second.cast<std::string>();
 }
 
-Kwargs::ListType Kwargs::ListRequired(const std::string& name) const {
+Kwargs::ListType Kwargs::ListRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     throw core::JKBuildError("expect field '{}' but not found", name);
@@ -40,7 +55,7 @@ Kwargs::ListType Kwargs::ListRequired(const std::string& name) const {
 }
 
 Kwargs::ListType Kwargs::ListOptional(
-    const std::string& name, boost::optional<ListType> default_value) const {
+    const std::string &name, boost::optional<ListType> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     if (default_value) {
@@ -57,7 +72,7 @@ Kwargs::ListType Kwargs::ListOptional(
 }
 
 Kwargs::StringType Kwargs::StringOptional(
-    const std::string& name, boost::optional<StringType> default_value) const {
+    const std::string &name, boost::optional<StringType> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     if (default_value) {
@@ -73,7 +88,7 @@ Kwargs::StringType Kwargs::StringOptional(
   return it->second.cast<std::string>();
 }
 
-bool Kwargs::BooleanRequired(const std::string& name) const {
+bool Kwargs::BooleanRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     throw core::JKBuildError("expect field '{}' but not found", name);
@@ -86,7 +101,7 @@ bool Kwargs::BooleanRequired(const std::string& name) const {
   return it->second.cast<bool>();
 }
 
-bool Kwargs::BooleanOptional(const std::string& name,
+bool Kwargs::BooleanOptional(const std::string &name,
                              boost::optional<bool> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {

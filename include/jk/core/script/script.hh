@@ -26,7 +26,11 @@ class ScriptInterpreter {
   using HookFunctionType =
       std::function<void(rules::BuildPackage *, const Kwargs &)>;
 
+  static ScriptInterpreter *Instance();
+
   void EvalScript(rules::BuildPackage *pkg, std::string_view filename);
+
+  void EvalScriptContent(rules::BuildPackage *pkg, const std::string &content);
 
   void RegHook(const std::string &name, HookFunctionType func);
 

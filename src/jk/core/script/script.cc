@@ -20,6 +20,11 @@ namespace jk {
 namespace core {
 namespace script {
 
+ScriptInterpreter *ScriptInterpreter::Instance() {
+  static ScriptInterpreter interp;
+  return &interp;
+}
+
 void ScriptInterpreter::RegHook(const std::string &name,
                                 HookFunctionType func) {
   hook_functions_.push_back(HookFunction{name, std::move(func)});
@@ -56,19 +61,25 @@ void ScriptInterpreter::AddConnomLocals(pybind11::dict *locals) {
   // TODO(hawtian): fill common
 }
 
-void ScriptInterpreter::EvalScript(rules::BuildPackage *pkg,
-                                   std::string_view filename) {
+void ScriptInterpreter::EvalScriptContent(rules::BuildPackage *pkg,
+                                          const std::string &content) {
   auto locals = Initialize(pkg);
   AddConnomLocals(&locals);
-
-  std::ifstream ifs(filename.data());
-  std::string content(std::istreambuf_iterator<char>{ifs},
-                      std::istreambuf_iterator<char>{});
 
   pybind11::exec(content, pybind11::globals(), locals);
 }
 
+void ScriptInterpreter::EvalScript(rules::BuildPackage *pkg,
+                                   std::string_view filename) {
+  std::ifstream ifs(filename.data());
+  std::string content(std::istreambuf_iterator<char>{ifs},
+                      std::istreambuf_iterator<char>{});
+
+  EvalScriptContent(pkg, content);
+}
+
 ScriptInterpreter::ScriptInterpreter() {
+  HookFunctions();
 }
 
 }  // namespace script

@@ -84,6 +84,8 @@ set(JK_SOURCE_FILES src/jk/core/rules/build_rule.cc
 )
 set(JK_TEST_FILES test/main.cc
                   test/jk/core/rules/dependent.cc
+                  test/jk/core/script/script.cc
+                  test/jk/utils/str.cc
 )
 
 target_sources(libjk PRIVATE ${JK_SOURCE_FILES})
