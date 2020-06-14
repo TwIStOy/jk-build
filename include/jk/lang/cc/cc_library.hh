@@ -41,6 +41,9 @@ class CCLibrary : public BuildRule {
   //! All compile flags for c files.
   const std::vector<std::string> &FlagsForCFiles() const;
 
+  //! Expand source files.
+  const std::vector<std::string> &ExpandSourceFiles() const;
+
   // --- Fields Start ---
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;
@@ -60,6 +63,7 @@ class CCLibrary : public BuildRule {
   mutable boost::optional<std::vector<std::string>> resolved_definitions_;
   mutable boost::optional<std::vector<std::string>> resolved_c_flags_;
   mutable boost::optional<std::vector<std::string>> resolved_cpp_flags_;
+  mutable boost::optional<std::vector<std::string>> expanded_source_files_;
 };
 
 }  // namespace rules

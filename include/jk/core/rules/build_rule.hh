@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "jk/common/path.hh"
 #include "jk/core/error.h"
 #include "jk/utils/kwargs.hh"
 #include "jk/utils/stack.hh"

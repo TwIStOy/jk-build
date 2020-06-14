@@ -3,6 +3,8 @@
 
 #include "jk/lang/cc/cc_library.hh"
 
+#include <glob.h>
+
 #include <algorithm>
 #include <boost/optional/optional.hpp>
 #include <iterator>
@@ -10,7 +12,10 @@
 #include <vector>
 
 #include "fmt/core.h"
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
+#include "jk/core/rules/package.hh"
+#include "jk/lang/cc/source_file.hh"
 
 namespace jk {
 namespace core {
@@ -133,6 +138,22 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
 
   resolved_c_flags_ = std::move(res);
   return resolved_c_flags_.get();
+}
+
+const std::vector<std::string> &CCLibrary::ExpandSourceFiles() const {
+  if (expanded_source_files_) {
+    return expanded_source_files_.get();
+  }
+
+  std::vector<std::string> res;
+
+  fs::path package_root = Package->Name;
+
+  for (const auto &source : Sources) {
+  }
+
+  expanded_source_files_ = std::move(res);
+  return expanded_source_files_.get();
 }
 
 }  // namespace rules

@@ -1,6 +1,8 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
+#pragma once  // NOLINT(build/header_guard)
+
 #include <list>
 #include <memory>
 #include <string>
@@ -8,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "jk/common/path.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/utils/stack.hh"
 
@@ -26,6 +29,8 @@ struct BuildPackage {
 
   //! All rules in this package.
   BuildRuleMap Rules;
+
+  common::ProjectRelativePath Path;
 
   //! Initialize package. Note that a package can not be initialized twice, the
   //! second call will not take effect.

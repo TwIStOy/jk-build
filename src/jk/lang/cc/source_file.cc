@@ -11,6 +11,12 @@ namespace jk {
 namespace lang {
 namespace cc {
 
+SourceFile::SourceFile(core::rules::BuildRule *rule,
+                       core::rules::BuildPackage *package, std::string filename)
+    : Rule(rule), Package(package) {
+  FileName = fs::path{package->Name} / rule->Name / filename;
+}
+
 std::string SourceFile::FullQualifiedName() const {
   auto p = fs::path(Package->Name) / FileName;
   return p.string();
