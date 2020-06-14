@@ -5,6 +5,7 @@
 
 #include <initializer_list>
 #include <list>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -28,11 +29,23 @@ class CCLibrary : public BuildRule {
 
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
+  //! Get all **includes** recursively
+  const std::vector<std::string> &ResolveIncludes() const;
+
+  //! Get all **definitions** recursively
+  const std::vector<std::string> &ResolveDefinitions() const;
+
+  //! All compile flags for cpp files.
+  const std::vector<std::string> &FlagsForCppFiles() const;
+
+  //! All compile flags for c files.
+  const std::vector<std::string> &FlagsForCFiles() const;
+
   // --- Fields Start ---
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;
   std::vector<std::string> CxxFlags;
-  std::vector<std::string> LdFlags;
+  std::vector<std::string> LdFlags;  // unused
   std::vector<std::string> Sources;
   std::vector<std::string> Excludes;
   std::vector<std::string> Includes;
@@ -41,6 +54,12 @@ class CCLibrary : public BuildRule {
   // --- Fields End ---
 
   const std::string ExportedFileName;
+
+ private:
+  mutable boost::optional<std::vector<std::string>> resolved_includes_;
+  mutable boost::optional<std::vector<std::string>> resolved_definitions_;
+  mutable boost::optional<std::vector<std::string>> resolved_c_flags_;
+  mutable boost::optional<std::vector<std::string>> resolved_cpp_flags_;
 };
 
 }  // namespace rules

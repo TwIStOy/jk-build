@@ -11,7 +11,7 @@
 namespace jk {
 namespace core {
 
-class JKBuildError : std::runtime_error {
+class JKBuildError : public std::runtime_error {
  public:
   template <typename... Args>
   JKBuildError(std::string_view fmt, const Args&... args)

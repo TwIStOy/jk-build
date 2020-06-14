@@ -61,7 +61,15 @@ BuildRuleId ParseIdString(std::string_view str) {
 
   std::string package_name;
   auto mid = ReadPackageName(str.substr(st), &package_name) + st;
-  assert(str[mid] == ':');
+  if (mid >= str.length()) {
+    throw JKBuildError("Failed to parse dep id '{}', unknown error", str);
+  }
+  if (str[mid] != ':') {
+    throw JKBuildError(
+        "Failed to parse dep id '{}', expect ':' at pos {} but "
+        "found '{}'",
+        str, mid, static_cast<char>(str[mid]));
+  }
 
   if (!package_name.empty()) {
     res.PackageName = std::move(package_name);

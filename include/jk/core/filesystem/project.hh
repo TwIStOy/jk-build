@@ -17,6 +17,8 @@ namespace filesystem {
 
 fs::path ProjectRoot();
 
+fs::path BuildRoot();
+
 }  // namespace filesystem
 }  // namespace core
 }  // namespace jk

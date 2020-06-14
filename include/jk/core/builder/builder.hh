@@ -10,6 +10,19 @@ namespace jk {
 namespace core {
 namespace builder {
 
+struct Writer {
+  virtual Writer &NewLine() = 0;
+
+  virtual Writer &Comment(const std::string &comment) = 0;
+
+  virtual Writer &Variable(const std::string &key, const std::string &value,
+                           uint32_t indent = 0) = 0;
+
+  virtual Writer &Include(const std::string &filename, bool fatal = false) = 0;
+
+  virtual ~Writer() = default;
+};
+
 class Builder {
  public:
   virtual Builder *WriteLine(const std::string &line) = 0;

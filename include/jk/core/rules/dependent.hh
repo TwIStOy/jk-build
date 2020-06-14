@@ -12,7 +12,7 @@ namespace jk {
 namespace core {
 namespace rules {
 
-enum class RuleRelativePosition {
+enum class RuleRelativePosition : uint8_t {
   kAbsolute,
   kBuiltin,
   kRelative,
@@ -38,16 +38,16 @@ BuildRuleId ParseIdString(std::string_view str);
 
 namespace fmt {
 
-template <>
+template<>
 struct formatter<jk::core::rules::RuleRelativePosition> {
   using Type = jk::core::rules::RuleRelativePosition;
 
-  template <typename ParseContext>
+  template<typename ParseContext>
   constexpr auto parse(ParseContext &ctx) {
     return ctx.begin();
   }
 
-  template <typename FormatContext>
+  template<typename FormatContext>
   auto format(const Type &d, FormatContext &ctx) {
     switch (d) {
       case Type::kAbsolute:
@@ -64,14 +64,14 @@ struct formatter<jk::core::rules::RuleRelativePosition> {
   }
 };
 
-template <>
+template<>
 struct formatter<jk::core::rules::BuildRuleId> {
-  template <typename ParseContext>
+  template<typename ParseContext>
   constexpr auto parse(ParseContext &ctx) {
     return ctx.begin();
   }
 
-  template <typename FormatContext>
+  template<typename FormatContext>
   auto format(const jk::core::rules::BuildRuleId &d, FormatContext &ctx) {
     return format_to(ctx.out(), "RuleId({}:{}, absolute: {})", d.PackageName,
                      d.RuleName, d.Position);

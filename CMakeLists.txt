@@ -1,9 +1,19 @@
 cmake_minimum_required(VERSION 3.12)
 project(jk LANGUAGES CXX)
 
-set(DEFAULT_CMAKE_BUILD_TYPE Release)
+set(DEFAULT_CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PYBIND11_CPP_STANDARD -std=c++1z)
+
+set(CMAKE_CXX_FLAGS_DEBUG -fsanitize=address
+                          -fno-inline
+                          -fno-omit-frame-pointer
+                          -fno-builtin
+                          -fno-optimize-sibling-calls
+                          -Wframe-larger-than=65535
+                          -fno-omit-frame-pointer
+)
+
 
 add_executable(jk "")
 add_library(libjk STATIC "")
@@ -45,6 +55,7 @@ if (Boost_FOUND)
 endif()
 
 include_directories(./include)
+include_directories(third-party/include)
 
 # --- third-party section ---
 add_subdirectory(third-party/fmt)
@@ -58,6 +69,9 @@ TARGET_LINK_LIBRARIES(libjk PUBLIC pybind11::module)
 target_link_libraries(jk PRIVATE libjk)
 target_link_libraries(jk_test PRIVATE libjk)
 
+
+# --- source fies ---
+
 set(JK_SOURCE_FILES src/jk/core/rules/build_rule.cc
                     src/jk/core/rules/dependent.cc
                     src/jk/core/rules/package.cc
@@ -65,12 +79,18 @@ set(JK_SOURCE_FILES src/jk/core/rules/build_rule.cc
                     src/jk/utils/kwargs.cc
                     src/jk/utils/stack.cc
                     src/jk/lang/cc/cc_library.cc
+                    src/jk/core/builder/makefile_builder.cc
                     src/main.cc
 )
-set(JK_TEST_FILES test/test.cc)
+set(JK_TEST_FILES test/main.cc
+                  test/jk/core/rules/dependent.cc
+)
 
 target_sources(libjk PRIVATE ${JK_SOURCE_FILES})
 target_sources(jk PRIVATE src/main.cc)
 target_sources(jk_test PRIVATE ${JK_TEST_FILES})
 
+enable_testing()
+
+add_test(AllTest jk_test)
 

@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <sstream>
 #include <string_view>
 
 namespace jk {
@@ -16,6 +17,30 @@ inline bool StringEndWith(std::string_view full_string,
   } else {
     return false;
   }
+}
+
+template<typename InputIterator>
+typename InputIterator::value_type __DefaultUnary(
+    const typename InputIterator::value_type &v) {
+  return v;
+}
+
+template<typename InputIterator,
+         typename UnaryOperator = decltype(__DefaultUnary<InputIterator>)>
+inline std::string JoinString(
+    std::string separator, InputIterator begin, InputIterator end,
+    UnaryOperator func = &__DefaultUnary<InputIterator>) {
+  std::ostringstream oss;
+  bool first = true;
+  for (auto it = begin; it != end; ++it) {
+    if (first) {
+      first = false;
+    } else {
+      oss << separator;
+    }
+    oss << func(*it);
+  }
+  return oss.str();
 }
 
 }  // namespace utils
