@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "jk/common/path.hh"
+
 namespace jk {
 
 namespace core::rules {
@@ -19,8 +21,9 @@ namespace lang::cc {
 
 /// SourceFile => a cpp filename
 struct SourceFile {
-  SourceFile(core::rules::BuildRule *rule, core::rules::BuildPackage *package,
-             std::string filename);
+  static SourceFile *Create(core::rules::BuildRule *rule,
+                            core::rules::BuildPackage *package,
+                            std::string filename);
 
   core::rules::BuildRule *Rule;
   core::rules::BuildPackage *Package;
@@ -28,8 +31,17 @@ struct SourceFile {
   // FileName written in 'BUILD'
   std::string FileName;
 
-  std::string FullQualifiedName() const;
-  std::string FullQualifiedObjectName() const;
+  common::ProjectRelativePath FullQualifiedPath() const;
+  common::AbsolutePath FullQualifiedObjectPath(
+      const common::AbsolutePath &new_root) const;
+
+  bool IsCppSourceFile() const;
+  bool IsCSourceFile() const;
+  bool IsSourceFile() const;
+
+ private:
+  SourceFile(core::rules::BuildRule *rule, core::rules::BuildPackage *package,
+             std::string filename);
 
  private:
   static std::unordered_map<std::string, std::unique_ptr<SourceFile>>

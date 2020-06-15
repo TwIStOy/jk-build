@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <sstream>
+#include <string>
 #include <string_view>
 
 namespace jk {
@@ -40,6 +41,21 @@ inline std::string JoinString(
     }
     oss << func(*it);
   }
+  return oss.str();
+}
+
+template<typename T>
+inline std::string Replace(const std::string &old, char from, const T &to) {
+  std::ostringstream oss;
+
+  for (auto x : old) {
+    if (x == from) {
+      oss << to;
+    } else {
+      oss << x;
+    }
+  }
+
   return oss.str();
 }
 

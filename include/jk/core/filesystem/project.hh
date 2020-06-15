@@ -16,8 +16,11 @@ struct ProjectFileSystem {
   //! Root path of build environment. Default is '.build' in **ProjectRoot**.
   common::AbsolutePath BuildRoot;
 
-  //! Resolve relative path to absolute
+  //! Resolve relative path to absolute from **ProjectRoot**
   common::AbsolutePath Resolve(const common::ProjectRelativePath &rp);
+
+  //! Resolve relative path to absolute from **BuildRoot**
+  common::AbsolutePath ResolveBuild(const common::ProjectRelativePath &rp);
 };
 
 fs::path ProjectRoot();

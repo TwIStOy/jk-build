@@ -19,6 +19,8 @@ class MakefileBuilder {
  public:
   MakefileBuilder();
 
+  void DefineCommon();
+
   void DefineEnvironment(const std::string &key, std::string value,
                          std::string comments = "");
 
@@ -30,6 +32,8 @@ class MakefileBuilder {
                  std::string Comments = "", bool phony = false);
 
   void WriteToFile(fs::path file) const;
+
+  std::string WriteToString() const;
 
  private:
   static void WriteComment(std::ostream &, const std::string &str);

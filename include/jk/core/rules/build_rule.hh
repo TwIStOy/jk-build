@@ -99,6 +99,10 @@ struct BuildRule {
   //! and build result of this rule can be cached.
   virtual bool IsStable() const = 0;
 
+  //! Returns exported names. Other rules which depend on this, will
+  //! automatically depend on all exported files.
+  virtual std::vector<std::string> ExportedFileName() const = 0;
+
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
 

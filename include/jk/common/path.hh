@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+#include "jk/core/error.h"
+
 #if __GNUC__ >= 8
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -23,11 +25,45 @@ struct ProjectRelativePath {
 
     return r / Path;
   }
+
+  template<typename T>
+  inline ProjectRelativePath Sub(const T &rhs) {
+    return ProjectRelativePath{Path / rhs};
+  }
+
+  inline std::string str() {
+    return Path.string();
+  }
 };
 
 struct AbsolutePath {
   fs::path Path;
+
+  template<typename T>
+  inline AbsolutePath Sub(const T &rhs) {
+    return AbsolutePath{Path / rhs};
+  }
+
+  inline std::string str() {
+    return Path.string();
+  }
 };
+
+inline void AssumeFolder(const fs::path &rp) {
+  if (fs::exists(rp)) {
+    if (fs::is_directory(rp)) {
+      return;
+    }
+    throw core::JKBuildError("{} is exist, but not a directory", rp.string());
+  }
+
+  AssumeFolder(rp.parent_path());
+  fs::create_directory(rp);
+}
+
+inline void AssumeFolder(const ProjectRelativePath &rp) {
+  AssumeFolder(rp.Path);
+}
 
 }  // namespace jk::common
 

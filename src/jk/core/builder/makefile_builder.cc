@@ -5,6 +5,7 @@
 
 #include <fstream>
 #include <iterator>
+#include <sstream>
 
 #include "fmt/core.h"
 #include "jk/core/filesystem/project.hh"
@@ -37,6 +38,9 @@ void MakefileBuilder::AddTarget(std::string target, std::list<std::string> deps,
 }
 
 MakefileBuilder::MakefileBuilder() {
+}
+
+void MakefileBuilder::DefineCommon() {
   DefineEnvironment("SHELL", "/bin/bash",
                     "The shell in which to execute make rules.");
 
@@ -54,6 +58,8 @@ MakefileBuilder::MakefileBuilder() {
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
 
   DefineEnvironment("PRINT", "jk tools echo_color ");
+
+  DefineEnvironment("AR", "ar qc ");
 }
 
 static const char *CommonHeader[] = {
@@ -69,8 +75,9 @@ void MakefileBuilder::WriteComment(std::ostream &oss, const std::string &str) {
   }
 }
 
-void MakefileBuilder::WriteToFile(fs::path file) const {
-  std::ofstream oss(file);
+std::string MakefileBuilder::WriteToString() const {
+  std::ostringstream oss;
+
   for (auto line : CommonHeader) {
     oss << line << std::endl;
   }
@@ -105,8 +112,21 @@ void MakefileBuilder::WriteToFile(fs::path file) const {
       oss << std::endl;
     }
 
+    if (tgt.Phony) {
+      oss << fmt::format(".PHONY : {}", tgt.TargetName);
+      oss << std::endl;
+    }
+
     oss << std::endl;
   }
+
+  return oss.str();
+}
+
+void MakefileBuilder::WriteToFile(fs::path file) const {
+  std::ofstream oss(file);
+
+  oss << WriteToString();
 
   oss.flush();
 }

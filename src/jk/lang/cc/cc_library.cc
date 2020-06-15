@@ -101,17 +101,18 @@ const std::vector<std::string> &CCLibrary::FlagsForCppFiles() const {
 
   std::vector<std::string> res;
   res.insert(res.end(), CppFlags.begin(), CppFlags.end());
-  auto &includes = ResolveIncludes();
-  std::transform(includes.begin(), includes.end(), std::back_inserter(res),
-                 [](const std::string &inc) {
-                   return fmt::format("-I{}", inc);
-                 });
-
-  auto &defines = ResolveDefinitions();
-  std::transform(defines.begin(), defines.end(), std::back_inserter(res),
-                 [](const std::string &inc) {
-                   return fmt::format("-D{}", inc);
-                 });
+  res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
+  // auto &includes = ResolveIncludes();
+  // std::transform(includes.begin(), includes.end(), std::back_inserter(res),
+  //                [](const std::string &inc) {
+  //                  return fmt::format("-I{}", inc);
+  //                });
+  //
+  // auto &defines = ResolveDefinitions();
+  // std::transform(defines.begin(), defines.end(), std::back_inserter(res),
+  //                [](const std::string &inc) {
+  //                  return fmt::format("-D{}", inc);
+  //                });
 
   resolved_cpp_flags_ = std::move(res);
   return resolved_cpp_flags_.get();
@@ -124,17 +125,18 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
 
   std::vector<std::string> res;
   res.insert(res.end(), CFlags.begin(), CFlags.end());
-  auto &includes = ResolveIncludes();
-  std::transform(includes.begin(), includes.end(), std::back_inserter(res),
-                 [](const std::string &inc) {
-                   return fmt::format("-I{}", inc);
-                 });
-
-  auto &defines = ResolveDefinitions();
-  std::transform(defines.begin(), defines.end(), std::back_inserter(res),
-                 [](const std::string &inc) {
-                   return fmt::format("-D{}", inc);
-                 });
+  res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
+  // auto &includes = ResolveIncludes();
+  // std::transform(includes.begin(), includes.end(), std::back_inserter(res),
+  //                [](const std::string &inc) {
+  //                  return fmt::format("-I{}", inc);
+  //                });
+  //
+  // auto &defines = ResolveDefinitions();
+  // std::transform(defines.begin(), defines.end(), std::back_inserter(res),
+  //                [](const std::string &inc) {
+  //                  return fmt::format("-D{}", inc);
+  //                });
 
   resolved_c_flags_ = std::move(res);
   return resolved_c_flags_.get();
@@ -150,6 +152,7 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles() const {
   fs::path package_root = Package->Name;
 
   for (const auto &source : Sources) {
+    // TODO(hawtian):
   }
 
   expanded_source_files_ = std::move(res);
