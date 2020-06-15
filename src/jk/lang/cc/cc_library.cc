@@ -159,6 +159,10 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles() const {
   return expanded_source_files_.get();
 }
 
+std::vector<std::string> CCLibrary::ExportedFilesSimpleName() const {
+  return {ExportedFileName};
+}
+
 }  // namespace rules
 }  // namespace core
 }  // namespace jk

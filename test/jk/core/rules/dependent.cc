@@ -4,6 +4,7 @@
 #include "jk/core/rules/dependent.hh"
 
 #include <catch.hpp>
+#include <boost/optional/optional_io.hpp>
 
 namespace jk {
 namespace core {
@@ -13,7 +14,7 @@ namespace test {
 #define DEP_PARSE(dep, pkg, rule, pos)   \
   auto res = ParseIdString(dep);         \
                                          \
-  REQUIRE(res.PackageName.has_value());  \
+  REQUIRE(res.PackageName);              \
   REQUIRE(res.PackageName.get() == pkg); \
   REQUIRE(res.RuleName == rule);         \
   REQUIRE(res.Position == RuleRelativePosition::pos)
@@ -31,7 +32,7 @@ TEST_CASE("Parse Relative Id", "[core][rules][dependent]") {
 TEST_CASE("Parse This Id", "[core][rules][dependent]") {
   auto res = ParseIdString(":base");
 
-  REQUIRE_FALSE(res.PackageName.has_value());
+  REQUIRE_FALSE(res.PackageName);
   REQUIRE(res.RuleName == "base");
   REQUIRE(res.Position == RuleRelativePosition::kThis);
 }

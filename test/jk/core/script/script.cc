@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
-#define private public
+#define JK_TEST
 
 #include "jk/core/script/script.hh"
 

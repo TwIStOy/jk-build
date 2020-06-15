@@ -101,7 +101,7 @@ struct BuildRule {
 
   //! Returns exported names. Other rules which depend on this, will
   //! automatically depend on all exported files.
-  virtual std::vector<std::string> ExportedFileName() const = 0;
+  virtual std::vector<std::string> ExportedFilesSimpleName() const = 0;
 
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
@@ -115,6 +115,10 @@ struct BuildRule {
 
  private:
   bool dependencies_has_built_{false};
+
+#ifdef JK_TEST
+ public:
+#endif
   std::vector<std::string> dependencies_str_;
 };
 

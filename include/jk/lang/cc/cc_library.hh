@@ -29,6 +29,8 @@ class CCLibrary : public BuildRule {
 
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
+  std::vector<std::string> ExportedFilesSimpleName() const override;
+
   //! Get all **includes** recursively
   const std::vector<std::string> &ResolveIncludes() const;
 
