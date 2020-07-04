@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "jk/core/filesystem/expander.hh"
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "pybind11/pytypes.h"
 
@@ -44,7 +46,9 @@ class CCLibrary : public BuildRule {
   const std::vector<std::string> &FlagsForCFiles() const;
 
   //! Expand source files.
-  const std::vector<std::string> &ExpandSourceFiles() const;
+  const std::vector<std::string> &ExpandSourceFiles(
+      filesystem::ProjectFileSystem *project,
+      filesystem::FileNamePatternExpander *expander) const;
 
   // --- Fields Start ---
   std::vector<std::string> CFlags;

@@ -21,10 +21,10 @@ using fmt::operator"" _a;
 using fmt::operator"" _format;
 
 void Compiler::Compile(filesystem::ProjectFileSystem *project,
-                       rules::BuildRule *rule) {
+                       writer::WriterFactory *factory, rules::BuildRule *rule) {
   const auto &name = rule->TypeName;
   if (name == "cc_library") {
-    Compile_cc_library(project, rule->Downcast<rules::CCLibrary>());
+    Compile_cc_library(project, factory, rule->Downcast<rules::CCLibrary>());
   } else {
     // ...
   }
@@ -44,7 +44,8 @@ void Compiler::Compile(filesystem::ProjectFileSystem *project,
  *   - depend.make: source files depends
  */
 void Compiler::Compile_cc_library(  // {{{
-    filesystem::ProjectFileSystem *project, rules::CCLibrary *rule) {
+    filesystem::ProjectFileSystem *project, writer::WriterFactory *factory,
+    rules::CCLibrary *rule) {
   auto working_folder = project->BuildRoot.Sub(
       utils::Replace(rule->FullQualifiedName(), '/', "@"));
 
@@ -73,7 +74,8 @@ void Compiler::Compile_cc_library(  // {{{
                                          [](const std::string &inc) {
                                            return fmt::format("-I{}", inc);
                                          }));
-    flags.WriteToFile(working_folder.Sub("flags.make").Path);
+    flags.WriteTo(
+        factory->Build(working_folder.Sub("flags.make").Stringify()).get());
   }
 
   // write "toolchain.make"
@@ -82,7 +84,8 @@ void Compiler::Compile_cc_library(  // {{{
 
     toolchain.DefineEnvironment("CXX", "g++");
 
-    toolchain.WriteToFile(working_folder.Sub("toolchain.make").Path);
+    toolchain.WriteTo(
+        factory->Build(working_folder.Sub("toolchain.make").Stringify()).get());
   }
 
   // write "build.make"
@@ -95,7 +98,7 @@ void Compiler::Compile_cc_library(  // {{{
                   "Include the ccompile flags for this rule's objectes.", true);
     build.Include(working_folder.Sub("toolchain.make").Path, "", true);
 
-    const auto &source_files = rule->ExpandSourceFiles();
+    const auto &source_files = rule->ExpandSourceFiles(project, Expander);
     auto idx = 0;
     std::list<std::string> all_objects;
 
@@ -104,64 +107,70 @@ void Compiler::Compile_cc_library(  // {{{
           lang::cc::SourceFile::Create(rule, rule->Package, source);
 
       build.AddTarget(
-          source_file->FullQualifiedObjectPath(working_folder).str(),
-          {working_folder.Sub("flags.make").str(),
-           working_folder.Sub("toolchain.make").str()});
+          source_file->FullQualifiedObjectPath(working_folder).Stringify(),
+          {working_folder.Sub("flags.make").Stringify(),
+           working_folder.Sub("toolchain.make").Stringify()});
 
       auto print_stmt =
           "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "
           "--progress-total={} \"Building CXX object {}\""_format(
               idx, source_files.size(),
-              source_file->FullQualifiedObjectPath(working_folder).str());
+              source_file->FullQualifiedObjectPath(working_folder).Stringify());
 
       if (source_file->IsCppSourceFile()) {
         auto build_stmt =
             "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(CPP_FLAGS)"
             " -o {} -c {}"_format(
-                source_file->FullQualifiedObjectPath(working_folder).str(),
-                source_file->FullQualifiedPath().str());
+                source_file->FullQualifiedObjectPath(working_folder)
+                    .Stringify(),
+                source_file->FullQualifiedPath().Stringify());
 
         build.AddTarget(
-            source_file->FullQualifiedObjectPath(working_folder).str(),
-            {source_file->FullQualifiedPath().str()}, {print_stmt, build_stmt});
+            source_file->FullQualifiedObjectPath(working_folder).Stringify(),
+            {source_file->FullQualifiedPath().Stringify()},
+            {print_stmt, build_stmt});
       } else if (source_file->IsCSourceFile()) {
         auto build_stmt =
             "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(C_FLAGS)"
             " -o {} -c {}"_format(
-                source_file->FullQualifiedObjectPath(working_folder).str(),
-                source_file->FullQualifiedPath().str());
+                source_file->FullQualifiedObjectPath(working_folder)
+                    .Stringify(),
+                source_file->FullQualifiedPath().Stringify());
 
         build.AddTarget(
-            source_file->FullQualifiedObjectPath(working_folder).str(),
-            {source_file->FullQualifiedPath().str()}, {print_stmt, build_stmt});
+            source_file->FullQualifiedObjectPath(working_folder).Stringify(),
+            {source_file->FullQualifiedPath().Stringify()},
+            {print_stmt, build_stmt});
       } else {
-        throw JKBuildError("unknown file extension: {}",
-                           source_file->FullQualifiedPath().Path.extension());
+        throw JKBuildError(
+            "unknown file extension: {}",
+            source_file->FullQualifiedPath().Path.extension().string());
       }
 
       all_objects.push_back(
-          source_file->FullQualifiedObjectPath(working_folder).str());
+          source_file->FullQualifiedObjectPath(working_folder).Stringify());
       idx++;
     }
 
     auto library_file = working_folder.Sub(rule->ExportedFileName);
     build.AddTarget(
-        library_file.str(), all_objects,
+        library_file.Stringify(), all_objects,
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
          "--progress-total={} \"Linking CXX static library {}\""_format(
-             idx, source_files.size(), library_file.str()),
+             idx, source_files.size(), library_file.Stringify()),
          "$(AR) {} {}"_format(
-             library_file.str(),
+             library_file.Stringify(),
              utils::JoinString(" ", all_objects.begin(), all_objects.end()))});
 
-    auto clean_target = working_folder.Sub("clean").str();
-    build.AddTarget(clean_target, {}, {"$(RM) {}"_format(library_file.str())},
-                    "", true);
+    auto clean_target = working_folder.Sub("clean").Stringify();
+    build.AddTarget(clean_target, {},
+                    {"$(RM) {}"_format(library_file.Stringify())}, "", true);
 
-    auto build_target = working_folder.Sub("build").str();
-    build.AddTarget(clean_target, {library_file.str()}, {}, "", true);
+    auto build_target = working_folder.Sub("build").Stringify();
+    build.AddTarget(clean_target, {library_file.Stringify()}, {}, "", true);
 
-    build.WriteToFile(working_folder.Sub("build.make").Path);
+    build.WriteTo(
+        factory->Build(working_folder.Sub("build.make").Stringify()).get());
   }
 }  // }}}
 

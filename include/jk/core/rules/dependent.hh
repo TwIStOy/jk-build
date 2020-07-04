@@ -7,6 +7,7 @@
 #include <string>
 
 #include "fmt/format.h"
+#include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
@@ -24,10 +25,12 @@ enum class RuleRelativePosition : uint8_t {
 //!   rule from builtins:   ##[/BUILD]:{RULE_NAME}
 //!   rule from pwd:        {PACKAGE_NAME}[/BUILD]:{RULE_NAME}
 //!   rule in this package: :{RULE_NAME}
-struct BuildRuleId {
+struct BuildRuleId : utils::Stringifiable {
   boost::optional<std::string> PackageName;
   std::string RuleName;
   RuleRelativePosition Position;
+
+  std::string Stringify() const final;
 };
 
 BuildRuleId ParseIdString(std::string_view str);
@@ -61,20 +64,6 @@ struct formatter<jk::core::rules::RuleRelativePosition> {
     }
 
     return format_to(ctx.out(), "unknown");
-  }
-};
-
-template<>
-struct formatter<jk::core::rules::BuildRuleId> {
-  template<typename ParseContext>
-  constexpr auto parse(ParseContext &ctx) {
-    return ctx.begin();
-  }
-
-  template<typename FormatContext>
-  auto format(const jk::core::rules::BuildRuleId &d, FormatContext &ctx) {
-    return format_to(ctx.out(), "RuleId({}:{}, absolute: {})", d.PackageName,
-                     d.RuleName, d.Position);
   }
 };
 

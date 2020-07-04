@@ -9,6 +9,7 @@
 
 #include "fmt/core.h"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/writer/writer.hh"
 #include "jk/utils/str.hh"
 #include "jk/version.h"
 
@@ -123,12 +124,9 @@ std::string MakefileBuilder::WriteToString() const {
   return oss.str();
 }
 
-void MakefileBuilder::WriteToFile(fs::path file) const {
-  std::ofstream oss(file);
-
-  oss << WriteToString();
-
-  oss.flush();
+void MakefileBuilder::WriteTo(writer::Writer *writer) const {
+  writer->Write(WriteToString());
+  writer->Flush();
 }
 
 }  // namespace builder

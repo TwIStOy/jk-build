@@ -6,8 +6,20 @@
 #include <iostream>
 #include <sstream>
 
+#include "jk/utils/str.hh"
+
 namespace jk {
 namespace utils {
+
+std::string CollisionNameStack::Stringify() const {
+  std::ostringstream oss;
+
+  oss << "CollisionNameStack [";
+  oss << JoinString(", ", ordered_names_.begin(), ordered_names_.end());
+  oss << "]";
+
+  return oss.str();
+}
 
 void CollisionNameStack::Pop() {
   if (ordered_names_.size()) {

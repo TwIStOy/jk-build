@@ -9,9 +9,11 @@
 #include <boost/optional/optional.hpp>
 #include <iterator>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "fmt/core.h"
+#include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
@@ -142,20 +144,35 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
   return resolved_c_flags_.get();
 }
 
-const std::vector<std::string> &CCLibrary::ExpandSourceFiles() const {
+const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
+    filesystem::ProjectFileSystem *project,
+    filesystem::FileNamePatternExpander *expander) const {
   if (expanded_source_files_) {
     return expanded_source_files_.get();
   }
 
-  std::vector<std::string> res;
+  std::vector<std::string> result;
+  std::unordered_set<std::string> excludes;
 
   fs::path package_root = Package->Name;
-
-  for (const auto &source : Sources) {
-    // TODO(hawtian):
+  for (const auto &exclude : Excludes) {
+    auto expanded = expander->Expand(exclude, project->Resolve(Package->Path));
+    for (const auto &f : expanded) {
+      excludes.insert(f);
+    }
   }
 
-  expanded_source_files_ = std::move(res);
+  for (const auto &source : Sources) {
+    auto expanded = expander->Expand(source, project->Resolve(Package->Path));
+
+    for (const auto &f : expanded) {
+      if (excludes.find(f) == excludes.end()) {
+        result.push_back(f);
+      }
+    }
+  }
+
+  expanded_source_files_ = std::move(result);
   return expanded_source_files_.get();
 }
 

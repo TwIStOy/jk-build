@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "jk/core/error.h"
+#include "jk/utils/str.hh"
 
 #if __GNUC__ >= 8
 #include <filesystem>
@@ -17,8 +18,11 @@ namespace fs = std::experimental::filesystem;
 
 namespace jk::common {
 
-struct ProjectRelativePath {
+struct ProjectRelativePath final : public utils::Stringifiable {
   fs::path Path;
+
+  explicit ProjectRelativePath(fs::path p) : Path(std::move(p)) {
+  }
 
   inline fs::path ToAbsolute(const fs::path &r) {
     assert(r.is_absolute());
@@ -27,26 +31,27 @@ struct ProjectRelativePath {
   }
 
   template<typename T>
-  inline ProjectRelativePath Sub(const T &rhs) {
+  inline ProjectRelativePath Sub(const T &rhs) const {
     return ProjectRelativePath{Path / rhs};
   }
 
-  inline std::string str() {
-    return Path.string();
-  }
+  // inherited from |utils::Stringifiable|
+  std::string Stringify() const;
 };
 
-struct AbsolutePath {
+struct AbsolutePath final : public utils::Stringifiable {
   fs::path Path;
 
+  explicit AbsolutePath(fs::path p) : Path(std::move(p)) {
+  }
+
   template<typename T>
-  inline AbsolutePath Sub(const T &rhs) {
+  inline AbsolutePath Sub(const T &rhs) const {
     return AbsolutePath{Path / rhs};
   }
 
-  inline std::string str() {
-    return Path.string();
-  }
+  // inherited from |utils::Stringifiable|
+  std::string Stringify() const final;
 };
 
 inline void AssumeFolder(const fs::path &rp) {

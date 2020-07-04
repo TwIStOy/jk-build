@@ -13,6 +13,11 @@ namespace jk {
 namespace core {
 namespace rules {
 
+std::string BuildRuleId::Stringify() const {
+  return "BuildRuleId(Id = \"{}:{}\", Position: {})"_format(PackageName,
+                                                            RuleName, Position);
+}
+
 static uint32_t ReadPackageName(std::string_view str, std::string *res) {
   auto ed = 0;
 

@@ -13,6 +13,7 @@
 #include "jk/common/path.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/utils/stack.hh"
+#include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
@@ -23,7 +24,11 @@ using BuildRuleMap =
 using BuildPackageMap =
     std::unordered_map<std::string, std::unique_ptr<BuildPackage>>;
 
-struct BuildPackage {
+struct BuildPackage : public utils::Stringifiable {
+  BuildPackage(std::string name, common::ProjectRelativePath path)
+      : Name(std::move(name)), Path(std::move(path)) {
+  }
+
   //! A package's name is its relative path from project root.
   std::string Name;
 
@@ -36,13 +41,17 @@ struct BuildPackage {
   //! second call will not take effect.
   void Initialize(utils::CollisionNameStack *stk);
 
+  std::string Stringify() const final;
+
  private:
-  bool initialized_;
+  bool initialized_ = false;
 };
 
 class BuildPackageFactory {
  public:
-  BuildPackage *CreatePackage(const std::string &name);
+  //! Get a *BuildPackage* from its address. This function will assume that
+  //! any two calls with same argument will return the a same object.
+  BuildPackage *Package(const std::string &name);
 
  private:
   BuildPackageMap packages_;

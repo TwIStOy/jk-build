@@ -62,9 +62,13 @@ add_subdirectory(third-party/fmt)
 target_link_libraries(libjk PUBLIC fmt::fmt)
 
 add_subdirectory(third-party/pybind11)
-TARGET_LINK_LIBRARIES(libjk PUBLIC pybind11::embed)
-TARGET_LINK_LIBRARIES(libjk PUBLIC pybind11::pybind11)
-TARGET_LINK_LIBRARIES(libjk PUBLIC pybind11::module)
+target_link_libraries(libjk PUBLIC pybind11::embed)
+target_link_libraries(libjk PUBLIC pybind11::pybind11)
+target_link_libraries(libjk PUBLIC pybind11::module)
+
+add_subdirectory(third-party/spdlog)
+set(SPDLOG_FMT_EXTERNAL ON)
+target_link_libraries(libjk PUBLIC spdlog::spdlog)
 
 target_link_libraries(jk PRIVATE libjk)
 target_link_libraries(jk_test PRIVATE libjk)
@@ -72,22 +76,8 @@ target_link_libraries(jk_test PRIVATE libjk)
 
 # --- source fies ---
 
-set(JK_SOURCE_FILES src/jk/core/rules/build_rule.cc
-                    src/jk/core/rules/dependent.cc
-                    src/jk/core/rules/package.cc
-                    src/jk/core/script/script.cc
-                    src/jk/utils/kwargs.cc
-                    src/jk/utils/stack.cc
-                    src/jk/lang/cc/cc_library.cc
-                    src/jk/core/builder/makefile_builder.cc
-                    src/main.cc
-)
-set(JK_TEST_FILES test/main.cc
-                  test/jk/core/rules/dependent.cc
-                  test/jk/core/script/script.cc
-                  test/jk/utils/str.cc
-                  test/jk/utils/stack.cc
-)
+file(GLOB_RECURSE JK_SOURCE_FILES ./src/*.cc)
+file(GLOB_RECURSE JK_TEST_FILES ./test/*.cc)
 
 target_sources(libjk PRIVATE ${JK_SOURCE_FILES})
 target_sources(jk PRIVATE src/main.cc)

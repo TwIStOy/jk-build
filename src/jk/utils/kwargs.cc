@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "jk/core/error.h"
+#include "jk/utils/str.hh"
 #include "pybind11/cast.h"
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
@@ -17,6 +18,22 @@ namespace jk {
 namespace utils {
 
 Kwargs::Kwargs(MapType mp) : value_(std::move(mp)) {
+}
+
+std::string Kwargs::Stringify() const {
+  std::ostringstream oss;
+
+  oss << "Kwargs {";
+
+  oss << JoinString(", ", value_.begin(), value_.end(),
+             [](const auto &pr) -> std::string {
+               return "{}: {}"_format(
+                   pr.first, pybind11::str(pr.second).cast<std::string>());
+             });
+
+  oss << "}";
+
+  return oss.str();
 }
 
 // static std::vector<std::string> CastList(const pybind11::object &obj) {

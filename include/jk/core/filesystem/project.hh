@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <memory>
 #include "jk/common/path.hh"
 
 namespace jk {

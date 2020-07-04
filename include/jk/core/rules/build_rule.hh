@@ -14,6 +14,7 @@
 #include "jk/core/error.h"
 #include "jk/utils/kwargs.hh"
 #include "jk/utils/stack.hh"
+#include "jk/utils/str.hh"
 #include "pybind11/embed.h"
 #include "pybind11/eval.h"
 #include "pybind11/pybind11.h"
@@ -44,7 +45,7 @@ enum class RuleTypeEnum : uint8_t {
     value_ |= static_cast<uint8_t>(RuleTypeEnum::k##type); \
   }
 
-struct RuleType {
+struct RuleType final : public utils::Stringifiable {
  public:
   inline bool HasType(RuleTypeEnum tp) const {
     return value_ & static_cast<uint8_t>(tp);
@@ -58,6 +59,9 @@ struct RuleType {
   TYPE_SET_GETTER(Binary);
   TYPE_SET_GETTER(Test);
 
+  // inherited from |utils::Stringifiable|
+  std::string Stringify() const final;
+
  private:
   uint8_t value_;
 };
@@ -65,7 +69,7 @@ struct RuleType {
 #undef TYPE_SET_GETTER
 
 /// BuildRule indicates a build-rule in process stage.
-struct BuildRule {
+struct BuildRule : public utils::Stringifiable {
   BuildRule(BuildPackage *package, std::string name,
             std::initializer_list<RuleTypeEnum> types,
             std::string_view type_name);
@@ -113,6 +117,9 @@ struct BuildRule {
   const RuleType Type;
   const std::string_view TypeName;
 
+  // inherited from |utils::Stringifiable|
+  std::string Stringify() const final;
+
  private:
   bool dependencies_has_built_{false};
 
@@ -122,6 +129,8 @@ struct BuildRule {
   std::vector<std::string> dependencies_str_;
 };
 
+//! Create a **BuildRule** instance in *pkg* with *kwags".
+//! The new rule will automatically register into its package.
 template<typename RuleType>
 void NewRuleFromScript(
     BuildPackage *pkg,

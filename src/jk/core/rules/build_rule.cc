@@ -3,6 +3,7 @@
 
 #include "jk/core/rules/build_rule.hh"
 
+#include <initializer_list>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -14,10 +15,45 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/dependent.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
 namespace rules {
+
+std::string RuleType::Stringify() const {
+  std::vector<std::string> flags;
+  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kLibrary)) {
+    flags.push_back("library");
+  }
+  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kBinary)) {
+    flags.push_back("binary");
+  }
+  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kTest)) {
+    flags.push_back("test");
+  }
+  return "RuleType [{}]"_format(
+      utils::JoinString("|", flags.begin(), flags.end()));
+}
+
+std::string BuildRule::Stringify() const {
+  std::ostringstream oss;
+  oss << "BuildRule { ";
+
+  std::vector<std::string> fields;
+
+  fields.push_back("Package = {}"_format(Package->Name));
+  fields.push_back("Name = {}"_format(Name));
+  fields.push_back("Type = {}"_format(Type));
+  fields.push_back("TypeName = {}"_format(TypeName));
+  fields.push_back("Dependencies = [{}]"_format(utils::JoinString(
+      ", ", dependencies_str_.begin(), dependencies_str_.end())));
+
+  oss << utils::JoinString(", ", fields.begin(), fields.end());
+
+  oss << " }";
+  return oss.str();
+}
 
 RuleType MergeType(std::initializer_list<RuleTypeEnum> types) {
   RuleType rtp;
@@ -75,14 +111,14 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
     switch (dep_id.Position) {
       case RuleRelativePosition::kAbsolute: {
         assert(dep_id.PackageName);
-        auto dep_pkg = factory->CreatePackage(dep_id.PackageName.get());
+        auto dep_pkg = factory->Package(dep_id.PackageName.get());
         dep_pkg->Initialize(pstk);
         ResolveDepends(dep_pkg, dep_id.RuleName);
       }
       case RuleRelativePosition::kRelative: {
         assert(dep_id.PackageName);
 
-        auto dep_pkg = factory->CreatePackage(
+        auto dep_pkg = factory->Package(
             fmt::format("{}/{}", Package->Name, dep_id.PackageName.get()));
         dep_pkg->Initialize(pstk);
         ResolveDepends(dep_pkg, dep_id.RuleName);

@@ -1,15 +1,15 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
+#include "jk/common/path.hh"
 #define JK_TEST
-
-#include "jk/core/script/script.hh"
 
 #include <catch.hpp>
 #include <initializer_list>
 #include <list>
 
 #include "fmt/core.h"
+#include "jk/core/script/script.hh"
 #include "jk/utils/str.hh"
 
 namespace jk::core::script::test {
@@ -49,8 +49,7 @@ TEST_CASE("Script", "[core][script]") {
                                                  ":bar",
                                              })}});
 
-    rules::BuildPackage pkg;
-    pkg.Name = "test";
+    rules::BuildPackage pkg("test", common::ProjectRelativePath{""});
 
     interp->EvalScriptContent(&pkg, content);
 
@@ -79,8 +78,7 @@ TEST_CASE("Script", "[core][script]") {
                                                  ":bar",
                                              })}});
 
-    rules::BuildPackage pkg;
-    pkg.Name = "test";
+    rules::BuildPackage pkg("test", common::ProjectRelativePath{""});
 
     REQUIRE_THROWS(interp->EvalScriptContent(&pkg, content));
   }

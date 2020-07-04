@@ -3,12 +3,26 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <fmt/format.h>
+
+#include <boost/optional.hpp>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace jk {
+
+using fmt::operator"" _format;
+
 namespace utils {
+
+struct Stringifiable {
+  virtual std::string Stringify() const = 0;
+
+  virtual ~Stringifiable() = default;
+};
 
 inline bool StringEndWith(std::string_view full_string,
                           std::string_view ending) {
@@ -26,8 +40,10 @@ typename InputIterator::value_type __DefaultUnary(
   return v;
 }
 
-template<typename InputIterator,
-         typename UnaryOperator = decltype(__DefaultUnary<InputIterator>)>
+template<
+    typename InputIterator,
+    typename UnaryOperator = decltype(__DefaultUnary<InputIterator>),
+    typename = typename std::iterator_traits<InputIterator>::iterator_category>
 inline std::string JoinString(
     std::string separator, InputIterator begin, InputIterator end,
     UnaryOperator func = &__DefaultUnary<InputIterator>) {
@@ -61,3 +77,47 @@ inline std::string Replace(const std::string &old, char from, const T &to) {
 
 }  // namespace utils
 }  // namespace jk
+
+namespace fmt {
+
+template<typename T>
+struct ::fmt::formatter<T, char,
+                        typename std::enable_if<std::is_base_of_v<
+                            jk::utils::Stringifiable, T>>::type> {
+  template<typename ParseContext>
+  typename ParseContext::iterator parse(
+      ParseContext &ctx) {  // NOLINT(runtime/references)
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const T &v,
+              FormatContext &ctx)  // NOLINT(runtime/references)
+      -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "{}", v.Stringify());
+  }
+};
+
+template<typename T>
+struct ::fmt::formatter<boost::optional<T>> {
+  using value_type = boost::optional<T>;
+
+  template<typename ParseContext>
+  typename ParseContext::iterator parse(
+      ParseContext &ctx) {  // NOLINT(runtime/references)
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const value_type &v,
+              FormatContext &ctx)  // NOLINT(runtime/references)
+      -> decltype(ctx.out()) {
+    if (v) {
+      return format_to(ctx.out(), "Optional({})", v.get());
+    }
+
+    return format_to(ctx.out(), "Optional()");
+  }
+};
+
+}  // namespace fmt

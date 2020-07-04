@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include "jk/common/path.hh"
+#include "jk/utils/str.hh"
 
 namespace jk {
 
@@ -20,7 +21,7 @@ struct BuildRule;
 namespace lang::cc {
 
 /// SourceFile => a cpp filename
-struct SourceFile {
+struct SourceFile : public utils::Stringifiable {
   static SourceFile *Create(core::rules::BuildRule *rule,
                             core::rules::BuildPackage *package,
                             std::string filename);
@@ -38,6 +39,8 @@ struct SourceFile {
   bool IsCppSourceFile() const;
   bool IsCSourceFile() const;
   bool IsSourceFile() const;
+
+  std::string Stringify() const final;
 
  private:
   SourceFile(core::rules::BuildRule *rule, core::rules::BuildPackage *package,

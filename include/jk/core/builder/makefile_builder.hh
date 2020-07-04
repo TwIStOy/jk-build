@@ -10,6 +10,7 @@
 
 #include "jk/core/builder/builder.hh"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/writer/writer.hh"
 
 namespace jk {
 namespace core {
@@ -31,7 +32,7 @@ class MakefileBuilder {
                  std::list<std::string> statements = {},
                  std::string Comments = "", bool phony = false);
 
-  void WriteToFile(fs::path file) const;
+  void WriteTo(writer::Writer *writer) const;
 
   std::string WriteToString() const;
 

@@ -20,21 +20,29 @@ static std::unordered_set<std::string> CExtensions = {
     ".c",
 };
 
+std::string SourceFile::Stringify() const {
+  return "SourceFile({})"_format(FullQualifiedPath());
+}
+
 SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
                                core::rules::BuildPackage *package,
                                std::string filename) {
-  auto x = new SourceFile(rule, package, std::move(filename));
-  return x;
+  auto it = source_files_.find(package->Path.Sub(filename).Stringify());
+  if (it == source_files_.end()) {
+    auto x = new SourceFile(rule, package, std::move(filename));
+    return x;
+  }
+
+  return it->second.get();
 }
 
 SourceFile::SourceFile(core::rules::BuildRule *rule,
                        core::rules::BuildPackage *package, std::string filename)
     : Rule(rule), Package(package), FileName(std::move(filename)) {
-  if (auto it = source_files_.find(FullQualifiedPath().str());
+  if (auto it = source_files_.find(FullQualifiedPath().Stringify());
       it != source_files_.end()) {
     throw core::JKBuildError("Source file {} in different rules: {} and {}",
-                             FullQualifiedPath().str(),
-                             rule->FullQualifiedName(),
+                             FullQualifiedPath(), rule->FullQualifiedName(),
                              it->second->Rule->FullQualifiedName());
   }
   source_files_[FileName].reset(this);
@@ -48,7 +56,7 @@ common::AbsolutePath SourceFile::FullQualifiedObjectPath(
     const common::AbsolutePath &new_root) const {
   auto p = new_root.Path / Package->Path.Sub(FileName).Path;
   p.replace_extension(".o");
-  return {p};
+  return common::AbsolutePath{p};
 }
 
 bool SourceFile::IsCSourceFile() const {

@@ -12,12 +12,13 @@
 #include <vector>
 
 #include "jk/core/error.h"
+#include "jk/utils/str.hh"
 #include "pybind11/pytypes.h"
 
 namespace jk {
 namespace utils {
 
-class Kwargs {
+class Kwargs final : public Stringifiable {
  public:
   using ListType = std::vector<std::string>;
   using StringType = std::string;
@@ -39,6 +40,8 @@ class Kwargs {
 
   bool BooleanOptional(const std::string &name,
                        boost::optional<bool> default_value) const;
+
+  std::string Stringify() const final;
 
  private:
   std::unordered_map<std::string, pybind11::object> value_;

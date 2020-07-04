@@ -13,6 +13,7 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/script/script.hh"
 #include "jk/utils/stack.hh"
+#include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
@@ -42,12 +43,21 @@ void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
   stk->Pop();
 }
 
-BuildPackage *BuildPackageFactory::CreatePackage(const std::string &name) {
+std::string BuildPackage::Stringify() const {
+  return R"(BuildPackage(Name = {}, Rules = [], Path = {}))"_format(
+      Name,
+      utils::JoinString(", ", Rules.begin(), Rules.end(),
+                        [](const auto &pr) {
+                          return pr.first;
+                        }),
+      Path);
+}
+
+BuildPackage *BuildPackageFactory::Package(const std::string &name) {
   auto it = packages_.find(name);
   if (it == packages_.end()) {
-    auto pkg = new BuildPackage;
-    pkg->Name = name;
-    pkg->Path = common::ProjectRelativePath{fs::path{name}};
+    auto pkg =
+        new BuildPackage(name, common::ProjectRelativePath{fs::path{name}});
 
     it = packages_
              .insert(std::make_pair(name, std::unique_ptr<BuildPackage>(pkg)))

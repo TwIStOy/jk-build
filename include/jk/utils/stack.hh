@@ -7,10 +7,12 @@
 #include <string>
 #include <unordered_map>
 
+#include "jk/utils/str.hh"
+
 namespace jk {
 namespace utils {
 
-class CollisionNameStack {
+class CollisionNameStack final : public Stringifiable {
  public:
   struct ScopedElement {
     ScopedElement();
@@ -39,6 +41,9 @@ class CollisionNameStack {
   //! RAII Element
   ScopedElement ScopedPush(const std::string &,
                            std::list<std::string> *stk = nullptr);
+
+  // inherited from |Stringifiable|
+  std::string Stringify() const final;
 
  private:
   std::list<std::string> ordered_names_;
