@@ -5,6 +5,7 @@
 
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
+#include "spdlog/spdlog.h"
 
 namespace jk::core::filesystem {
 
@@ -37,7 +38,7 @@ fs::path ProjectRoot() {
     current = current.parent_path();
   }
 
-  throw JKBuildError("You are not in a JK project. No JK_ROOT file found.");
+  JK_THROW(JKBuildError("You are not in a JK project. No JK_ROOT file found."));
 }
 
 fs::path BuildRoot() {

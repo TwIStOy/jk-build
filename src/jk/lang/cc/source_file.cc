@@ -23,6 +23,8 @@ static std::unordered_set<std::string> CExtensions = {
 std::string SourceFile::Stringify() const {
   return "SourceFile({})"_format(FullQualifiedPath());
 }
+std::unordered_map<std::string, std::unique_ptr<SourceFile>>
+    SourceFile::source_files_;
 
 SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
                                core::rules::BuildPackage *package,
@@ -41,9 +43,9 @@ SourceFile::SourceFile(core::rules::BuildRule *rule,
     : Rule(rule), Package(package), FileName(std::move(filename)) {
   if (auto it = source_files_.find(FullQualifiedPath().Stringify());
       it != source_files_.end()) {
-    throw core::JKBuildError("Source file {} in different rules: {} and {}",
-                             FullQualifiedPath(), rule->FullQualifiedName(),
-                             it->second->Rule->FullQualifiedName());
+    JK_THROW(core::JKBuildError("Source file {} in different rules: {} and {}",
+                                FullQualifiedPath(), rule->FullQualifiedName(),
+                                it->second->Rule->FullQualifiedName()));
   }
   source_files_[FileName].reset(this);
 }
@@ -66,7 +68,7 @@ bool SourceFile::IsCSourceFile() const {
 
 bool SourceFile::IsCppSourceFile() const {
   auto p = fs::path(Package->Name) / FileName;
-  return CppExtensions.find(p.extension()) == CppExtensions.end();
+  return CppExtensions.find(p.extension()) != CppExtensions.end();
 }
 
 bool SourceFile::IsSourceFile() const {

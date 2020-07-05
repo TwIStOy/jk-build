@@ -13,12 +13,16 @@
 #include "jk/core/rules/package.hh"
 #include "jk/lang/cc/cc_library.hh"
 #include "jk/lang/cc/source_file.hh"
+#include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
+#include "spdlog/spdlog.h"
 
 namespace jk::core::compile {
 
 using fmt::operator"" _a;
 using fmt::operator"" _format;
+
+auto logger = utils::Logger("compiler");
 
 void Compiler::Compile(filesystem::ProjectFileSystem *project,
                        writer::WriterFactory *factory, rules::BuildRule *rule) {
@@ -92,10 +96,10 @@ void Compiler::Compile_cc_library(  // {{{
   {
     builder::MakefileBuilder build;
 
-    build.DefineCommon();
+    build.DefineCommon(project);
 
     build.Include(working_folder.Sub("flags.make").Path,
-                  "Include the ccompile flags for this rule's objectes.", true);
+                  "Include the compile flags for this rule's objectes.", true);
     build.Include(working_folder.Sub("toolchain.make").Path, "", true);
 
     const auto &source_files = rule->ExpandSourceFiles(project, Expander);
@@ -142,9 +146,9 @@ void Compiler::Compile_cc_library(  // {{{
             {source_file->FullQualifiedPath().Stringify()},
             {print_stmt, build_stmt});
       } else {
-        throw JKBuildError(
+        JK_THROW(JKBuildError(
             "unknown file extension: {}",
-            source_file->FullQualifiedPath().Path.extension().string());
+            source_file->FullQualifiedPath().Path.extension().string()));
       }
 
       all_objects.push_back(

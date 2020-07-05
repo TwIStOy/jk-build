@@ -90,17 +90,17 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
   }
 
   if (!rstk->Push(FullQualifiedName())) {
-    throw JKBuildError(
+    JK_THROW(JKBuildError(
         "Build {}'s dependencies failed, this rule has been built before in "
         "this stage. There's a circle: {}",
-        FullQualifiedName(), rstk->DumpStack());
+        FullQualifiedName(), rstk->DumpStack()));
   }
 
   auto ResolveDepends = [this](BuildPackage *pkg, const std::string &name) {
     auto dep_rule = pkg->Rules[name].get();
     if (dep_rule == nullptr) {
-      throw JKBuildError("depend on rule: {}:{} but not found!", pkg->Name,
-                         name);
+      JK_THROW(JKBuildError("depend on rule: {}:{} but not found!", pkg->Name,
+                            name));
     }
     Dependencies.push_back(dep_rule);
   };
@@ -125,7 +125,7 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
       }
       case RuleRelativePosition::kBuiltin: {
         assert(false);
-        throw JKBuildError("not supported");
+        JK_THROW(JKBuildError("not supported"));
       }
       case RuleRelativePosition::kThis: {
         ResolveDepends(Package, dep_id.RuleName);

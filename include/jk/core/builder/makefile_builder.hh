@@ -20,7 +20,7 @@ class MakefileBuilder {
  public:
   MakefileBuilder();
 
-  void DefineCommon();
+  void DefineCommon(filesystem::ProjectFileSystem *project);
 
   void DefineEnvironment(const std::string &key, std::string value,
                          std::string comments = "");

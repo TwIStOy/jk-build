@@ -26,10 +26,10 @@ void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
 
   if (stk != nullptr) {
     if (!stk->Push(this->Name)) {
-      throw JKBuildError(
+      JK_THROW(JKBuildError(
           "Initialize pacakged {} failed, this package has been initialized "
           "before in ths stage. It may be a circle. {}",
-          Name, stk->DumpStack());
+          Name, stk->DumpStack()));
     }
   }
 

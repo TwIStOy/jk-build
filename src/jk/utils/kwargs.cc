@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "jk/core/error.h"
+#include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 #include "pybind11/cast.h"
 #include "pybind11/pytypes.h"
@@ -25,11 +26,11 @@ std::string Kwargs::Stringify() const {
 
   oss << "Kwargs {";
 
-  oss << JoinString(", ", value_.begin(), value_.end(),
-             [](const auto &pr) -> std::string {
-               return "{}: {}"_format(
-                   pr.first, pybind11::str(pr.second).cast<std::string>());
-             });
+  oss << JoinString(
+      ", ", value_.begin(), value_.end(), [](const auto &pr) -> std::string {
+        return "{}: {}"_format(pr.first,
+                               pybind11::str(pr.second).cast<std::string>());
+      });
 
   oss << "}";
 
@@ -48,11 +49,11 @@ std::string Kwargs::Stringify() const {
 Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
-    throw core::JKBuildError("expect field '{}' but not found", name);
+    JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
   if (!it->second.get_type().is(pybind11::str().get_type())) {
-    throw core::JKBuildError("field '{}' expect type str", name);
+    JK_THROW(core::JKBuildError("field '{}' expect type str", name));
   }
 
   return it->second.cast<std::string>();
@@ -61,11 +62,11 @@ Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
 Kwargs::ListType Kwargs::ListRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
-    throw core::JKBuildError("expect field '{}' but not found", name);
+    JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
   if (!it->second.get_type().is(pybind11::list().get_type())) {
-    throw core::JKBuildError("field '{}' expect type list", name);
+    JK_THROW(core::JKBuildError("field '{}' expect type list", name));
   }
 
   return it->second.cast<ListType>();
@@ -78,11 +79,11 @@ Kwargs::ListType Kwargs::ListOptional(
     if (default_value) {
       return default_value.value();
     }
-    throw core::JKBuildError("expect field '{}' but not found", name);
+    JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
   if (!it->second.get_type().is(pybind11::list().get_type())) {
-    throw core::JKBuildError("field '{}' expect type list", name);
+    JK_THROW(core::JKBuildError("field '{}' expect type list", name));
   }
 
   return it->second.cast<ListType>();
@@ -95,11 +96,11 @@ Kwargs::StringType Kwargs::StringOptional(
     if (default_value) {
       return default_value.value();
     }
-    throw core::JKBuildError("expect field '{}' but not found", name);
+    JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
   if (!it->second.get_type().is(pybind11::str().get_type())) {
-    throw core::JKBuildError("field '{}' expect type str", name);
+    JK_THROW(core::JKBuildError("field '{}' expect type str", name));
   }
 
   return it->second.cast<std::string>();
@@ -108,11 +109,11 @@ Kwargs::StringType Kwargs::StringOptional(
 bool Kwargs::BooleanRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
-    throw core::JKBuildError("expect field '{}' but not found", name);
+    JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
   if (!it->second.get_type().is(pybind11::bool_().get_type())) {
-    throw core::JKBuildError("field '{}' expect type boolean", name);
+    JK_THROW(core::JKBuildError("field '{}' expect type boolean", name));
   }
 
   return it->second.cast<bool>();
@@ -125,11 +126,11 @@ bool Kwargs::BooleanOptional(const std::string &name,
     if (default_value) {
       return default_value.value();
     }
-    throw core::JKBuildError("expect field '{}' but not found", name);
+    JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
   if (!it->second.get_type().is(pybind11::bool_().get_type())) {
-    throw core::JKBuildError("field '{}' expect type boolean", name);
+    JK_THROW(core::JKBuildError("field '{}' expect type boolean", name));
   }
 
   return it->second.cast<bool>();

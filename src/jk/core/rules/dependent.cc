@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "jk/core/error.h"
+#include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
 namespace jk {
@@ -47,7 +48,7 @@ BuildRuleId ParseIdString(std::string_view str) {
   BuildRuleId res;
 
   if (str.empty()) {
-    throw JKBuildError("Failed to parse dependent identifier '{}'.", str);
+    JK_THROW(JKBuildError("Failed to parse dependent identifier '{}'.", str));
   }
 
   auto st = 0;
@@ -67,13 +68,13 @@ BuildRuleId ParseIdString(std::string_view str) {
   std::string package_name;
   auto mid = ReadPackageName(str.substr(st), &package_name) + st;
   if (mid >= str.length()) {
-    throw JKBuildError("Failed to parse dep id '{}', unknown error", str);
+    JK_THROW(JKBuildError("Failed to parse dep id '{}', unknown error", str));
   }
   if (str[mid] != ':') {
-    throw JKBuildError(
-        "Failed to parse dep id '{}', expect ':' at pos {} but "
-        "found '{}'",
-        str, mid, static_cast<char>(str[mid]));
+    JK_THROW(
+        JKBuildError("Failed to parse dep id '{}', expect ':' at pos {} but "
+                     "found '{}'",
+                     str, mid, static_cast<char>(str[mid])));
   }
 
   if (!package_name.empty()) {

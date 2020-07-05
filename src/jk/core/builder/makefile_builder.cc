@@ -41,7 +41,7 @@ void MakefileBuilder::AddTarget(std::string target, std::list<std::string> deps,
 MakefileBuilder::MakefileBuilder() {
 }
 
-void MakefileBuilder::DefineCommon() {
+void MakefileBuilder::DefineCommon(filesystem::ProjectFileSystem *project) {
   DefineEnvironment("SHELL", "/bin/bash",
                     "The shell in which to execute make rules.");
 
@@ -50,10 +50,10 @@ void MakefileBuilder::DefineCommon() {
   // TODO(hawtian): fix rm command
   DefineEnvironment("RM", "rm", "The command to remove a file.");
 
-  DefineEnvironment("JK_SOURCE_DIR", filesystem::ProjectRoot().string(),
+  DefineEnvironment("JK_SOURCE_DIR", project->ProjectRoot.Stringify(),
                     "The top-level source directory on which Jk was run.");
 
-  DefineEnvironment("JK_BINARY_DIR", filesystem::BuildRoot().string(),
+  DefineEnvironment("JK_BINARY_DIR", project->BuildRoot.Stringify(),
                     "The top-level build directory on which Jk was run.");
 
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
@@ -72,7 +72,7 @@ static const char *Separator =
 
 void MakefileBuilder::WriteComment(std::ostream &oss, const std::string &str) {
   if (str.length()) {
-    oss << str << std::endl;
+    oss << "# " << str << std::endl;
   }
 }
 
@@ -89,16 +89,16 @@ std::string MakefileBuilder::WriteToString() const {
 
   for (const auto &[key, env] : environments_) {
     WriteComment(oss, env.Comments);
-    oss << fmt::format("{} = {}", env.Key, env.Value);
+    oss << fmt::format("{} = {}", env.Key, env.Value) << std::endl;
     oss << std::endl;
   }
 
   for (const auto &inc : includes_) {
     WriteComment(oss, inc.Comments);
     if (inc.Fatal) {
-      oss << fmt::format("include {}", inc.Path.string());
+      oss << fmt::format("include {}", inc.Path.string()) << std::endl;
     } else {
-      oss << fmt::format("-include {}", inc.Path.string());
+      oss << fmt::format("-include {}", inc.Path.string()) << std::endl;
     }
   }
 
@@ -109,13 +109,11 @@ std::string MakefileBuilder::WriteToString() const {
                                          std::end(tgt.Dependencies)));
     oss << std::endl;
     for (const auto &stmt : tgt.Statements) {
-      oss << fmt::format("\t{}", stmt);
-      oss << std::endl;
+      oss << fmt::format("\t{}", stmt) << std::endl;
     }
 
     if (tgt.Phony) {
-      oss << fmt::format(".PHONY : {}", tgt.TargetName);
-      oss << std::endl;
+      oss << fmt::format(".PHONY : {}", tgt.TargetName) << std::endl;
     }
 
     oss << std::endl;

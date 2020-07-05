@@ -28,7 +28,7 @@ std::list<std::string> DefaultPatternExpander::Expand(
   int rv = glob(full_pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
   if (rv != 0) {
     globfree(&glob_result);
-    throw JKBuildError("Glob failed with erro code: {}", rv);
+    JK_THROW(JKBuildError("Glob failed with erro code: {}", rv));
   }
 
   std::list<std::string> result;

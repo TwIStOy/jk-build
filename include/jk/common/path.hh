@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "jk/core/error.h"
+#include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
 #if __GNUC__ >= 8
@@ -59,7 +60,9 @@ inline void AssumeFolder(const fs::path &rp) {
     if (fs::is_directory(rp)) {
       return;
     }
-    throw core::JKBuildError("{} is exist, but not a directory", rp.string());
+
+    JK_THROW(
+        core::JKBuildError("{} is exist, but not a directory", rp.string()));
   }
 
   AssumeFolder(rp.parent_path());

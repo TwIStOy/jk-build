@@ -115,6 +115,8 @@ TEST_CASE("Compile cc_library", "[compiler]") {
         &project, &writer_factory,
         simple_project.Package("library/base")->Rules["base"].get());
     writer_factory.DebugPrint(std::cout);
+
+    REQUIRE(true);
   }
 }
 
