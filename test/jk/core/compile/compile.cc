@@ -118,6 +118,15 @@ TEST_CASE("Compile cc_library", "[compiler]") {
 
     REQUIRE(true);
   }
+
+  SECTION("library/memory:memory") {
+    compiler.Compile(
+        &project, &writer_factory,
+        simple_project.Package("library/memory")->Rules["memory"].get());
+    writer_factory.DebugPrint(std::cout);
+
+    REQUIRE(true);
+  }
 }
 
 }  // namespace jk::core::compile::test
