@@ -6,9 +6,12 @@
 #include <fstream>
 #include <iterator>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "fmt/core.h"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/rules/package.hh"
 #include "jk/core/writer/writer.hh"
 #include "jk/utils/str.hh"
 #include "jk/version.h"
@@ -17,51 +20,7 @@ namespace jk {
 namespace core {
 namespace builder {
 
-void MakefileBuilder::DefineEnvironment(const std::string &key,
-                                        std::string value,
-                                        std::string comments) {
-  environments_[key] =
-      EnvironmentItem{key, std::move(value), std::move(comments)};
-}
-
-void MakefileBuilder::Include(fs::path file_path, std::string comments,
-                              bool fatal) {
-  includes_.push_back(
-      IncludeItem{std::move(file_path), std::move(comments), fatal});
-}
-
-void MakefileBuilder::AddTarget(std::string target, std::list<std::string> deps,
-                                std::list<std::string> statements,
-                                std::string comments, bool phony) {
-  targets_.push_back(TargetItem{std::move(target), std::move(deps),
-                                std::move(statements), std::move(comments),
-                                phony});
-}
-
-MakefileBuilder::MakefileBuilder() {
-}
-
-void MakefileBuilder::DefineCommon(filesystem::ProjectFileSystem *project) {
-  DefineEnvironment("SHELL", "/bin/bash",
-                    "The shell in which to execute make rules.");
-
-  DefineEnvironment("JK_COMMAND", "jk", "The command Jk executable.");
-
-  // TODO(hawtian): fix rm command
-  DefineEnvironment("RM", "rm", "The command to remove a file.");
-
-  DefineEnvironment("JK_SOURCE_DIR", project->ProjectRoot.Stringify(),
-                    "The top-level source directory on which Jk was run.");
-
-  DefineEnvironment("JK_BINARY_DIR", project->BuildRoot.Stringify(),
-                    "The top-level build directory on which Jk was run.");
-
-  DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
-
-  DefineEnvironment("PRINT", "jk tools echo_color ");
-
-  DefineEnvironment("AR", "ar qc ");
-}
+using fmt::operator""_format;
 
 static const char *CommonHeader[] = {
     "# JK generated file: DO NOT EDIT!",
@@ -70,61 +29,104 @@ static const char *Separator =
     "#========================================================================="
     "====";
 
-void MakefileBuilder::WriteComment(std::ostream &oss, const std::string &str) {
+static void WriteHeader(writer::Writer *w) {
+  for (const auto &line : CommonHeader) {
+    w->WriteLine(line);
+  }
+  w->WriteLine(Separator)->NewLine();
+}
+
+static void WriterComment(writer::Writer *w, const std::string &str) {
   if (str.length()) {
-    oss << "# " << str << std::endl;
+    w->WriteLineF("# {}", str);
   }
 }
 
-std::string MakefileBuilder::WriteToString() const {
-  std::ostringstream oss;
-
-  for (auto line : CommonHeader) {
-    oss << line << std::endl;
-  }
-  oss << Separator << std::endl;
-
-  WriteComment(oss, "Set environment variables for the build.");
-  oss << std::endl;
-
-  for (const auto &[key, env] : environments_) {
-    WriteComment(oss, env.Comments);
-    oss << fmt::format("{} = {}", env.Key, env.Value) << std::endl;
-    oss << std::endl;
+struct ElementVisitor : public boost::static_visitor<std::string> {
+  std::string operator()(compile::ir::DefinedVariable *v) const {
+    return "$({})"_format(v->Key);
   }
 
-  for (const auto &inc : includes_) {
-    WriteComment(oss, inc.Comments);
-    if (inc.Fatal) {
-      oss << fmt::format("include {}", inc.Path.string()) << std::endl;
-    } else {
-      oss << fmt::format("-include {}", inc.Path.string()) << std::endl;
+  std::string operator()(const std::string &s) const {
+    return s;
+  }
+};
+
+/*
+ * Page 'build'
+ */
+void MakefileBuilder::WriteIR(filesystem::ProjectFileSystem *project,
+                              rules::BuildRule *rule, compile::ir::IR *ir,
+                              writer::WriterFactory *writer_factory) {
+  auto root = project->BuildRoot.Sub(
+      utils::Replace(rule->FullQualifiedName(), '/', "@"));
+
+  std::vector<std::string> env_only;
+  for (const auto &[key, _] : ir->Environments) {
+    auto it = ir->Pages.find(key);
+    if (it == ir->Pages.end()) {
+      env_only.push_back(key);
     }
   }
 
-  for (const auto &tgt : targets_) {
-    WriteComment(oss, tgt.Comments);
-    oss << fmt::format("{}: {}", tgt.TargetName,
-                       utils::JoinString(" ", std::begin(tgt.Dependencies),
-                                         std::end(tgt.Dependencies)));
-    oss << std::endl;
-    for (const auto &stmt : tgt.Statements) {
-      oss << fmt::format("\t{}", stmt) << std::endl;
-    }
+  for (const auto &name : env_only) {
+    auto w = writer_factory->Build("{}/{}.make"_format(root, name));
 
-    if (tgt.Phony) {
-      oss << fmt::format(".PHONY : {}", tgt.TargetName) << std::endl;
+    WriteHeader(w.get());
+    for (const auto &[_, v] : ir->Environments[name].Vars) {
+      WriterComment(w.get(), v->Comment);
+      w->WriteLineF("{} = {}", v->Key, v->Value);
     }
-
-    oss << std::endl;
   }
 
-  return oss.str();
-}
+  for (const auto &[name, page] : ir->Pages) {
+    auto w = writer_factory->Build("{}/{}.make"_format(root, name));
 
-void MakefileBuilder::WriteTo(writer::Writer *writer) const {
-  writer->Write(WriteToString());
-  writer->Flush();
+    w->NewLine();
+    WriteHeader(w.get());
+    for (const auto &[_, v] : ir->Environments[name].Vars) {
+      WriterComment(w.get(), v->Comment);
+      w->WriteLineF("{} = {}", v->Key, v->Value)->NewLine();
+    }
+
+    // includes
+    for (const auto &inc : page.Includes) {
+      WriterComment(w.get(), inc.Comments);
+      if (inc.Fatal) {
+        w->WriteLineF("include {}/{}.make", root, inc.Tag);
+      } else {
+        w->WriteLineF("-include {}/{}.make", root, inc.Tag);
+      }
+    }
+
+    auto idx = 0;
+    auto total = page.Targets.size();
+    for (const auto &tgt : page.Targets) {
+      WriterComment(w.get(), tgt.Comments);
+
+      w->WriteLineF("{}: {}", tgt.Name,
+                    utils::JoinString(" ", std::begin(tgt.Dependencies),
+                                      std::end(tgt.Dependencies)));
+
+      for (const auto &stmt : tgt.Statements) {
+        w->WriteLineF(
+            "\t@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
+            "--progress-total={} \"{}\"",
+            idx, total, stmt.Hint);
+
+        w->WriteLineF("\t{}",
+                      utils::JoinString(
+                          " ", stmt.Elements.begin(), stmt.Elements.end(),
+                          [](const compile::ir::StmtElement &e) {
+                            return boost::apply_visitor(ElementVisitor{}, e);
+                          }));
+      }
+
+      if (tgt.Phony) {
+        w->WriteLineF(".PHONY : {}", tgt.Name);
+      }
+    }
+  }
 }
 
 }  // namespace builder

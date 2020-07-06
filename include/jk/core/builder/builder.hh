@@ -6,39 +6,22 @@
 #include <list>
 #include <string>
 
+#include "jk/common/path.hh"
+#include "jk/core/compile/ir.hh"
+#include "jk/core/rules/build_rule.hh"
+#include "jk/core/writer/writer.hh"
+
 namespace jk {
 namespace core {
 namespace builder {
 
-struct Writer {
-  virtual Writer &NewLine() = 0;
+struct Builder {
+  virtual void WriteIR(filesystem::ProjectFileSystem *project,
+                       rules::BuildRule *rule, compile::ir::IR *ir,
+                       writer::WriterFactory *writer_factory) = 0;
 
-  virtual Writer &Comment(const std::string &comment) = 0;
-
-  virtual Writer &Variable(const std::string &key, const std::string &value,
-                           uint32_t indent = 0) = 0;
-
-  virtual Writer &Include(const std::string &filename, bool fatal = false) = 0;
-
-  virtual ~Writer() = default;
+  virtual ~Builder() = default;
 };
-
-class Builder {
- public:
-  virtual Builder *WriteLine(const std::string &line) = 0;
-
-  template<typename Container>
-  Builder *WriteLines(Container container);
-};
-
-template<typename Container>
-Builder *Builder::WriteLines(Container container) {
-  for (const auto &line : container) {
-    WriteLine(line);
-  }
-
-  return this;
-}
 
 }  // namespace builder
 }  // namespace core

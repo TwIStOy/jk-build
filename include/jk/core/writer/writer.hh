@@ -20,7 +20,7 @@ struct Writer {
   virtual Writer *Flush() = 0;
 
   template<typename... Args>
-  Writer *WriteLineF(const std::string &tpl, const Args &&... args) {
+  Writer *WriteLineF(const std::string &tpl, const Args &... args) {
     return WriteLine(fmt::format(tpl, args...));
   }
 

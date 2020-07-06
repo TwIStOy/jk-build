@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "jk/core/rules/build_rule.hh"
-#include "jk/lang/cc/cc_library.hh"
+#include "jk/lang/cc/rules/cc_library.hh"
 #include "pybind11/pytypes.h"
 
 namespace jk {

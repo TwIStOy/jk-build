@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include "jk/common/path.hh"
+#include "jk/core/compile/ir.hh"
 #include "jk/utils/str.hh"
 
 namespace jk {
@@ -35,6 +36,7 @@ struct SourceFile : public utils::Stringifiable {
   common::ProjectRelativePath FullQualifiedPath() const;
   common::AbsolutePath FullQualifiedObjectPath(
       const common::AbsolutePath &new_root) const;
+  common::ProjectRelativePath FullQualifiedObjectPath() const;
 
   bool IsCppSourceFile() const;
   bool IsCSourceFile() const;

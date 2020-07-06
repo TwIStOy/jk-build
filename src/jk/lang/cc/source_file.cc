@@ -61,6 +61,12 @@ common::AbsolutePath SourceFile::FullQualifiedObjectPath(
   return common::AbsolutePath{p};
 }
 
+common::ProjectRelativePath SourceFile::FullQualifiedObjectPath() const {
+  auto p = Package->Path.Sub(FileName);
+  p.Path.replace_extension(".o");
+  return p;
+}
+
 bool SourceFile::IsCSourceFile() const {
   auto p = fs::path(Package->Name) / FileName;
   return CExtensions.find(p.extension()) != CExtensions.end();

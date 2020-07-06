@@ -12,9 +12,9 @@
 #include <iterator>
 
 #include "jk/core/rules/build_rule.hh"
-#include "jk/lang/cc/cc_binary.hh"
-#include "jk/lang/cc/cc_library.hh"
-#include "jk/lang/cc/cc_test.hh"
+#include "jk/lang/cc/rules/cc_binary.hh"
+#include "jk/lang/cc/rules/cc_library.hh"
+#include "jk/lang/cc/rules/cc_test.hh"
 
 namespace jk {
 namespace core {

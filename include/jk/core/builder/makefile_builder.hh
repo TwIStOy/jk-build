@@ -16,53 +16,10 @@ namespace jk {
 namespace core {
 namespace builder {
 
-class MakefileBuilder {
- public:
-  MakefileBuilder();
-
-  void DefineCommon(filesystem::ProjectFileSystem *project);
-
-  void DefineEnvironment(const std::string &key, std::string value,
-                         std::string comments = "");
-
-  void Include(fs::path file_path, std::string comments = "",
-               bool fatal = false);
-
-  void AddTarget(std::string target, std::list<std::string> deps,
-                 std::list<std::string> statements = {},
-                 std::string Comments = "", bool phony = false);
-
-  void WriteTo(writer::Writer *writer) const;
-
-  std::string WriteToString() const;
-
- private:
-  static void WriteComment(std::ostream &, const std::string &str);
-
- private:
-  struct EnvironmentItem {
-    std::string Key;
-    std::string Value;
-    std::string Comments;
-  };
-
-  struct IncludeItem {
-    fs::path Path;
-    std::string Comments;
-    bool Fatal;
-  };
-
-  struct TargetItem {
-    std::string TargetName;
-    std::list<std::string> Dependencies;
-    std::list<std::string> Statements;
-    std::string Comments;
-    bool Phony;
-  };
-
-  std::unordered_map<std::string, EnvironmentItem> environments_;
-  std::list<IncludeItem> includes_;
-  std::list<TargetItem> targets_;
+struct MakefileBuilder final : Builder {
+  void WriteIR(filesystem::ProjectFileSystem *project, rules::BuildRule *rule,
+               compile::ir::IR *ir,
+               writer::WriterFactory *writer_factory) final;
 };
 
 }  // namespace builder

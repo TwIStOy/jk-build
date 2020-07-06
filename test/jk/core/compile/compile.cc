@@ -14,13 +14,15 @@
 #include <unordered_map>
 
 #include "jk/common/path.hh"
+#include "jk/core/builder/builder.hh"
+#include "jk/core/builder/makefile_builder.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/core/writer/buffer_writer.hh"
 #include "jk/core/writer/writer.hh"
-#include "jk/lang/cc/cc_library.hh"
+#include "jk/lang/cc/rules/cc_library.hh"
 
 namespace jk::core::compile::test {
 
@@ -100,30 +102,38 @@ std::list<std::string> NopExpander::Expand(const std::string &pattern,
   return std::list<std::string>{pattern};
 }
 
-TEST_CASE("Compile cc_library", "[compiler]") {
+TEST_CASE("Compile cc_library", "[compiler][makefile]") {
   filesystem::ProjectFileSystem project{
       common::AbsolutePath{"~/Projects/agora"},
       common::AbsolutePath{"~/Projects/agora/.build"},
   };
   FakeBufferWriterFactory writer_factory;
-  Compiler compiler;
+  CompilerFactory compiler_factory;
+  auto compiler = compiler_factory.FindCompiler("cc_library");
   NopExpander expander;
-  compiler.Expander = &expander;
+  builder::Builder *builder = new builder::MakefileBuilder{};
+
   auto simple_project = SimpleProject();
 
   SECTION("library/base:base") {
-    compiler.Compile(
-        &project, &writer_factory,
-        simple_project.Package("library/base")->Rules["base"].get());
+    ir::IR ir;
+    auto rule = simple_project.Package("library/base")->Rules["base"].get();
+    compiler->Compile(&project, &ir, rule, &expander);
+
+    builder->WriteIR(&project, rule, &ir, &writer_factory);
+
     writer_factory.DebugPrint(std::cout);
 
     REQUIRE(true);
   }
 
   SECTION("library/memory:memory") {
-    compiler.Compile(
-        &project, &writer_factory,
-        simple_project.Package("library/memory")->Rules["memory"].get());
+    ir::IR ir;
+    auto rule = simple_project.Package("library/memory")->Rules["memory"].get();
+    compiler->Compile(&project, &ir, rule, &expander);
+
+    builder->WriteIR(&project, rule, &ir, &writer_factory);
+
     writer_factory.DebugPrint(std::cout);
 
     REQUIRE(true);

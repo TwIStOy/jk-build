@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
-#include "jk/lang/cc/cc_library.hh"
+#include "jk/lang/cc/rules/cc_library.hh"
 
 #include <glob.h>
 
