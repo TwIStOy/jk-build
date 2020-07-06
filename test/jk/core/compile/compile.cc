@@ -82,7 +82,8 @@ static rules::BuildPackageFactory SimpleProject() {
         factory.Package("library/base")->Rules["base"].get());
     memory->Includes.push_back("memory_inherit_include_directory");
     memory->Defines.push_back("memory_inherit_define_flag");
-    memory->Sources = {"memory1.cpp", "memory2.cpp", "memory3.cpp"};
+    memory->Sources = {"memory1.cpp", "memory2.cpp", "memory3.cpp",
+                       "sub/memory1.cpp"};
     memory->CppFlags.push_back("-Dmemory_only_defie_flag");
   }
 
