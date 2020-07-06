@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <cassert>
+#include <utility>
 
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"

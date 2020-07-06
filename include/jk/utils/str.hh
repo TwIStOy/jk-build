@@ -81,9 +81,9 @@ inline std::string Replace(const std::string &old, char from, const T &to) {
 namespace fmt {
 
 template<typename T>
-struct ::fmt::formatter<T, char,
-                        typename std::enable_if<std::is_base_of_v<
-                            jk::utils::Stringifiable, T>>::type> {
+struct formatter<T, char,
+                 typename std::enable_if<
+                     std::is_base_of_v<jk::utils::Stringifiable, T>>::type> {
   template<typename ParseContext>
   typename ParseContext::iterator parse(
       ParseContext &ctx) {  // NOLINT(runtime/references)
@@ -99,7 +99,7 @@ struct ::fmt::formatter<T, char,
 };
 
 template<typename T>
-struct ::fmt::formatter<boost::optional<T>> {
+struct formatter<boost::optional<T>> {
   using value_type = boost::optional<T>;
 
   template<typename ParseContext>
