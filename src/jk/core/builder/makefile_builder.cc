@@ -82,7 +82,6 @@ void MakefileBuilder::WriteIR(filesystem::ProjectFileSystem *project,
   for (const auto &[name, page] : ir->Pages) {
     auto w = writer_factory->Build("{}/{}.make"_format(root, name));
 
-    w->NewLine();
     WriteHeader(w.get());
     for (const auto &[_, v] : ir->Environments[name].Vars) {
       WriterComment(w.get(), v->Comment);
@@ -102,6 +101,7 @@ void MakefileBuilder::WriteIR(filesystem::ProjectFileSystem *project,
     auto idx = 0;
     auto total = page.Targets.size();
     for (const auto &tgt : page.Targets) {
+      w->NewLine();
       WriterComment(w.get(), tgt.Comments);
 
       w->WriteLineF("{}: {}", tgt.Name,
