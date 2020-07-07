@@ -41,6 +41,7 @@ struct Target {
   std::list<std::string> Dependencies;
   std::string Comments;
   bool Phony;
+  bool Countable;
 };
 
 struct IncludeItem {

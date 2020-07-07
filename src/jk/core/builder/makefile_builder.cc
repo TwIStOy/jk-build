@@ -98,8 +98,14 @@ void MakefileBuilder::WriteIR(filesystem::ProjectFileSystem *project,
       }
     }
 
-    auto idx = 0;
-    auto total = page.Targets.size();
+    auto idx = 1;
+    auto total = 0;
+    for (const auto &tgt : page.Targets) {
+      if (tgt.Countable) {
+        total++;
+      }
+    }
+
     for (const auto &tgt : page.Targets) {
       w->NewLine();
       WriterComment(w.get(), tgt.Comments);
@@ -109,10 +115,12 @@ void MakefileBuilder::WriteIR(filesystem::ProjectFileSystem *project,
                                       std::end(tgt.Dependencies)));
 
       for (const auto &stmt : tgt.Statements) {
-        w->WriteLineF(
-            "\t@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
-            "--progress-total={} \"{}\"",
-            idx, total, stmt.Hint);
+        if (stmt.Hint.size()) {
+          w->WriteLineF(
+              "\t@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
+              "--progress-total={} \"{}\"",
+              idx, total, stmt.Hint);
+        }
 
         w->WriteLineF("\t{}",
                       utils::JoinString(
@@ -125,6 +133,8 @@ void MakefileBuilder::WriteIR(filesystem::ProjectFileSystem *project,
       if (tgt.Phony) {
         w->WriteLineF(".PHONY : {}", tgt.Name);
       }
+
+      idx++;
     }
   }
 }
