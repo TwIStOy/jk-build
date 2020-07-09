@@ -107,8 +107,23 @@ struct BuildRule : public utils::Stringifiable {
   //! automatically depend on all exported files.
   virtual std::vector<std::string> ExportedFilesSimpleName() const = 0;
 
+  //! Return exported link flags. Other rules which depend on this, will
+  //! automatically add these flags into its link flags.
+  virtual std::vector<std::string> ExportedLinkFlags() const = 0;
+
+  //! Return exported header files.
+  //!
+  //! Some rules such as `cc_library`, `shell_script` may generate some headers,
+  //! these headers must be generated before sources files used them. So a rule
+  //! should hint `JK` to make dependencies between source files and these
+  //! headers.
+  virtual std::vector<std::string> ExportedHeaders() const = 0;
+
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
+
+  //! Extract all deps recursively.
+  std::list<BuildRule const *> DependenciesInOrder() const;
 
   //! Which package where this build-rule is inside
   BuildPackage *Package;

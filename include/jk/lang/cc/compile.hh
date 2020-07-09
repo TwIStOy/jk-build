@@ -21,20 +21,19 @@ struct CCLibraryCompiler : public core::compile::Compiler {
       core::filesystem::ProjectFileSystem *project, core::compile::ir::IR *ir,
       core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
+
+  void CompileSources(
+      core::filesystem::ProjectFileSystem *project, core::compile::ir::IR *ir,
+      core::rules::BuildRule *rule,
+      core::filesystem::FileNamePatternExpander *expander) const;
 };
 
-//
-// core::compile::ir::Statement CompileIR(
-//     core::rules::CCLibrary *cc_library,
-//     core::filesystem::ProjectFileSystem *project, core::compile::ir::IR *ir);
-//
-// core::compile::ir::Statement CompileIR(
-//     core::rules::CCBinary *cc_library,
-//     core::filesystem::ProjectFileSystem *project, core::compile::ir::IR *ir);
-//
-// core::compile::ir::Statement CompileIR(
-//     core::rules::CCTest *cc_library,
-//     core::filesystem::ProjectFileSystem *project, core::compile::ir::IR *ir);
+struct CCBinaryCompiler : public CCLibraryCompiler {
+  void Compile(
+      core::filesystem::ProjectFileSystem *project, core::compile::ir::IR *ir,
+      core::rules::BuildRule *rule,
+      core::filesystem::FileNamePatternExpander *expander) const override;
+};
 
 }  // namespace jk::lang::cc
 

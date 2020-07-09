@@ -50,6 +50,10 @@ class CCLibrary : public BuildRule {
       filesystem::ProjectFileSystem *project,
       filesystem::FileNamePatternExpander *expander) const;
 
+  std::vector<std::string> ExportedLinkFlags() const override;
+
+  std::vector<std::string> ExportedHeaders() const override;
+
   // --- Fields Start ---
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;
@@ -75,4 +79,3 @@ class CCLibrary : public BuildRule {
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
-

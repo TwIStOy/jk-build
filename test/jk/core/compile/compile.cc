@@ -14,8 +14,6 @@
 #include <unordered_map>
 
 #include "jk/common/path.hh"
-#include "jk/core/builder/builder.hh"
-#include "jk/core/builder/makefile_builder.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
@@ -108,19 +106,15 @@ TEST_CASE("Compile cc_library", "[compiler][makefile]") {
       common::AbsolutePath{"~/Projects/agora/.build"},
   };
   FakeBufferWriterFactory writer_factory;
-  CompilerFactory compiler_factory;
-  auto compiler = compiler_factory.FindCompiler("cc_library");
+  auto compiler =
+      CompilerFactory::Instance()->FindCompiler("Makefile.cc_library");
   NopExpander expander;
-  builder::Builder *builder = new builder::MakefileBuilder{};
 
   auto simple_project = SimpleProject();
 
   SECTION("library/base:base") {
-    ir::IR ir;
     auto rule = simple_project.Package("library/base")->Rules["base"].get();
-    compiler->Compile(&project, &ir, rule, &expander);
-
-    builder->WriteIR(&project, rule, &ir, &writer_factory);
+    compiler->Compile(&project, &writer_factory, rule, &expander);
 
     writer_factory.DebugPrint(std::cout);
 
@@ -128,11 +122,8 @@ TEST_CASE("Compile cc_library", "[compiler][makefile]") {
   }
 
   SECTION("library/memory:memory") {
-    ir::IR ir;
     auto rule = simple_project.Package("library/memory")->Rules["memory"].get();
-    compiler->Compile(&project, &ir, rule, &expander);
-
-    builder->WriteIR(&project, rule, &ir, &writer_factory);
+    compiler->Compile(&project, &writer_factory, rule, &expander);
 
     writer_factory.DebugPrint(std::cout);
 
@@ -143,4 +134,3 @@ TEST_CASE("Compile cc_library", "[compiler][makefile]") {
 }  // namespace jk::core::compile::test
 
 // vim: fdm=marker
-

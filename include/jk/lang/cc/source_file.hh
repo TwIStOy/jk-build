@@ -9,7 +9,6 @@
 #include <unordered_set>
 
 #include "jk/common/path.hh"
-#include "jk/core/compile/ir.hh"
 #include "jk/utils/str.hh"
 
 namespace jk {

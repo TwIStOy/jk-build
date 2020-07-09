@@ -1,18 +1,25 @@
 cmake_minimum_required(VERSION 3.12)
 project(jk LANGUAGES CXX)
 
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
 set(DEFAULT_CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PYBIND11_CPP_STANDARD -std=c++1z)
 
-set(CMAKE_CXX_FLAGS_DEBUG -fsanitize=address
-                          -fno-inline
-                          -fno-omit-frame-pointer
-                          -fno-builtin
-                          -fno-optimize-sibling-calls
-                          -Wframe-larger-than=65535
-                          -fno-omit-frame-pointer
-)
+set(CMAKE_CXX_CPPLINT "cpplint")
+
+include(CodeCoverage)
+append_coverage_compiler_flags()
+
+# set(CMAKE_CXX_FLAGS_DEBUG -fsanitize=address
+#                           -fno-inline
+#                           -fno-omit-frame-pointer
+#                           -fno-builtin
+#                           -fno-optimize-sibling-calls
+#                           -Wframe-larger-than=65535
+#                           -fno-omit-frame-pointer
+# )
 
 
 add_executable(jk "")
@@ -86,4 +93,12 @@ target_sources(jk_test PRIVATE ${JK_TEST_FILES})
 enable_testing()
 
 add_test(AllTest jk_test)
+
+# -- code coverage section ---
+setup_target_for_coverage_gcovr_html(
+  NAME jk_coverage
+  EXECUTABLE jk_test
+  BASE_DIRECTORY "${PROJECT_SOURCE_DIR}/src"
+  EXCLUDE "third-party/*"
+)
 

@@ -180,7 +180,19 @@ std::vector<std::string> CCLibrary::ExportedFilesSimpleName() const {
   return {ExportedFileName};
 }
 
+std::vector<std::string> CCLibrary::ExportedLinkFlags() const {
+  return LdFlags;
+}
+
+std::vector<std::string> CCLibrary::ExportedHeaders() const {
+  std::vector<std::string> res;
+  std::transform(Headers.begin(), Headers.end(), std::back_inserter(res),
+                 [this](const std::string &hdr) {
+                   return Package->Path.Sub(hdr).Stringify();
+                 });
+  return Headers;
+}
+
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
-

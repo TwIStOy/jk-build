@@ -3,7 +3,10 @@
 
 #include "jk/core/rules/build_rule.hh"
 
+#include <algorithm>
 #include <initializer_list>
+#include <queue>
+#include <set>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -34,6 +37,43 @@ std::string RuleType::Stringify() const {
   }
   return "RuleType [{}]"_format(
       utils::JoinString("|", flags.begin(), flags.end()));
+}
+
+std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
+  std::list<BuildRule const *> result;
+  std::queue<BuildRule const *> Q;
+  Q.push(this);
+
+  while (!Q.empty()) {
+    auto cur = Q.front();
+    Q.pop();
+
+    if (cur != this) {
+      result.push_back(cur);
+    }
+    for (auto it : cur->Dependencies) {
+      Q.push(it);
+    }
+  }
+
+  std::reverse(result.begin(), result.end());
+  std::set<std::string> s;
+  for (auto iter = result.begin(); iter != result.end();) {
+    auto it = s.find((*iter)->FullQualifiedName());
+    auto next = iter;
+    ++next;
+
+    if (it == s.end()) {
+      s.insert((*iter)->FullQualifiedName());
+    } else {
+      result.erase(iter);
+    }
+
+    iter = next;
+  }
+  std::reverse(result.begin(), result.end());
+
+  return result;
 }
 
 std::string BuildRule::Stringify() const {
