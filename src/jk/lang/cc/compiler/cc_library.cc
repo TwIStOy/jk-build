@@ -167,7 +167,7 @@ void MakefileCCLibraryCompiler::GenerateToolchain(
   core::output::UnixMakefile makefile("toolchain.make");
 
   makefile.DefineEnvironment("CXX", "g++");
-  makefile.DefineEnvironment("AR", "ar");
+  makefile.DefineEnvironment("AR", "ar qc");
   makefile.DefineEnvironment("RM", "rm", "The command to remove a file.");
 
   makefile.Write(w);
