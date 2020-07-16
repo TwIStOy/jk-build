@@ -81,7 +81,7 @@ const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
   }
 
   std::vector<std::string> res;
-  res.insert(res.end(), Includes.begin(), Includes.end());
+  res.insert(res.end(), Defines.begin(), Defines.end());
 
   for (const auto &dep : Dependencies) {
     if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {

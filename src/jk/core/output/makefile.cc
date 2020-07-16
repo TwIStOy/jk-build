@@ -17,22 +17,22 @@ UnixMakefile::UnixMakefile(const std::string &filename) : filename_(filename) {
 
 void UnixMakefile::DefineEnvironment(const std::string &key, std::string value,
                                      std::string comments) {
-  environments_[key] =
+  Environments[key] =
       EnvironmentItem{key, std::move(value), std::move(comments)};
 }
 
 void UnixMakefile::Include(fs::path file_path, std::string comments,
                            bool fatal) {
-  includes_.push_back(
+  Includes.push_back(
       IncludeItem{std::move(file_path), std::move(comments), fatal});
 }
 
 void UnixMakefile::AddTarget(std::string target, std::list<std::string> deps,
                              std::list<std::string> statements,
                              std::string comments, bool phony) {
-  targets_.push_back(TargetItem{std::move(target), std::move(deps),
-                                std::move(statements), std::move(comments),
-                                phony});
+  Targets.push_back(TargetItem{std::move(target), std::move(deps),
+                               std::move(statements), std::move(comments),
+                               phony});
 }
 
 void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
@@ -76,13 +76,13 @@ std::string UnixMakefile::WriteToString() const {
   WriteComment(oss, "Set environment variables for the build.");
   oss << std::endl;
 
-  for (const auto &[key, env] : environments_) {
+  for (const auto &[key, env] : Environments) {
     WriteComment(oss, env.Comments);
     oss << fmt::format("{} = {}", env.Key, env.Value) << std::endl;
     oss << std::endl;
   }
 
-  for (const auto &inc : includes_) {
+  for (const auto &inc : Includes) {
     WriteComment(oss, inc.Comments);
     if (inc.Fatal) {
       oss << fmt::format("include {}", inc.Path.string()) << std::endl;
@@ -91,7 +91,7 @@ std::string UnixMakefile::WriteToString() const {
     }
   }
 
-  for (const auto &tgt : targets_) {
+  for (const auto &tgt : Targets) {
     WriteComment(oss, tgt.Comments);
     oss << fmt::format("{}: {}", tgt.TargetName,
                        utils::JoinString(" ", std::begin(tgt.Dependencies),
@@ -117,3 +117,4 @@ void UnixMakefile::Write(writer::Writer *writer) const {
 }
 
 }  // namespace jk::core::output
+

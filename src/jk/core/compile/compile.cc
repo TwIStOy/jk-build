@@ -10,6 +10,7 @@
 #include "fmt/core.h"
 #include "jk/core/error.h"
 #include "jk/core/rules/package.hh"
+#include "jk/lang/cc/compiler/cc_binary.hh"
 #include "jk/lang/cc/compiler/cc_library.hh"
 #include "jk/lang/cc/source_file.hh"
 #include "jk/utils/logging.hh"
@@ -31,7 +32,8 @@ CompilerFactory *CompilerFactory::Instance() {
 CompilerFactory::CompilerFactory() {
   compilers_["Makefile.cc_library"].reset(
       new lang::cc::MakefileCCLibraryCompiler);
-  // compilers_["cc_binary"].reset(new lang::cc::CCBinaryCompiler{});
+  compilers_["Makefile.cc_binary"].reset(
+      new lang::cc::MakefileCCBinaryCompiler{});
 }
 
 Compiler *CompilerFactory::FindCompiler(const std::string &name) const {

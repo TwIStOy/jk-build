@@ -61,6 +61,7 @@ if (Boost_FOUND)
   target_link_libraries(libjk PUBLIC ${Boost_LIBRARIES})
 endif()
 
+include_directories(.)
 include_directories(./include)
 include_directories(third-party/include)
 

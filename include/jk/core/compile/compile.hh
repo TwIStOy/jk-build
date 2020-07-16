@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 #include "jk/common/path.hh"

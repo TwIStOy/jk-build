@@ -4,7 +4,9 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <list>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/writer/writer.hh"
@@ -12,7 +14,7 @@
 namespace jk::core::output {
 
 struct UnixMakefile {
-  UnixMakefile(const std::string &filename);
+  explicit UnixMakefile(const std::string &filename);
 
   void DefineCommon(filesystem::ProjectFileSystem *project);
 
@@ -33,7 +35,7 @@ struct UnixMakefile {
  private:
   static void WriteComment(std::ostream &, const std::string &str);
 
- private:
+ public:
   std::string filename_;
   struct EnvironmentItem {
     std::string Key;
@@ -55,9 +57,11 @@ struct UnixMakefile {
     bool Phony;
   };
 
-  std::unordered_map<std::string, EnvironmentItem> environments_;
-  std::list<IncludeItem> includes_;
-  std::list<TargetItem> targets_;
+  std::unordered_map<std::string, EnvironmentItem> Environments;
+  std::list<IncludeItem> Includes;
+  std::list<TargetItem> Targets;
 };
+
+using UnixMakefilePtr = std::unique_ptr<UnixMakefile>;
 
 }  // namespace jk::core::output
