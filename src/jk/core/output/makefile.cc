@@ -49,7 +49,7 @@ void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
 
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
 
-  DefineEnvironment("PRINT", "jk tools echo_color ");
+  DefineEnvironment("PRINT", "jk tools echo_color");
 }
 
 static const char *CommonHeader[] = {

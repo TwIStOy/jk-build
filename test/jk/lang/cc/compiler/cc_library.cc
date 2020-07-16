@@ -3,6 +3,7 @@
 
 #include "jk/lang/cc/compiler/cc_library.hh"
 
+#include <boost/optional.hpp>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -18,6 +19,7 @@
 #include "jk/core/writer/buffer_writer.hh"
 #include "jk/core/writer/writer.hh"
 #include "jk/lang/cc/rules/cc_library.hh"
+#include "jk/utils/array.hh"
 #include "jk/utils/str.hh"
 #include "test/jk/core/compile/fake_buffer_writer.hh"
 #include "test/jk/core/compile/nop_expander.hh"
@@ -51,34 +53,28 @@ static core::rules::BuildPackageFactory SimpleProject() {
   return factory;
 }
 
-static bool SameArray(const std::string &str,
-                      const std::vector<std::string> &vec) {
-  std::cout << fmt::format(R"(SameArray checking "{}" and [{}])", str,
-                           utils::JoinString(", ", vec.begin(), vec.end()))
-            << std::endl;
-
-  std::set<std::string> parts;
-  std::set<std::string> parts2{vec.begin(), vec.end()};
-
-  std::stringstream iss(str);
-  std::string line;
-  while (std::getline(iss, line, ' ')) {
-    parts.insert(line);
-  }
-
-  if (vec.size() != parts.size()) {
-    return false;
-  }
-
-  auto it1 = parts.begin();
-  auto it2 = parts2.begin();
-  for (; it1 != parts.end(); ++it1, ++it2) {
-    if (*it1 != *it2) {
-      return false;
+static boost::optional<core::output::UnixMakefile::IncludeItem> FindInclude(
+    std::list<core::output::UnixMakefile::IncludeItem> includes,
+    const fs::path &path) {
+  for (const auto &it : includes) {
+    if (it.Path == path) {
+      return it;
     }
   }
+  return {};
+}
 
-  return true;
+static std::list<std::string> MergeDependencies(
+    const std::list<core::output::UnixMakefile::TargetItem> &targets,
+    const std::string &name) {
+  std::list<std::string> res;
+  for (const auto &target : targets) {
+    if (target.TargetName == name) {
+      res.insert(res.end(), target.Dependencies.begin(),
+                 target.Dependencies.end());
+    }
+  }
+  return res;
 }
 
 TEST_CASE("compiler.makefile.cc_library.simple_target",
@@ -102,14 +98,63 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",
 
     auto makefile = compiler->GenerateFlags(w.get(), rule);
 
-    REQUIRE(SameArray(makefile->Environments["C_FLAGS"].Value, {}));
-    REQUIRE(SameArray(makefile->Environments["CXX_FLAGS"].Value, {}));
-    REQUIRE(SameArray(makefile->Environments["CPP_FLAGS"].Value,
-                      {"-Dbase_only_defie_flag"}));
-    REQUIRE(SameArray(makefile->Environments["CXX_DEFINE"].Value,
-                      {"-Dbase_inherit_define_flag"}));
-    REQUIRE(SameArray(makefile->Environments["CXX_INCLUDE"].Value,
-                      {"-Ibase_inherit_include_directory"}));
+    REQUIRE(utils::SameArray(makefile->Environments["C_FLAGS"].Value,
+                             std::vector<std::string>{}));
+    REQUIRE(utils::SameArray(makefile->Environments["CXX_FLAGS"].Value,
+                             std::vector<std::string>{}));
+    REQUIRE(
+        utils::SameArray(makefile->Environments["CPP_FLAGS"].Value,
+                         std::vector<std::string>{"-Dbase_only_defie_flag"}));
+    REQUIRE(utils::SameArray(
+        makefile->Environments["CXX_DEFINE"].Value,
+        std::vector<std::string>{"-Dbase_inherit_define_flag"}));
+    REQUIRE(utils::SameArray(
+        makefile->Environments["CXX_INCLUDE"].Value,
+        std::vector<std::string>{"-Ibase_inherit_include_directory"}));
+  }
+
+  SECTION("toolchain.make") {
+    auto w = writer_factory.Build("flags.make");
+
+    auto makefile = compiler->GenerateToolchain(w.get());
+
+    REQUIRE(makefile->Environments["CXX"].Value == "g++");
+    REQUIRE(makefile->Environments["AR"].Value == "ar qc");
+    REQUIRE(makefile->Environments["RM"].Value == "rm");
+  }
+
+  SECTION("build.make") {
+    auto w = writer_factory.Build("flags.make");
+    auto working_folder = project.BuildRoot.Sub(
+        utils::Replace(rule->FullQualifiedName(), '/', "@"));
+
+    auto makefile = compiler->GenerateBuild(&project, working_folder, w.get(),
+                                            rule, &expander);
+
+    REQUIRE(makefile->Environments["SHELL"].Value == "/bin/bash");
+    REQUIRE(makefile->Environments["JK_COMMAND"].Value == "jk");
+    REQUIRE(makefile->Environments["JK_SOURCE_DIR"].Value ==
+            "~/Projects/agora");
+    REQUIRE(makefile->Environments["JK_BINARY_DIR"].Value ==
+            "~/Projects/agora/.build");
+    REQUIRE(makefile->Environments["EQUALS"].Value == "=");
+    REQUIRE(makefile->Environments["PRINT"].Value == "jk tools echo_color");
+
+    auto include_flags_make =
+        FindInclude(makefile->Includes, working_folder.Sub("flags.make").Path);
+    REQUIRE(include_flags_make.is_initialized());
+    CHECK(include_flags_make.value().Fatal == true);
+
+    auto include_toolchain_make = FindInclude(
+        makefile->Includes, working_folder.Sub("toolchain.make").Path);
+    REQUIRE(include_toolchain_make.is_initialized());
+    CHECK(include_toolchain_make.value().Fatal == true);
+
+    // base->Sources = {"base1.cpp", "base2.cpp", "base3.cpp"};
+    auto base1_object = working_folder.Sub("library/base/base1.o").Stringify();
+    auto base1_dep = MergeDependencies(makefile->Targets, base1_object);
+    // TODO(hawtian): fix test case
+    REQUIRE(utils::SameArray(base1_dep, std::vector<std::string>{}));
   }
 }
 
