@@ -13,6 +13,7 @@
 #include "jk/core/compile/compile.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/output/makefile.hh"
+#include "jk/core/rules/package.hh"
 #include "jk/core/writer/writer.hh"
 #include "jk/lang/cc/rules/cc_binary.hh"
 #include "jk/lang/cc/rules/cc_library.hh"
@@ -77,10 +78,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     auto vec = dep->ExportedHeaders();
     std::transform(
         vec.begin(), vec.end(), std::back_inserter(all_dep_headers),
-        [project](const std::string &filename) {
-          return project
-              ->Resolve(common::ProjectRelativePath{fs::path{filename}})
-              .Stringify();
+        [project, dep](const std::string &filename) {
+          return project->Resolve(dep->Package->Path.Sub(filename)).Stringify();
         });
   }
 
@@ -137,7 +136,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
           source_file->FullQualifiedObjectPath(working_folder).Stringify());
 
   auto dep = headers;
-  dep.push_back(source_file->FullQualifiedPath().Stringify());
+  dep.push_back(project->Resolve(source_file->FullQualifiedPath()).Stringify());
   if (source_file->IsCppSourceFile()) {
     auto build_stmt =
         "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(CPP_FLAGS)"

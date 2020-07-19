@@ -20,9 +20,11 @@ void FakeBufferWriterFactory::DebugPrint(std::ostream &oss) const {
   oss << "FakeBufferWriterFactory Debug Print:" << std::endl;
   for (const auto &[name, content] : Files) {
     oss << sep;
-    sep = "=======================================";
-
-    oss << "*** File: " << name << std::endl;
+    for (auto i = 0; i < name.size() + 14; i++) {
+      oss << "-";
+    }
+    oss << std::endl;
+    oss << "[[[*** File: " << name << " ***]]]" << std::endl;
     oss << content << std::endl;
   }
 }

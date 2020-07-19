@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <list>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,8 @@ class CCBinary : public CCLibrary {
            std::string_view type_name = "cc_binary")
       : CCLibrary(package, name, types, type_name) {
   }
+
+  std::vector<std::string> ResolveDependenciesAndLdFlags() const;
 };
 
 }  // namespace rules

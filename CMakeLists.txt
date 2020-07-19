@@ -9,8 +9,8 @@ set(PYBIND11_CPP_STANDARD -std=c++1z)
 
 set(CMAKE_CXX_CPPLINT "cpplint")
 
-include(CodeCoverage)
-append_coverage_compiler_flags()
+# include(CodeCoverage)
+# append_coverage_compiler_flags()
 
 # set(CMAKE_CXX_FLAGS_DEBUG -fsanitize=address
 #                           -fno-inline
@@ -96,10 +96,10 @@ enable_testing()
 add_test(AllTest jk_test)
 
 # -- code coverage section ---
-setup_target_for_coverage_gcovr_html(
-  NAME jk_coverage
-  EXECUTABLE jk_test
-  BASE_DIRECTORY "${PROJECT_SOURCE_DIR}/src"
-  EXCLUDE "third-party/*"
-)
+# setup_target_for_coverage_gcovr_html(
+#   NAME jk_coverage
+#   EXECUTABLE jk_test
+#   BASE_DIRECTORY "${PROJECT_SOURCE_DIR}/src"
+#   EXCLUDE "third-party/*"
+# )
 

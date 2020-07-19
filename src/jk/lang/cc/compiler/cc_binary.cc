@@ -32,8 +32,9 @@ void MakefileCCBinaryCompiler::Compile(
 void MakefileCCBinaryCompiler::GenerateBuild(
     core::filesystem::ProjectFileSystem *project,
     const common::AbsolutePath &working_folder, core::writer::Writer *w,
-    core::rules::CCLibrary *rule,
+    core::rules::CCLibrary *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
+  auto rule = _rule->Downcast<core::rules::CCBinary>();
   core::output::UnixMakefile build("build.make");
 
   build.DefineCommon(project);
@@ -71,15 +72,18 @@ void MakefileCCBinaryCompiler::GenerateBuild(
   }
 
   auto binary_file = working_folder.Sub(rule->ExportedFileName);
+  auto deps_and_flags = rule->ResolveDependenciesAndLdFlags();
   build.AddTarget(
       binary_file.Stringify(), all_objects,
       {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
        "--progress-total={} \"Linking binary {}\""_format(
            idx, source_files.size(), binary_file.Stringify()),
-       // TODO(hawtian): deps and ldfalgs
-       "$(CXX) {} {}"_format(
+       // TODO(hawtian): deps and ldfalgs in order
+       "$(CXX) -o {} {} {}"_format(
            binary_file.Stringify(),
-           utils::JoinString(" ", all_objects.begin(), all_objects.end()))});
+           utils::JoinString(" ", all_objects.begin(), all_objects.end()),
+           utils::JoinString(" ", deps_and_flags.begin(),
+                             deps_and_flags.end()))});
 
   auto clean_target = working_folder.Sub("clean").Stringify();
   build.AddTarget(clean_target, {},
