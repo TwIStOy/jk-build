@@ -107,8 +107,13 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
            utils::JoinString(" ", all_objects.begin(), all_objects.end()))});
 
   auto clean_target = working_folder.Sub("clean").Stringify();
-  build->AddTarget(clean_target, {},
-                   {"$(RM) {}"_format(library_file.Stringify())}, "", true);
+  std::list<std::string> clean_statements;
+  clean_statements.push_back("$(RM) {}"_format(library_file.Stringify()));
+  for (const auto &it : all_objects) {
+    clean_statements.push_back("$(RM) {}"_format(it));
+  }
+
+  build->AddTarget(clean_target, {}, std::move(clean_statements), "", true);
 
   auto build_target = working_folder.Sub("build").Stringify();
   build->AddTarget(build_target, {library_file.Stringify()}, {},

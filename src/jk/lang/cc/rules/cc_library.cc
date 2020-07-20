@@ -25,9 +25,10 @@ namespace rules {
 
 CCLibrary::CCLibrary(BuildPackage *package, std::string name,
                      std::initializer_list<RuleTypeEnum> types,
-                     std::string_view type_name)
+                     std::string_view type_name, std::string exported_file_name)
     : BuildRule(package, name, std::move(types), type_name),
-      ExportedFileName(fmt::format("lib{}.a", name)) {
+      ExportedFileName(exported_file_name.empty() ? fmt::format("lib{}.a", name)
+                                                  : exported_file_name) {
 }
 
 bool CCLibrary::IsStable() const {

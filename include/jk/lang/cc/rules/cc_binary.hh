@@ -22,7 +22,7 @@ class CCBinary : public CCLibrary {
   CCBinary(BuildPackage *package, std::string name,
            std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kBinary},
            std::string_view type_name = "cc_binary")
-      : CCLibrary(package, name, types, type_name) {
+      : CCLibrary(package, name, types, type_name, name) {
   }
 
   std::vector<std::string> ResolveDependenciesAndLdFlags() const;

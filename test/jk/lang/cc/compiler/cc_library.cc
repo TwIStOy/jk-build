@@ -23,6 +23,7 @@
 #include "jk/utils/str.hh"
 #include "test/jk/core/compile/fake_buffer_writer.hh"
 #include "test/jk/core/compile/nop_expander.hh"
+#include "test/jk/lang/cc/compiler/utility.hh"
 
 namespace jk::lang::cc::test {
 
@@ -52,30 +53,6 @@ static core::rules::BuildPackageFactory SimpleProject() {
 
   return factory;
 }
-
-static boost::optional<core::output::UnixMakefile::IncludeItem> FindInclude(
-    std::list<core::output::UnixMakefile::IncludeItem> includes,
-    const fs::path &path) {
-  for (const auto &it : includes) {
-    if (it.Path == path) {
-      return it;
-    }
-  }
-  return {};
-}
-
-static std::list<std::string> MergeDependencies(  // {{{
-    const std::list<core::output::UnixMakefile::TargetItem> &targets,
-    const std::string &name) {
-  std::list<std::string> res;
-  for (const auto &target : targets) {
-    if (target.TargetName == name) {
-      res.insert(res.end(), target.Dependencies.begin(),
-                 target.Dependencies.end());
-    }
-  }
-  return res;
-}  // }}}
 
 TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
           "[compiler][makefile][cc_library]") {

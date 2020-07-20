@@ -17,11 +17,11 @@ struct MakefileCCBinaryCompiler : MakefileCCLibraryCompiler {
       core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 
- private:
-  void GenerateBuild(core::filesystem::ProjectFileSystem *project,
-                     const common::AbsolutePath &working_folder,
-                     core::writer::Writer *w, core::rules::CCLibrary *rule,
-                     core::filesystem::FileNamePatternExpander *expander) const;
+  core::output::UnixMakefilePtr GenerateBuild(
+      core::filesystem::ProjectFileSystem *project,
+      const common::AbsolutePath &working_folder, core::writer::Writer *w,
+      core::rules::CCLibrary *rule,
+      core::filesystem::FileNamePatternExpander *expander) const;
 };
 
 }  // namespace jk::lang::cc

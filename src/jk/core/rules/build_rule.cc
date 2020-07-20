@@ -4,6 +4,7 @@
 #include "jk/core/rules/build_rule.hh"
 
 #include <algorithm>
+#include <functional>
 #include <initializer_list>
 #include <queue>
 #include <set>
@@ -40,40 +41,75 @@ std::string RuleType::Stringify() const {
 }
 
 std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
-  std::list<BuildRule const *> result;
+  if (topological_sorting_result_) {
+    return topological_sorting_result_.value();
+  }
+
+  struct TopItem {
+    BuildRule const *Rule{nullptr};
+    uint32_t RestOutgoing{0};
+    bool Built{false};
+
+    std::list<BuildRule const *> Incoming{};
+  };
+
+  using TopItemMap =
+      std::unordered_map<std::string /* FullQualifiedName */, TopItem>;
+
+  std::function<void(BuildRule const *, TopItemMap *)> dfs;
+  dfs = [&dfs](BuildRule const *rule, TopItemMap *mp) {
+    auto &item = (*mp)[rule->FullQualifiedName()];
+    if (item.Built) {
+      return;
+    }
+    item.Rule = rule;
+    item.RestOutgoing = rule->Dependencies.size();
+    item.Built = true;
+
+    for (const auto &dep : rule->Dependencies) {
+      (*mp)[dep->FullQualifiedName()].Incoming.push_back(rule);
+      dfs(dep, mp);
+    }
+  };
+
+  TopItemMap items;
+  dfs(this, &items);
+
   std::queue<BuildRule const *> Q;
-  Q.push(this);
+  for (const auto &[name, item] : items) {
+    if (item.RestOutgoing <= 0) {
+      Q.push(item.Rule);
+    }
+  }
 
+  if (Q.empty()) {
+    JK_THROW(JKBuildError("unexpected circular dependency"));
+  }
+
+  std::list<BuildRule const *> after_sorted;
   while (!Q.empty()) {
-    auto cur = Q.front();
+    auto rule = Q.front();
     Q.pop();
-
-    if (cur != this) {
-      result.push_back(cur);
+    if (rule != this) {
+      after_sorted.push_back(rule);
     }
-    for (auto it : cur->Dependencies) {
-      Q.push(it);
+
+    auto &item = items[rule->FullQualifiedName()];
+    for (const auto &incoming : item.Incoming) {
+      auto &incoming_item = items[incoming->FullQualifiedName()];
+      incoming_item.RestOutgoing--;
+      if (incoming_item.RestOutgoing <= 0) {
+        Q.push(incoming);
+      }
     }
   }
 
-  std::reverse(result.begin(), result.end());
-  std::set<std::string> s;
-  for (auto iter = result.begin(); iter != result.end();) {
-    auto it = s.find((*iter)->FullQualifiedName());
-    auto next = iter;
-    ++next;
-
-    if (it == s.end()) {
-      s.insert((*iter)->FullQualifiedName());
-    } else {
-      result.erase(iter);
-    }
-
-    iter = next;
+  if (after_sorted.size() + 1 /* this */ != items.size()) {
+    JK_THROW(JKBuildError("unexpected circular dependency"));
   }
-  std::reverse(result.begin(), result.end());
 
-  return result;
+  topological_sorting_result_ = after_sorted;
+  return after_sorted;
 }
 
 std::string BuildRule::Stringify() const {

@@ -25,7 +25,8 @@ class CCLibrary : public BuildRule {
   CCLibrary(
       BuildPackage *package, std::string name,
       std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kLibrary},
-      std::string_view type_name = "cc_library");
+      std::string_view type_name = "cc_library",
+      std::string exported_file_name = "");
 
   bool IsStable() const override;
 

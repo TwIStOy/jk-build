@@ -122,7 +122,7 @@ struct BuildRule : public utils::Stringifiable {
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
 
-  //! Extract all deps recursively.
+  //! Extract all deps after topological sorting
   std::list<BuildRule const *> DependenciesInOrder() const;
 
   //! Which package where this build-rule is inside
@@ -142,6 +142,8 @@ struct BuildRule : public utils::Stringifiable {
  public:
 #endif
   std::vector<std::string> dependencies_str_;
+  mutable boost::optional<std::list<BuildRule const *>>
+      topological_sorting_result_;
 };
 
 //! Create a **BuildRule** instance in *pkg* with *kwags".
