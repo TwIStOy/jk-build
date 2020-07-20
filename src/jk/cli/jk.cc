@@ -18,7 +18,11 @@ static auto Nop = [](args::Subparser &) {
 };
 
 Cli::Cli() {
-  NewSubCommand("version", "Print version message and exit.", Nop);
+  NewSubCommand("version", "Print version message and exit.",
+                [](args::Subparser &p) {
+                  p.Parse();
+                  std::cout << "JK version " << JK_VERSION << std::endl;
+                });
   NewSubCommand("echo_color", "Echo color", &EchoColor);
   // Add commands
 }
@@ -33,11 +37,12 @@ int Cli::Run(int argc, const char *argv[]) {
                     args::Matcher{"verbose", 'V'}, 0);
   args::HelpFlag help(global_group, "help", "Print this message and exit.",
                       {'h', "help"});
+  args::CompletionFlag complete(parser, {"complete"});
 
   args::GlobalOptions globals(parser, global_group);
 
-  for (auto &cmd : subcommands_) {
-    cmd.second.Register(commands, [&]() {
+  for (auto &[name, cmd] : subcommands_) {
+    cmd.Register(commands, [&]() {
       vg.Notify();
 
       if (verbose_.Value) {
@@ -48,6 +53,8 @@ int Cli::Run(int argc, const char *argv[]) {
 
   try {
     parser.ParseCLI(argc, argv);
+  } catch (args::Completion e) {
+    std::cout << e.what() << std::endl;
   } catch (args::Help) {
     std::cout << parser;
   } catch (args::Error &e) {
@@ -59,8 +66,7 @@ int Cli::Run(int argc, const char *argv[]) {
 
 void Cli::NewSubCommand(std::string Name, std::string Desp,
                         std::function<void(args::Subparser &)> Callback) {
-  subcommands_[Name] =
-      SubCommand{std::move(Name), std::move(Desp), std::move(Callback)};
+  subcommands_[Name] = SubCommand{Name, std::move(Desp), std::move(Callback)};
 }
 
 }  // namespace jk::cli
