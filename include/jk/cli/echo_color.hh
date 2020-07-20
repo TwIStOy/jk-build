@@ -3,9 +3,13 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-namespace jk::utils {
+#include "args.hxx"
 
-}  // namespace jk::utils
+namespace jk {
+
+void EchoColor(args::Subparser &parser);
+
+}  // namespace jk
 
 // vim: fdm=marker
 

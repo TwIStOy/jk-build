@@ -3,9 +3,13 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-namespace jk::utils {
+#include <cstdint>
 
-}  // namespace jk::utils
+namespace jk::common {
+
+extern uint32_t FLAGS_verbose;
+
+}  // namespace jk::common
 
 // vim: fdm=marker
 
