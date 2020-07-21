@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "jk/common/path.hh"
 #include "jk/core/compile/compile.hh"
@@ -17,6 +18,8 @@
 #include "jk/lang/cc/source_file.hh"
 
 namespace jk::lang::cc {
+
+extern std::vector<std::string> BuildTypes;
 
 struct MakefileCCLibraryCompiler : public core::compile::Compiler {
   std::string Name() const override;
@@ -38,9 +41,15 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
       core::rules::CCLibrary *rule,
       core::filesystem::FileNamePatternExpander *expander) const;
 
-  void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
+  void LintSourceFile(core::filesystem::ProjectFileSystem *project,
                       SourceFile *source_file, uint32_t idx,
                       uint32_t source_files_count,
+                      core::output::UnixMakefile *build,
+                      const common::AbsolutePath &working_folder) const;
+
+  void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
+                      const std::string &build_type, SourceFile *source_file,
+                      uint32_t idx, uint32_t source_files_count,
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;

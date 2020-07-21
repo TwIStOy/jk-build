@@ -6,6 +6,7 @@
 #include <string>
 
 #include "jk/core/rules/package.hh"
+#include "jk/lang/cc/rules/cc_library_helper.hh"
 
 namespace jk::lang::cc {
 
@@ -18,8 +19,7 @@ void MakefileCCBinaryCompiler::Compile(
     core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<core::rules::CCBinary>();
-  auto working_folder = project->BuildRoot.Sub(
-      utils::Replace(rule->FullQualifiedName(), '/', "@"));
+  auto working_folder = rule->WorkingFolder(project->BuildRoot);
 
   GenerateFlags(wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
                 rule);
@@ -49,63 +49,67 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
   // headers
-  std::list<std::string> all_dep_headers;
-  for (auto dep : rule->DependenciesInOrder()) {
-    auto vec = dep->ExportedHeaders();
-    std::transform(
-        vec.begin(), vec.end(), std::back_inserter(all_dep_headers),
-        [project, dep](const std::string &filename) {
-          return project->Resolve(dep->Package->Path.Sub(filename)).Stringify();
-        });
-  }
+  std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
 
-  auto idx = 0;
-  std::list<std::string> all_objects;
   for (const auto &filename : source_files) {
     auto source_file =
         lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-    MakeSourceFile(project, source_file, idx, source_files.size(),
-                   all_dep_headers, build.get(), working_folder);
-    all_objects.push_back(
-        source_file->FullQualifiedObjectPath(working_folder).Stringify());
-    idx++;
+    LintSourceFile(project, source_file, 0, source_files.size(), build.get(),
+                   working_folder);
   }
-
-  auto binary_file = working_folder.Sub(rule->ExportedFileName);
-  auto deps_and_flags = rule->ResolveDependenciesAndLdFlags();
-  auto binary_deps = all_objects;
-  for (auto dep : rule->Dependencies) {
-    auto names = dep->ExportedFilesSimpleName();
-    auto dep_working_folder = project->BuildRoot.Sub(
-        utils::Replace(dep->FullQualifiedName(), '/', "@"));
-    for (const auto &name : names) {
-      binary_deps.push_back(dep_working_folder.Sub(name).Stringify());
-    }
-  }
-  build->AddTarget(
-      binary_file.Stringify(), binary_deps,
-      {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
-       "--progress-total={} \"Linking binary {}\""_format(
-           idx, source_files.size(), binary_file.Stringify()),
-       "$(CXX) -o {} {} {}"_format(
-           binary_file.Stringify(),
-           utils::JoinString(" ", all_objects.begin(), all_objects.end()),
-           utils::JoinString(" ", deps_and_flags.begin(),
-                             deps_and_flags.end()))});
 
   auto clean_target = working_folder.Sub("clean").Stringify();
   std::list<std::string> clean_statements;
-  clean_statements.push_back("$(RM) {}"_format(binary_file.Stringify()));
-  for (const auto &obj : all_objects) {
-    clean_statements.push_back("$(RM) {}"_format(obj));
+
+  for (const auto &build_type : BuildTypes) {
+    auto idx = 0;
+    std::list<std::string> all_objects;
+    for (const auto &filename : source_files) {
+      auto source_file =
+          lang::cc::SourceFile::Create(rule, rule->Package, filename);
+
+      MakeSourceFile(project, build_type, source_file, idx, source_files.size(),
+                     all_dep_headers, build.get(), working_folder);
+      all_objects.push_back(
+          source_file->FullQualifiedObjectPath(working_folder, build_type)
+              .Stringify());
+      idx++;
+    }
+    auto binary_file =
+        working_folder.Sub(build_type).Sub(rule->ExportedFileName);
+    auto deps_and_flags = rule->ResolveDependenciesAndLdFlags();
+
+    auto binary_deps = all_objects;
+    for (auto dep : rule->Dependencies) {
+      auto names = dep->ExportedFilesSimpleName();
+      auto dep_working_folder = dep->WorkingFolder(project->BuildRoot);
+      for (const auto &name : names) {
+        binary_deps.push_back(
+            dep_working_folder.Sub(build_type).Sub(name).Stringify());
+      }
+    }
+    build->AddTarget(
+        binary_file.Stringify(), binary_deps,
+        {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
+         "--progress-total={} \"Linking binary {}\""_format(
+             idx, source_files.size(), binary_file.Stringify()),
+         "$(LINKER) -o {} {} {}"_format(
+             binary_file.Stringify(),
+             utils::JoinString(" ", all_objects.begin(), all_objects.end()),
+             utils::JoinString(" ", deps_and_flags.begin(),
+                               deps_and_flags.end()))});
+    clean_statements.push_back("$(RM) {}"_format(binary_file.Stringify()));
+    for (const auto &obj : all_objects) {
+      clean_statements.push_back("$(RM) {}"_format(obj));
+    }
+
+    auto build_target = working_folder.Sub(build_type).Sub("build").Stringify();
+    build->AddTarget(build_target, {binary_file.Stringify()}, {},
+                     "Rule to build all files generated by this target.", true);
   }
 
   build->AddTarget(clean_target, {}, clean_statements, "", true);
-
-  auto build_target = working_folder.Sub("build").Stringify();
-  build->AddTarget(build_target, {binary_file.Stringify()}, {},
-                   "Rule to build all files generated by this target.", true);
 
   build->Write(w);
 

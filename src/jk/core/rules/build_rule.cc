@@ -214,6 +214,11 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
   dependencies_has_built_ = true;
 }
 
+common::AbsolutePath BuildRule::WorkingFolder(
+    const common::AbsolutePath &build_root) const {
+  return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@"));
+}
+
 }  // namespace rules
 }  // namespace core
 }  // namespace jk

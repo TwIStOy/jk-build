@@ -132,7 +132,7 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
     REQUIRE(makefile->Environments["JK_BINARY_DIR"].Value ==
             "~/Projects/test_project/.build");
     REQUIRE(makefile->Environments["EQUALS"].Value == "=");
-    REQUIRE(makefile->Environments["PRINT"].Value == "jk tools echo_color");
+    REQUIRE(makefile->Environments["PRINT"].Value == "jk echo_color");
 
     auto include_flags_make =
         FindInclude(makefile->Includes, working_folder.Sub("flags.make").Path);

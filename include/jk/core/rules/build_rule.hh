@@ -31,9 +31,10 @@ class BuildPackageFactory;
 
 // clang-format off
 enum class RuleTypeEnum : uint8_t {
-  kLibrary = 1 << 0,
-  kBinary  = 1 << 1,
-  kTest    = 1 << 2,
+  kLibrary  = 1 << 0,
+  kBinary   = 1 << 1,
+  kTest     = 1 << 2,
+  kExternal = 1 << 3,
 };
 // clang-format on
 
@@ -58,6 +59,7 @@ struct RuleType final : public utils::Stringifiable {
   TYPE_SET_GETTER(Library);
   TYPE_SET_GETTER(Binary);
   TYPE_SET_GETTER(Test);
+  TYPE_SET_GETTER(External);
 
   // inherited from |utils::Stringifiable|
   std::string Stringify() const final;
@@ -124,6 +126,9 @@ struct BuildRule : public utils::Stringifiable {
 
   //! Extract all deps after topological sorting
   std::list<BuildRule const *> DependenciesInOrder() const;
+
+  common::AbsolutePath WorkingFolder(
+      const common::AbsolutePath &build_root) const;
 
   //! Which package where this build-rule is inside
   BuildPackage *Package;

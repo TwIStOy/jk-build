@@ -55,15 +55,22 @@ common::ProjectRelativePath SourceFile::FullQualifiedPath() const {
 }
 
 common::AbsolutePath SourceFile::FullQualifiedObjectPath(
+    const common::AbsolutePath &new_root, const std::string &build_type) const {
+  auto p = new_root.Path / build_type / Package->Path.Sub(FileName).Path;
+  p.replace_filename(p.filename().string() + ".o");
+  return common::AbsolutePath{p};
+}
+
+common::AbsolutePath SourceFile::FullQualifiedLintPath(
     const common::AbsolutePath &new_root) const {
   auto p = new_root.Path / Package->Path.Sub(FileName).Path;
-  p.replace_extension(".o");
+  p.replace_filename(p.filename().string() + ".lint");
   return common::AbsolutePath{p};
 }
 
 common::ProjectRelativePath SourceFile::FullQualifiedObjectPath() const {
   auto p = Package->Path.Sub(FileName);
-  p.Path.replace_extension(".o");
+  p.Path.replace_filename(p.Path.filename().string() + ".o");
   return p;
 }
 

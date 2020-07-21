@@ -25,6 +25,7 @@ struct Cli {
 
  private:
   Variable<uint32_t> verbose_;
+  Variable<uint32_t> platform_;
 
   std::unordered_map<std::string, SubCommand> subcommands_;
 };

@@ -33,9 +33,15 @@ struct SourceFile : public utils::Stringifiable {
   std::string FileName;
 
   common::ProjectRelativePath FullQualifiedPath() const;
+
   common::AbsolutePath FullQualifiedObjectPath(
-      const common::AbsolutePath &new_root) const;
+      const common::AbsolutePath &new_root,
+      const std::string &build_type) const;
+
   common::ProjectRelativePath FullQualifiedObjectPath() const;
+
+  common::AbsolutePath FullQualifiedLintPath(
+      const common::AbsolutePath &new_root) const;
 
   bool IsCppSourceFile() const;
   bool IsCSourceFile() const;

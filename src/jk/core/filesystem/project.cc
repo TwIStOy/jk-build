@@ -3,6 +3,7 @@
 
 #include "jk/core/filesystem/project.hh"
 
+#include "jk/common/flags.hh"
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
 #include "spdlog/spdlog.h"
@@ -42,7 +43,10 @@ fs::path ProjectRoot() {
 }
 
 fs::path BuildRoot() {
-  return ProjectRoot() / ".build";
+  if (common::FLAGS_platform == common::Platform::k32) {
+    return ProjectRoot() / ".build" / "i386";
+  }
+  return ProjectRoot() / ".build" / "x86_64";
 }
 
 }  // namespace jk::core::filesystem

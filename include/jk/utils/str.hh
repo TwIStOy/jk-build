@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 namespace jk {
 
@@ -58,6 +59,18 @@ inline std::string JoinString(
     oss << func(*it);
   }
   return oss.str();
+}
+
+template<typename Container,
+         typename UnaryOperator =
+             decltype(__DefaultUnary<typename Container::const_iterator>),
+         typename = decltype(std::declval<Container>().begin(),
+                             std::declval<Container>().end())>
+inline std::string JoinString(
+    std::string separator, Container container,
+    UnaryOperator func = &__DefaultUnary<typename Container::const_iterator>) {
+  return JoinString(std::move(separator), std::begin(container),
+                    std::end(container), func);
 }
 
 template<typename T>

@@ -61,6 +61,36 @@ bool SameArray(const std::string &str, const T<std::string> &vec) {
   return true;
 }
 
+namespace __detail {
+
+template<typename T>
+void ConcatArraysImpl(std::vector<T> *res) {
+}
+
+template<typename T, typename First, typename... Args,
+         typename = std::enable_if_t<
+             std::is_same_v<typename First::value_type, T> &&
+             (std::is_same_v<typename Args::value_type, T> && ...)>>
+void ConcatArraysImpl(std::vector<T> *res, const First &first,
+                      const Args &... rest) {
+  res->insert(res->end(), std::begin(first), std::end(first));
+  ConcatArraysImpl(res, rest...);
+}
+
+}  // namespace __detail
+
+template<
+    typename First, typename... Args,
+    typename = std::enable_if_t<(
+        std::is_same_v<typename First::value_type, typename Args::value_type> &&
+        ...)>,
+    typename ValueType = typename First::value_type>
+std::vector<ValueType> ConcatArrays(const First &first, const Args &... args) {
+  std::vector<ValueType> res;
+  __detail::ConcatArraysImpl(&res, first, args...);
+  return res;
+}
+
 }  // namespace jk::utils
 
 // vim: fdm=marker
