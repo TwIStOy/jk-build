@@ -4,6 +4,7 @@
 #include "jk/lang/cc/compiler/cc_binary.hh"
 
 #include "catch.hpp"
+#include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
@@ -107,14 +108,30 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
                                  "-Iapp_inherit_include_directory"}));
   }
 
-  SECTION("toolchain.make") {
+  SECTION("toolchain.make32") {
+    common::FLAGS_platform = common::Platform::k32;
+
     auto w = writer_factory.Build("flags.make");
 
     auto makefile = compiler->GenerateToolchain(w.get());
 
-    REQUIRE(makefile->Environments["CXX"].Value == "g++");
-    REQUIRE(makefile->Environments["AR"].Value == "ar qc");
+    REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
+    REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
     REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["LINKER"].Value == "g++");
+  }
+
+  SECTION("toolchain.make64") {
+    common::FLAGS_platform = common::Platform::k64;
+
+    auto w = writer_factory.Build("flags.make");
+
+    auto makefile = compiler->GenerateToolchain(w.get());
+
+    REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
+    REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
+    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
   SECTION("build.make") {
@@ -144,7 +161,8 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
     REQUIRE(include_toolchain_make.is_initialized());
     CHECK(include_toolchain_make.value().Fatal == true);
 
-    auto main_object = working_folder.Sub("application/app/main.o").Stringify();
+    auto main_object =
+        working_folder.Sub("DEBUG/application/app/main.cpp.o").Stringify();
     auto main_deps = MergeDependencies(makefile->Targets, main_object);
 
     UNSCOPED_INFO(fmt::format(
@@ -152,14 +170,16 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
         utils::JoinString(", ", std::begin(main_deps), std::end(main_deps))));
 
     REQUIRE(utils::SameArray(
-        main_deps, std::vector<std::string>{
-                       working_folder.Sub("flags.make").Stringify(),
-                       working_folder.Sub("toolchain.make").Stringify(),
-                       "~/Projects/test_project/application/app/main.cpp",
-                       "~/Projects/test_project/library/base/base.h",
-                   }));
+        main_deps,
+        std::vector<std::string>{
+            working_folder.Sub("flags.make").Stringify(),
+            working_folder.Sub("toolchain.make").Stringify(),
+            "~/Projects/test_project/application/app/main.cpp",
+            "~/Projects/test_project/library/base/base.h",
+            working_folder.Sub("application/app/main.cpp.lint").Stringify()}));
 
-    auto exec_target = working_folder.Sub(rule->ExportedFileName).Stringify();
+    auto exec_target =
+        working_folder.Sub("DEBUG").Sub(rule->ExportedFileName).Stringify();
     auto exec_deps = MergeDependencies(makefile->Targets, exec_target);
 
     UNSCOPED_INFO(fmt::format(
@@ -168,13 +188,16 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
     REQUIRE(utils::SameArray(
         exec_deps,
         std::vector<std::string>{
-            working_folder.Sub("application/app/main.o").Stringify(),
+            working_folder.Sub("DEBUG")
+                .Sub("application/app/main.cpp.o")
+                .Stringify(),
             project.BuildRoot
                 .Sub(utils::Replace(simple_project.Package("library/base")
                                         ->Rules["base"]
                                         .get()
                                         ->FullQualifiedName(),
                                     '/', "@"))
+                .Sub("DEBUG")
                 .Sub(simple_project.Package("library/base")
                          ->Rules["base"]
                          .get()
@@ -187,6 +210,7 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
                                         .get()
                                         ->FullQualifiedName(),
                                     '/', "@"))
+                .Sub("DEBUG")
                 .Sub(simple_project.Package("library/memory")
                          ->Rules["memory"]
                          .get()

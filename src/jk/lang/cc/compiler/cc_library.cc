@@ -115,6 +115,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
          "--progress-total={} \"Linking CXX static library {}\""_format(
              idx, source_files.size(), library_file.Stringify()),
+         "@$(MKDIR) {}"_format(library_file.Path.parent_path().string()),
          "$(AR) {} {}"_format(
              library_file.Stringify(),
              utils::JoinString(" ", all_objects.begin(), all_objects.end()))});
@@ -146,8 +147,14 @@ void MakefileCCLibraryCompiler::LintSourceFile(
       "--progress-total={} \"Linting CXX file {}\""_format(
           idx, source_files_count,
           project->Resolve(source_file->FullQualifiedPath()));
-  auto lint_stmt =
-      "$(LINT) {}"_format(project->Resolve(source_file->FullQualifiedPath()));
+  auto lint_stmt = "$(CPPLINT) {}"_format(
+      project->Resolve(source_file->FullQualifiedPath()));
+  auto mkdir_stmt =
+      "@$(MKDIR) {}"_format(source_file->FullQualifiedLintPath(working_folder)
+                                .Path.parent_path()
+                                .string());
+  auto touch_stmt = "@touch {}"_format(
+      source_file->FullQualifiedLintPath(working_folder).Stringify());
 
   build->AddTarget(
       source_file->FullQualifiedLintPath(working_folder).Stringify(),
@@ -155,7 +162,7 @@ void MakefileCCLibraryCompiler::LintSourceFile(
           project->Resolve(source_file->FullQualifiedPath()).Stringify(),
           working_folder.Sub("toolchain.make").Stringify(),
       },
-      {print_stmt, lint_stmt});
+      {print_stmt, lint_stmt, touch_stmt});
 }
 
 void MakefileCCLibraryCompiler::MakeSourceFile(
@@ -179,6 +186,11 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 
   auto dep = headers;
   dep.push_back(project->Resolve(source_file->FullQualifiedPath()).Stringify());
+  auto mkdir_stmt = "@$(MKDIR) {}"_format(
+      source_file->FullQualifiedObjectPath(working_folder, build_type)
+          .Path.parent_path()
+          .string());
+
   if (source_file->IsCppSourceFile()) {
     auto build_stmt =
         "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(CPP_FLAGS) "
@@ -192,7 +204,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
     build->AddTarget(
         source_file->FullQualifiedObjectPath(working_folder, build_type)
             .Stringify(),
-        dep, {print_stmt, build_stmt});
+        dep, {print_stmt, mkdir_stmt, build_stmt});
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt =
         "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(C_FLAGS) "
@@ -206,7 +218,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
     build->AddTarget(
         source_file->FullQualifiedObjectPath(working_folder, build_type)
             .Stringify(),
-        dep, {print_stmt, build_stmt});
+        dep, {print_stmt, mkdir_stmt, build_stmt});
   } else {
     JK_THROW(core::JKBuildError(
         "unknown file extension: {}",
@@ -232,6 +244,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   makefile->DefineEnvironment("RM", "rm", "The command to remove a file.");
 
   makefile->DefineEnvironment("CPPLINT", "jk cpplint");
+
+  makefile->DefineEnvironment("MKDIR", "jk mkdir");
 
   makefile->Write(w);
   return makefile;
@@ -370,12 +384,12 @@ static std::vector<std::string> PROFILING_CPPFLAGS_EXTRA = {
 
 #define DEFINE_FLAGS(tag)                                                 \
   makefile->DefineEnvironment(                                            \
-      #tag "C_FLAGS",                                                     \
+      #tag "_C_FLAGS",                                                    \
       utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CFLAGS,   \
                                                  tag##_CFLAGS_EXTRA)));   \
                                                                           \
   makefile->DefineEnvironment(                                            \
-      #tag "CPP_FLAGS",                                                   \
+      #tag "_CPP_FLAGS",                                                  \
       utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CPPFLAGS, \
                                                  tag##_CPPFLAGS_EXTRA)));
 

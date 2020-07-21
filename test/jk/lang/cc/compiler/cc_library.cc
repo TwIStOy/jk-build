@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "catch.hpp"
+#include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
@@ -85,19 +86,36 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
     REQUIRE(utils::SameArray(
         makefile->Environments["CXX_DEFINE"].Value,
         std::vector<std::string>{"-Dbase_inherit_define_flag"}));
+
     REQUIRE(utils::SameArray(
         makefile->Environments["CXX_INCLUDE"].Value,
         std::vector<std::string>{"-Ibase_inherit_include_directory"}));
   }
 
-  SECTION("toolchain.make") {
+  SECTION("toolchain.make32") {
+    common::FLAGS_platform = common::Platform::k32;
+
     auto w = writer_factory.Build("flags.make");
 
     auto makefile = compiler->GenerateToolchain(w.get());
 
-    REQUIRE(makefile->Environments["CXX"].Value == "g++");
-    REQUIRE(makefile->Environments["AR"].Value == "ar qc");
+    REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
+    REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
     REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["LINKER"].Value == "g++");
+  }
+
+  SECTION("toolchain.make64") {
+    common::FLAGS_platform = common::Platform::k64;
+
+    auto w = writer_factory.Build("flags.make");
+
+    auto makefile = compiler->GenerateToolchain(w.get());
+
+    REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
+    REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
+    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
   SECTION("build.make") {
@@ -128,23 +146,33 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
     CHECK(include_toolchain_make.value().Fatal == true);
 
     // base->Sources = {"base1.cpp", "base2.cpp", "base3.cpp"};
-    auto base1_object = working_folder.Sub("library/base/base1.o").Stringify();
+    auto base1_object =
+        working_folder.Sub("DEBUG/library/base/base1.cpp.o").Stringify();
     auto base1_dep = MergeDependencies(makefile->Targets, base1_object);
     REQUIRE(utils::SameArray(
-        base1_dep, std::vector<std::string>{
-                       working_folder.Sub("flags.make").Stringify(),
-                       working_folder.Sub("toolchain.make").Stringify(),
-                       "~/Projects/test_project/library/base/base1.cpp"}));
+        base1_dep,
+        std::vector<std::string>{
+            working_folder.Sub("flags.make").Stringify(),
+            working_folder.Sub("toolchain.make").Stringify(),
+            "~/Projects/test_project/library/base/base1.cpp",
+            working_folder.Sub("library/base/base1.cpp.lint").Stringify(),
+        }));
 
     auto library_target =
-        working_folder.Sub(rule->ExportedFileName).Stringify();
+        working_folder.Sub("DEBUG").Sub(rule->ExportedFileName).Stringify();
     auto library_dep = MergeDependencies(makefile->Targets, library_target);
-    REQUIRE(utils::SameArray(
-        library_dep, std::vector<std::string>{
-                         working_folder.Sub("library/base/base1.o").Stringify(),
-                         working_folder.Sub("library/base/base2.o").Stringify(),
-                         working_folder.Sub("library/base/base3.o").Stringify(),
-                     }));
+    REQUIRE(
+        utils::SameArray(library_dep, std::vector<std::string>{
+                                          working_folder.Sub("DEBUG")
+                                              .Sub("library/base/base1.cpp.o")
+                                              .Stringify(),
+                                          working_folder.Sub("DEBUG")
+                                              .Sub("library/base/base2.cpp.o")
+                                              .Stringify(),
+                                          working_folder.Sub("DEBUG")
+                                              .Sub("library/base/base3.cpp.o")
+                                              .Stringify(),
+                                      }));
   }
 
   SECTION("view all") {
@@ -191,14 +219,30 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
                                  "-Imemory_inherit_include_directory"}));
   }
 
-  SECTION("toolchain.make") {
+  SECTION("toolchain.make32") {
+    common::FLAGS_platform = common::Platform::k32;
+
     auto w = writer_factory.Build("flags.make");
 
     auto makefile = compiler->GenerateToolchain(w.get());
 
-    REQUIRE(makefile->Environments["CXX"].Value == "g++");
-    REQUIRE(makefile->Environments["AR"].Value == "ar qc");
+    REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
+    REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
     REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["LINKER"].Value == "g++");
+  }
+
+  SECTION("toolchain.make64") {
+    common::FLAGS_platform = common::Platform::k64;
+
+    auto w = writer_factory.Build("flags.make");
+
+    auto makefile = compiler->GenerateToolchain(w.get());
+
+    REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
+    REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
+    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
   SECTION("build.make") {
@@ -229,30 +273,36 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
     CHECK(include_toolchain_make.value().Fatal == true);
 
     auto base1_object =
-        working_folder.Sub("library/memory/memory1.o").Stringify();
+        working_folder.Sub("DEBUG/library/memory/memory1.cpp.o").Stringify();
     auto base1_dep = MergeDependencies(makefile->Targets, base1_object);
     UNSCOPED_INFO(fmt::format(
         "dep: [{}]",
         utils::JoinString(", ", base1_dep.begin(), base1_dep.end())));
 
     REQUIRE(utils::SameArray(
-        base1_dep, std::vector<std::string>{
-                       working_folder.Sub("flags.make").Stringify(),
-                       working_folder.Sub("toolchain.make").Stringify(),
-                       "~/Projects/test_project/library/memory/memory1.cpp",
-                       "~/Projects/test_project/library/base/base.h",
-                   }));
+        base1_dep,
+        std::vector<std::string>{
+            working_folder.Sub("flags.make").Stringify(),
+            working_folder.Sub("toolchain.make").Stringify(),
+            "~/Projects/test_project/library/memory/memory1.cpp",
+            "~/Projects/test_project/library/base/base.h",
+            working_folder.Sub("library/memory/memory1.cpp.lint").Stringify(),
+        }));
 
     auto library_target =
-        working_folder.Sub(rule->ExportedFileName).Stringify();
+        working_folder.Sub("DEBUG").Sub(rule->ExportedFileName).Stringify();
     auto library_dep = MergeDependencies(makefile->Targets, library_target);
     REQUIRE(utils::SameArray(
         library_dep,
         std::vector<std::string>{
-            working_folder.Sub("library/memory/memory1.o").Stringify(),
-            working_folder.Sub("library/memory/memory2.o").Stringify(),
-            working_folder.Sub("library/memory/memory3.o").Stringify(),
-            working_folder.Sub("library/memory/sub/memory1.o").Stringify(),
+            working_folder.Sub("DEBUG/library/memory/memory1.cpp.o")
+                .Stringify(),
+            working_folder.Sub("DEBUG/library/memory/memory2.cpp.o")
+                .Stringify(),
+            working_folder.Sub("DEBUG/library/memory/memory3.cpp.o")
+                .Stringify(),
+            working_folder.Sub("DEBUG/library/memory/sub/memory1.cpp.o")
+                .Stringify(),
         }));
   }
 
