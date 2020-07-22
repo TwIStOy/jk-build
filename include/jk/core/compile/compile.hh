@@ -32,7 +32,8 @@ struct Compiler {
 struct CompilerFactory {
   static CompilerFactory *Instance();
 
-  Compiler *FindCompiler(const std::string &name) const;
+  Compiler *FindCompiler(const std::string &format,
+                         const std::string &rule_type) const;
 
  private:
   CompilerFactory();

@@ -26,9 +26,10 @@ std::list<std::string> DefaultPatternExpander::Expand(
   auto full_pattern = path.Sub(pattern).Stringify();
 
   int rv = glob(full_pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
-  if (rv != 0) {
+  if (rv != 0 && rv != GLOB_NOMATCH) {
     globfree(&glob_result);
-    JK_THROW(JKBuildError("Glob failed with erro code: {}", rv));
+    JK_THROW(JKBuildError("Glob failed with error code: {}, pattern: '{}'", rv,
+                          full_pattern));
   }
 
   std::list<std::string> result;

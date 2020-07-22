@@ -7,7 +7,7 @@
 
 namespace jk::cli {
 
-void EchoColor(args::Subparser &parser);
+void Generate(args::Subparser &parser);
 
 }  // namespace jk::cli
 

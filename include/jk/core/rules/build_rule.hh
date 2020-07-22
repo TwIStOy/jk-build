@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <functional>
 #include <initializer_list>
 #include <list>
 #include <string>
@@ -129,6 +130,8 @@ struct BuildRule : public utils::Stringifiable {
 
   common::AbsolutePath WorkingFolder(
       const common::AbsolutePath &build_root) const;
+
+  void RecursiveExecute(std::function<void(BuildRule *)> func);
 
   //! Which package where this build-rule is inside
   BuildPackage *Package;

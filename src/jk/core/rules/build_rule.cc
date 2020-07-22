@@ -19,11 +19,14 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/dependent.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
 namespace rules {
+
+static auto logger = utils::Logger("BuildRule");
 
 std::string RuleType::Stringify() const {
   std::vector<std::string> flags;
@@ -165,6 +168,8 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
     return;
   }
 
+  logger->info("<Rule: {}> build dependencies", FullQualifiedName());
+
   if (!rstk->Push(FullQualifiedName())) {
     JK_THROW(JKBuildError(
         "Build {}'s dependencies failed, this rule has been built before in "
@@ -179,34 +184,38 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
                             name));
     }
     Dependencies.push_back(dep_rule);
+    return dep_rule;
   };
 
   for (const auto &dep_str : dependencies_str_) {
     auto dep_id = ParseIdString(dep_str);
+    BuildRule *dep = nullptr;
 
     switch (dep_id.Position) {
       case RuleRelativePosition::kAbsolute: {
         assert(dep_id.PackageName);
         auto dep_pkg = factory->Package(dep_id.PackageName.get());
         dep_pkg->Initialize(pstk);
-        ResolveDepends(dep_pkg, dep_id.RuleName);
-      }
+        dep = ResolveDepends(dep_pkg, dep_id.RuleName);
+      } break;
       case RuleRelativePosition::kRelative: {
         assert(dep_id.PackageName);
 
         auto dep_pkg = factory->Package(
             fmt::format("{}/{}", Package->Name, dep_id.PackageName.get()));
         dep_pkg->Initialize(pstk);
-        ResolveDepends(dep_pkg, dep_id.RuleName);
-      }
+        dep = ResolveDepends(dep_pkg, dep_id.RuleName);
+      } break;
       case RuleRelativePosition::kBuiltin: {
         assert(false);
         JK_THROW(JKBuildError("not supported"));
-      }
+      } break;
       case RuleRelativePosition::kThis: {
-        ResolveDepends(Package, dep_id.RuleName);
-      }
+        dep = ResolveDepends(Package, dep_id.RuleName);
+      } break;
     }
+
+    dep->BuildDependencies(factory, pstk, rstk);
   }
 
   rstk->Pop();
@@ -217,6 +226,14 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
 common::AbsolutePath BuildRule::WorkingFolder(
     const common::AbsolutePath &build_root) const {
   return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@"));
+}
+
+void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func) {
+  func(this);
+
+  for (auto it : Dependencies) {
+    it->RecursiveExecute(func);
+  }
 }
 
 }  // namespace rules

@@ -9,6 +9,7 @@
 #include "fmt/core.h"
 #include "jk/cli/cli.hh"
 #include "jk/cli/echo_color.hh"
+#include "jk/cli/gen.hh"
 #include "jk/common/flags.hh"
 #include "jk/version.h"
 
@@ -24,6 +25,7 @@ Cli::Cli() {
                   std::cout << "JK version " << JK_VERSION << std::endl;
                 });
   NewSubCommand("echo_color", "Echo color", &EchoColor);
+  NewSubCommand("gen", "Generate...", &Generate);
   // Add commands
 }
 

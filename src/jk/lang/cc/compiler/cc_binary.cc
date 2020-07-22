@@ -78,7 +78,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     }
     auto binary_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
-    auto deps_and_flags = rule->ResolveDependenciesAndLdFlags();
+    auto deps_and_flags =
+        rule->ResolveDependenciesAndLdFlags(project->BuildRoot, build_type);
 
     auto binary_deps = all_objects;
     for (auto dep : rule->Dependencies) {

@@ -9,7 +9,7 @@
 #include "fmt/core.h"
 #include "jk/utils/str.hh"
 
-namespace jk {
+namespace jk::cli {
 
 #define COLOR(color) args::Flag color(color_group, #color, #color, {#color})
 
@@ -80,7 +80,7 @@ void EchoColor(args::Subparser &parser) {
             << std::endl;
 }
 
-}  // namespace jk
+}  // namespace jk::cli
 
 // vim: fdm=marker
 

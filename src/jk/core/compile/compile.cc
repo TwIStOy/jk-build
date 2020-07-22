@@ -12,6 +12,7 @@
 #include "jk/core/rules/package.hh"
 #include "jk/lang/cc/compiler/cc_binary.hh"
 #include "jk/lang/cc/compiler/cc_library.hh"
+#include "jk/lang/cc/compiler/cc_test.hh"
 #include "jk/lang/cc/source_file.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
@@ -34,9 +35,12 @@ CompilerFactory::CompilerFactory() {
       new lang::cc::MakefileCCLibraryCompiler);
   compilers_["Makefile.cc_binary"].reset(
       new lang::cc::MakefileCCBinaryCompiler{});
+  compilers_["Makefile.cc_test"].reset(new lang::cc::MakefileCCTestCompiler{});
 }
 
-Compiler *CompilerFactory::FindCompiler(const std::string &name) const {
+Compiler *CompilerFactory::FindCompiler(const std::string &format,
+                                        const std::string &rule_type) const {
+  auto name = "{}.{}"_format(format, rule_type);
   auto it = compilers_.find(name);
   if (it == compilers_.end()) {
     return nullptr;

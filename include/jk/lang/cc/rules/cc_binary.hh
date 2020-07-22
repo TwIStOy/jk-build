@@ -25,7 +25,9 @@ class CCBinary : public CCLibrary {
       : CCLibrary(package, name, types, type_name, name) {
   }
 
-  std::vector<std::string> ResolveDependenciesAndLdFlags() const;
+  std::vector<std::string> ResolveDependenciesAndLdFlags(
+      const common::AbsolutePath &build_root,
+      const std::string &build_type) const;
 };
 
 }  // namespace rules
