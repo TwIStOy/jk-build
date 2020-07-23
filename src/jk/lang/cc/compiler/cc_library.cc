@@ -118,7 +118,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
          "--progress-total={} \"Linking CXX static library {}\""_format(
              idx, source_files.size(), library_file.Stringify()),
          "@$(MKDIR) {}"_format(library_file.Path.parent_path().string()),
-         "$(AR) {} {}"_format(
+         "@$(AR) {} {}"_format(
              library_file.Stringify(),
              utils::JoinString(" ", all_objects.begin(), all_objects.end()))});
     clean_statements.push_back("$(RM) {}"_format(library_file.Stringify()));
@@ -150,7 +150,7 @@ void MakefileCCLibraryCompiler::LintSourceFile(
       "--progress-total={} \"Linting CXX file {}\""_format(
           idx, source_files_count,
           project->Resolve(source_file->FullQualifiedPath()));
-  auto lint_stmt = "$(CPPLINT) {}"_format(
+  auto lint_stmt = "@$(CPPLINT) {} >/dev/null"_format(
       project->Resolve(source_file->FullQualifiedPath()));
   auto mkdir_stmt =
       "@$(MKDIR) {}"_format(source_file->FullQualifiedLintPath(working_folder)
@@ -196,7 +196,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 
   if (source_file->IsCppSourceFile()) {
     auto build_stmt =
-        "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(CPP_FLAGS) "
+        "@$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(CPP_FLAGS) "
         "$({}_CPP_FLAGS)"
         " -o {} -c {}"_format(
             build_type,
@@ -210,7 +210,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
         dep, {print_stmt, mkdir_stmt, build_stmt});
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt =
-        "$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(C_FLAGS) "
+        "@$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(C_FLAGS) "
         "$({}_C_FLAGS)"
         " -o {} -c {}"_format(
             build_type,
