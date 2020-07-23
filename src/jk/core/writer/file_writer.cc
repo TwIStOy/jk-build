@@ -14,7 +14,7 @@ namespace jk::core::writer {
 FileWriter::FileWriter(const std::string &path) {
   fs::path p{path};
   common::AssumeFolder(p.parent_path());
-  ofs_ = std::ofstream(p);
+  ofs_ = std::ofstream(p.string());
 }
 
 Writer *FileWriter::WriteLine(const std::string &str) {

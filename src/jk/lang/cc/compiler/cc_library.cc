@@ -162,7 +162,7 @@ void MakefileCCLibraryCompiler::LintSourceFile(
           project->Resolve(source_file->FullQualifiedPath()).Stringify(),
           working_folder.Sub("toolchain.make").Stringify(),
       },
-      {print_stmt, lint_stmt, touch_stmt});
+      {print_stmt, lint_stmt, mkdir_stmt, touch_stmt});
 }
 
 void MakefileCCLibraryCompiler::MakeSourceFile(
@@ -243,9 +243,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
 
   makefile->DefineEnvironment("RM", "rm", "The command to remove a file.");
 
-  makefile->DefineEnvironment("CPPLINT", "jk cpplint");
+  makefile->DefineEnvironment("CPPLINT", "cpplint");
 
-  makefile->DefineEnvironment("MKDIR", "jk mkdir");
+  makefile->DefineEnvironment("MKDIR", "mkdir -p");
 
   makefile->Write(w);
   return makefile;

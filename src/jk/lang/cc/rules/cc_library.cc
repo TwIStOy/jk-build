@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "fmt/core.h"
+#include "jk/common/path.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
@@ -168,12 +169,14 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
 
     for (const auto &f : expanded) {
       if (excludes.find(f) == excludes.end()) {
-        result.push_back(f);
+        result.push_back(
+            fs::relative(f, project->Resolve(Package->Path).Path).string());
       }
     }
   }
 
   expanded_source_files_ = std::move(result);
+
   return expanded_source_files_.get();
 }
 

@@ -25,9 +25,7 @@ using BuildPackageMap =
     std::unordered_map<std::string, std::unique_ptr<BuildPackage>>;
 
 struct BuildPackage : public utils::Stringifiable {
-  BuildPackage(std::string name, common::ProjectRelativePath path)
-      : Name(std::move(name)), Path(std::move(path)) {
-  }
+  BuildPackage(std::string name, common::ProjectRelativePath path);
 
   //! A package's name is its relative path from project root.
   std::string Name;

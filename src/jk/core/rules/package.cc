@@ -12,12 +12,20 @@
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/script/script.hh"
+#include "jk/utils/logging.hh"
 #include "jk/utils/stack.hh"
 #include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
 namespace rules {
+
+static auto logger = utils::Logger("Package");
+
+BuildPackage::BuildPackage(std::string name, common::ProjectRelativePath path)
+    : Name(std::move(name)), Path(std::move(path)) {
+  logger->info("New BuildPackage({}, {})", Name, Path.Stringify());
+}
 
 void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
   if (initialized_) {

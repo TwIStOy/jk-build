@@ -7,17 +7,12 @@
 #include <string>
 #include <utility>
 
+#include "boost/filesystem.hpp"
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
-#if __GNUC__ >= 8
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
+namespace fs = boost::filesystem;
 
 namespace jk::common {
 

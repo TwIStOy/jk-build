@@ -55,10 +55,11 @@ find_package(OpenSSL REQUIRED)
 # --- boost section ---
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 if (Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
-  target_link_libraries(libjk PUBLIC ${Boost_LIBRARIES})
+  target_link_libraries(libjk PUBLIC ${Boost_FILESYSTEM_LIBRARIES})
+  target_link_libraries(libjk PUBLIC ${Boost_SYSTEM_LIBRARIES})
 endif()
 
 include_directories(.)
@@ -90,6 +91,8 @@ file(GLOB_RECURSE JK_TEST_FILES ./test/*.cc)
 target_sources(libjk PRIVATE ${JK_SOURCE_FILES})
 target_sources(jk PRIVATE src/main.cc)
 target_sources(jk_test PRIVATE ${JK_TEST_FILES})
+
+install(TARGETS jk)
 
 enable_testing()
 
