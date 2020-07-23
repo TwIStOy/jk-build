@@ -3,6 +3,7 @@
 
 #include "jk/lang/cc/source_file.hh"
 
+#include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
@@ -32,9 +33,11 @@ std::unordered_map<std::string, std::unique_ptr<SourceFile>>
 SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
                                core::rules::BuildPackage *package,
                                std::string filename) {
-  auto it = source_files_.find(package->Path.Sub(filename).Stringify());
+  auto key = package->Path.Sub(filename).Stringify();
+  auto it = source_files_.find(key);
   if (it == source_files_.end()) {
     auto x = new SourceFile(rule, package, std::move(filename));
+    source_files_[key].reset(x);
     return x;
   }
 
@@ -43,7 +46,10 @@ SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
 
 SourceFile::SourceFile(core::rules::BuildRule *rule,
                        core::rules::BuildPackage *package, std::string filename)
-    : Rule(rule), Package(package), FileName(std::move(filename)) {
+    : Rule(rule),
+      Package(package),
+      FileName(std::move(filename)),
+      ProgressNum(common::Counter()->Next()) {
   if (auto it = source_files_.find(FullQualifiedPath().Stringify());
       it != source_files_.end()) {
     JK_THROW(core::JKBuildError("Source file {} in different rules: {} and {}",

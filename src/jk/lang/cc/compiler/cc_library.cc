@@ -83,18 +83,19 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
   auto counter = common::Counter();
-  counter->Reset();
 
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
+  std::list<uint32_t> progress_num;
 
   // lint sources first
   for (const auto &filename : source_files) {
     auto source_file =
         lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-    LintSourceFile(project, source_file, build.get(), working_folder);
-    source_file->ProgressNum = counter->Next();
+    progress_num.push_back(
+        LintSourceFile(project, source_file, build.get(), working_folder));
+    progress_num.push_back(source_file->ProgressNum);
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
@@ -121,7 +122,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
         library_file.Stringify(), all_objects,
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
          "--progress-dir={} \"Linking CXX static library {}\""_format(
-             utils::JoinString(",", counter->Record), project->BuildRoot,
+             utils::JoinString(",", progress_num), project->BuildRoot,
              library_file.Stringify()),
          "@$(MKDIR) {}"_format(library_file.Path.parent_path().string()),
          "@$(AR) {} {}"_format(
@@ -146,15 +147,16 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   return build;
 }
 
-void MakefileCCLibraryCompiler::LintSourceFile(
+uint32_t MakefileCCLibraryCompiler::LintSourceFile(
     core::filesystem::ProjectFileSystem *project, SourceFile *source_file,
     core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
-  auto counter = common::Counter();
+  auto progress_num = common::Counter()->Next();
+
   auto print_stmt =
       "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "
       "--progress-dir={} \"Linting CXX file {}\""_format(
-          counter->Next(), project->BuildRoot,
+          progress_num, project->BuildRoot,
           project->Resolve(source_file->FullQualifiedPath()));
   auto lint_stmt = "@$(CPPLINT) {} >/dev/null"_format(
       project->Resolve(source_file->FullQualifiedPath()));
@@ -172,6 +174,7 @@ void MakefileCCLibraryCompiler::LintSourceFile(
           working_folder.Sub("toolchain.make").Stringify(),
       },
       {print_stmt, lint_stmt, mkdir_stmt, touch_stmt});
+  return progress_num;
 }
 
 void MakefileCCLibraryCompiler::MakeSourceFile(

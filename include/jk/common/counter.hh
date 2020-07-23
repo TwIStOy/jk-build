@@ -10,23 +10,16 @@ namespace jk::common {
 
 //! Global Counter
 struct _Counter {
-  std::vector<uint32_t> Record;
-
   inline uint32_t Now() {
     return Count;
   }
 
   inline uint32_t Next() {
-    auto ret = Count++;
-    Record.push_back(ret);
+    uint32_t ret = Count++;
     return ret;
   }
 
-  inline void Reset() {
-    Record.clear();
-  }
-
-  uint32_t Count;
+  uint32_t Count{0};
 };
 
 inline _Counter *Counter() {

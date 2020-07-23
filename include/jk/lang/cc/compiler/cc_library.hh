@@ -41,10 +41,11 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
       core::rules::CCLibrary *rule,
       core::filesystem::FileNamePatternExpander *expander) const;
 
-  void LintSourceFile(core::filesystem::ProjectFileSystem *project,
-                      SourceFile *source_file,
-                      core::output::UnixMakefile *build,
-                      const common::AbsolutePath &working_folder) const;
+  //! return `ProgressNum`
+  uint32_t LintSourceFile(core::filesystem::ProjectFileSystem *project,
+                          SourceFile *source_file,
+                          core::output::UnixMakefile *build,
+                          const common::AbsolutePath &working_folder) const;
 
   void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
                       const std::string &build_type, SourceFile *source_file,

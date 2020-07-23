@@ -51,17 +51,18 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
+  std::list<uint32_t> progress_num;
 
   auto counter = common::Counter();
-  counter->Reset();
 
   // lint files first
   for (const auto &filename : source_files) {
     auto source_file =
         lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-    LintSourceFile(project, source_file, build.get(), working_folder);
-    source_file->ProgressNum = counter->Next();
+    progress_num.push_back(
+        LintSourceFile(project, source_file, build.get(), working_folder));
+    progress_num.push_back(source_file->ProgressNum);
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
@@ -98,7 +99,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
         binary_file.Stringify(), binary_deps,
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
          "--progress-total={} \"Linking binary {}\""_format(
-             utils::JoinString(",", counter->Record), project->BuildRoot,
+             utils::JoinString(",", progress_num), project->BuildRoot,
              binary_file.Stringify()),
          "$(LINKER) -o {} {} {}"_format(
              binary_file.Stringify(),
