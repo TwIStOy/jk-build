@@ -49,6 +49,8 @@ struct SourceFile : public utils::Stringifiable {
 
   std::string Stringify() const final;
 
+  uint32_t ProgressNum;
+
  private:
   SourceFile(core::rules::BuildRule *rule, core::rules::BuildPackage *package,
              std::string filename);

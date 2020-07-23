@@ -42,14 +42,12 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
       core::filesystem::FileNamePatternExpander *expander) const;
 
   void LintSourceFile(core::filesystem::ProjectFileSystem *project,
-                      SourceFile *source_file, uint32_t idx,
-                      uint32_t source_files_count,
+                      SourceFile *source_file,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;
 
   void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
                       const std::string &build_type, SourceFile *source_file,
-                      uint32_t idx, uint32_t source_files_count,
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;

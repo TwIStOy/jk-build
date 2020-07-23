@@ -8,10 +8,13 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/utils/logging.hh"
 
 namespace jk {
 namespace lang {
 namespace cc {
+
+auto logger = utils::Logger("SourceFile");
 
 static std::unordered_set<std::string> CppExtensions = {
     ".cc", ".cpp", ".cxx", ".CC", ".CPP", ".CXX",

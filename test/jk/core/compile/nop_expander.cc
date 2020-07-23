@@ -6,8 +6,8 @@
 namespace jk::test {
 
 std::list<std::string> NopExpander::Expand(const std::string &pattern,
-                                           const common::AbsolutePath &) {
-  return std::list<std::string>{pattern};
+                                           const common::AbsolutePath &p) {
+  return std::list<std::string>{p.Sub(pattern).Stringify()};
 }
 
 }  // namespace jk::test

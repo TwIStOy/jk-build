@@ -4,12 +4,14 @@
 #include "jk/cli/gen.hh"
 
 #include <algorithm>
+#include <fstream>
 #include <iterator>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
 #include "args.hxx"
+#include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/compile/compile.hh"
 #include "jk/core/error.h"
@@ -99,6 +101,15 @@ void Generate(args::Subparser &parser) {
 
   for (const auto &rule : rules) {
     rule->RecursiveExecute(compile_rule);
+  }
+
+  {
+    std::ofstream ofs(project.BuildRoot.Sub("/progress.mark").Stringify());
+    if (ofs) {
+      ofs << common::Counter()->Count;
+    } else {
+      JK_THROW(core::JKBuildError("Could not write progress count file."));
+    }
   }
 }
 

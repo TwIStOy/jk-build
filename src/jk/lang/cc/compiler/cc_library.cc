@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/compile/compile.hh"
@@ -23,6 +24,7 @@
 #include "jk/lang/cc/rules/cc_test.hh"
 #include "jk/lang/cc/source_file.hh"
 #include "jk/utils/array.hh"
+#include "jk/utils/str.hh"
 
 namespace jk::lang::cc {
 
@@ -80,43 +82,47 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
+  auto counter = common::Counter();
+  counter->Reset();
+
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
 
+  // lint sources first
   for (const auto &filename : source_files) {
     auto source_file =
         lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-    LintSourceFile(project, source_file, 0, source_files.size(), build.get(),
-                   working_folder);
+    LintSourceFile(project, source_file, build.get(), working_folder);
+    source_file->ProgressNum = counter->Next();
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
   std::list<std::string> clean_statements;
 
+  auto library_progress_num = counter->Next();
   for (const auto &build_type : BuildTypes) {
-    auto idx = 0;
     std::list<std::string> all_objects;
 
     for (const auto &filename : source_files) {
       auto source_file =
           lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-      MakeSourceFile(project, build_type, source_file, idx, source_files.size(),
-                     all_dep_headers, build.get(), working_folder);
+      MakeSourceFile(project, build_type, source_file, all_dep_headers,
+                     build.get(), working_folder);
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());
-      idx++;
     }
+
     auto library_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
-
     build->AddTarget(
         library_file.Stringify(), all_objects,
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
-         "--progress-total={} \"Linking CXX static library {}\""_format(
-             idx, source_files.size(), library_file.Stringify()),
+         "--progress-dir={} \"Linking CXX static library {}\""_format(
+             utils::JoinString(",", counter->Record), project->BuildRoot,
+             library_file.Stringify()),
          "@$(MKDIR) {}"_format(library_file.Path.parent_path().string()),
          "@$(AR) {} {}"_format(
              library_file.Stringify(),
@@ -142,13 +148,13 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
 void MakefileCCLibraryCompiler::LintSourceFile(
     core::filesystem::ProjectFileSystem *project, SourceFile *source_file,
-    uint32_t idx, uint32_t source_files_count,
     core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
+  auto counter = common::Counter();
   auto print_stmt =
       "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "
-      "--progress-total={} \"Linting CXX file {}\""_format(
-          idx, source_files_count,
+      "--progress-dir={} \"Linting CXX file {}\""_format(
+          counter->Next(), project->BuildRoot,
           project->Resolve(source_file->FullQualifiedPath()));
   auto lint_stmt = "@$(CPPLINT) {} >/dev/null"_format(
       project->Resolve(source_file->FullQualifiedPath()));
@@ -170,8 +176,8 @@ void MakefileCCLibraryCompiler::LintSourceFile(
 
 void MakefileCCLibraryCompiler::MakeSourceFile(
     core::filesystem::ProjectFileSystem *project, const std::string &build_type,
-    SourceFile *source_file, uint32_t idx, uint32_t source_files_count,
-    const std::list<std::string> &headers, core::output::UnixMakefile *build,
+    SourceFile *source_file, const std::list<std::string> &headers,
+    core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
   build->AddTarget(
       source_file->FullQualifiedObjectPath(working_folder, build_type)
@@ -182,8 +188,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 
   auto print_stmt =
       "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "
-      "--progress-total={} \"Building CXX object {}\""_format(
-          idx, source_files_count,
+      "--progress-dir={} \"Building CXX object {}\""_format(
+          source_file->ProgressNum, project->BuildRoot,
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());
 

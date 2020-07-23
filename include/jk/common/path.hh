@@ -70,5 +70,9 @@ inline void AssumeFolder(const ProjectRelativePath &rp) {
   AssumeFolder(rp.Path);
 }
 
+uint32_t GetNumberOfFilesInDirectory(const AbsolutePath &path);
+
+void RemoveDirectory(const AbsolutePath &p);
+
 }  // namespace jk::common
 

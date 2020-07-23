@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "jk/common/counter.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/lang/cc/rules/cc_library_helper.hh"
 
@@ -51,30 +52,33 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
 
+  auto counter = common::Counter();
+  counter->Reset();
+
+  // lint files first
   for (const auto &filename : source_files) {
     auto source_file =
         lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-    LintSourceFile(project, source_file, 0, source_files.size(), build.get(),
-                   working_folder);
+    LintSourceFile(project, source_file, build.get(), working_folder);
+    source_file->ProgressNum = counter->Next();
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
   std::list<std::string> clean_statements;
 
+  auto binary_progress_num = counter->Next();
   for (const auto &build_type : BuildTypes) {
-    auto idx = 0;
     std::list<std::string> all_objects;
     for (const auto &filename : source_files) {
       auto source_file =
           lang::cc::SourceFile::Create(rule, rule->Package, filename);
 
-      MakeSourceFile(project, build_type, source_file, idx, source_files.size(),
-                     all_dep_headers, build.get(), working_folder);
+      MakeSourceFile(project, build_type, source_file, all_dep_headers,
+                     build.get(), working_folder);
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());
-      idx++;
     }
     auto binary_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
@@ -94,7 +98,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
         binary_file.Stringify(), binary_deps,
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
          "--progress-total={} \"Linking binary {}\""_format(
-             idx, source_files.size(), binary_file.Stringify()),
+             utils::JoinString(",", counter->Record), project->BuildRoot,
+             binary_file.Stringify()),
          "$(LINKER) -o {} {} {}"_format(
              binary_file.Stringify(),
              utils::JoinString(" ", all_objects.begin(), all_objects.end()),
