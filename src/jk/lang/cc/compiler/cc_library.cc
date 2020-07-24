@@ -80,6 +80,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   build->AddTarget("all", {"DEBUG"}, {}, "", true);
 
+  build->AddTarget("jk_force", {}, {}, "This target is always oudated.", true);
+
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
   auto counter = common::Counter();
@@ -118,6 +120,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
     auto library_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
+    build->AddTarget(library_file.Stringify(), {"jk_force"});
     build->AddTarget(
         library_file.Stringify(), all_objects,
         {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
@@ -389,10 +392,6 @@ static std::vector<std::string> PROFILING_CPPFLAGS_EXTRA = {
     "-fno-omit-frame-pointer",
 };
 // }}}
-
-// PROFILING_LDFLAGS = ${LDFLAGS} -Wl,--whole-archive \
-// -Wl,-Bstatic,-ltcmalloc_and_profiler
-// -Wl,--no-whole-archive -Wl,-Bdynamic
 
 #define DEFINE_FLAGS(tag)                                                 \
   makefile->DefineEnvironment(                                            \

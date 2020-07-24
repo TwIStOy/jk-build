@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "jk/common/path.hh"
@@ -131,7 +132,8 @@ struct BuildRule : public utils::Stringifiable {
   common::AbsolutePath WorkingFolder(
       const common::AbsolutePath &build_root) const;
 
-  void RecursiveExecute(std::function<void(BuildRule *)> func);
+  void RecursiveExecute(std::function<void(BuildRule *)> func,
+                        std::unordered_set<std::string> *recorder = nullptr);
 
   //! Which package where this build-rule is inside
   BuildPackage *Package;

@@ -7,6 +7,10 @@ set(DEFAULT_CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PYBIND11_CPP_STANDARD -std=c++1z)
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
+
 # set(CMAKE_CXX_CPPLINT "cpplint")
 
 # include(CodeCoverage)

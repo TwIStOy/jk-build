@@ -111,7 +111,13 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
     JK_THROW(JKBuildError("unexpected circular dependency"));
   }
 
+  std::reverse(std::begin(after_sorted), std::end(after_sorted));
   topological_sorting_result_ = after_sorted;
+  logger->info(
+      "after topological sort: [{}]",
+      utils::JoinString(", ", after_sorted, [](const BuildRule *const rule) {
+        return rule->FullQualifiedName();
+      }));
   return after_sorted;
 }
 
@@ -228,11 +234,20 @@ common::AbsolutePath BuildRule::WorkingFolder(
   return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@"));
 }
 
-void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func) {
+void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,
+                                 std::unordered_set<std::string> *recorder) {
+  if (recorder) {
+    auto it = recorder->find(this->FullQualifiedName());
+    if (it != recorder->end()) {
+      return;
+    }
+    recorder->insert(this->FullQualifiedName());
+  }
+
   func(this);
 
   for (auto it : Dependencies) {
-    it->RecursiveExecute(func);
+    it->RecursiveExecute(func, recorder);
   }
 }
 

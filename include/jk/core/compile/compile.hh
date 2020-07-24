@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/expander.hh"
@@ -27,6 +28,12 @@ struct Compiler {
                            &filesystem::kDefaultPatternExpander) const = 0;
 
   virtual ~Compiler() = default;
+};
+
+struct MakefileGlobalCompiler {
+  void Compile(filesystem::ProjectFileSystem *project,
+               writer::WriterFactory *wf,
+               const std::vector<rules::BuildRule *> &rules);
 };
 
 struct CompilerFactory {

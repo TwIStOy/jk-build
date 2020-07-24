@@ -37,7 +37,6 @@ SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
   auto it = source_files_.find(key);
   if (it == source_files_.end()) {
     auto x = new SourceFile(rule, package, std::move(filename));
-    source_files_[key].reset(x);
     return x;
   }
 
@@ -56,7 +55,8 @@ SourceFile::SourceFile(core::rules::BuildRule *rule,
                                 FullQualifiedPath(), rule->FullQualifiedName(),
                                 it->second->Rule->FullQualifiedName()));
   }
-  source_files_[FileName].reset(this);
+
+  source_files_[package->Path.Sub(FileName).Stringify()].reset(this);
 }
 
 common::ProjectRelativePath SourceFile::FullQualifiedPath() const {

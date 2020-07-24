@@ -111,6 +111,10 @@ void Generate(args::Subparser &parser) {
       JK_THROW(core::JKBuildError("Could not write progress count file."));
     }
   }
+
+  // generate global makefile
+  core::compile::MakefileGlobalCompiler global;
+  global.Compile(&project, &writer_factory, rules);
 }
 
 }  // namespace jk::cli

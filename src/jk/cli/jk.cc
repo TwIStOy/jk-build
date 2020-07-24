@@ -10,6 +10,7 @@
 #include "jk/cli/cli.hh"
 #include "jk/cli/echo_color.hh"
 #include "jk/cli/gen.hh"
+#include "jk/cli/progress.hh"
 #include "jk/common/flags.hh"
 #include "jk/version.h"
 
@@ -26,6 +27,7 @@ Cli::Cli() {
                 });
   NewSubCommand("echo_color", "Echo color", &EchoColor);
   NewSubCommand("gen", "Generate...", &Generate);
+  NewSubCommand("start_progress", "Start progres...", &StartProgress);
   // Add commands
 }
 
