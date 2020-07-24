@@ -104,6 +104,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   std::list<std::string> clean_statements;
 
   auto library_progress_num = counter->Next();
+  progress_num.push_back(library_progress_num);
   for (const auto &build_type : BuildTypes) {
     std::list<std::string> all_objects;
 

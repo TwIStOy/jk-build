@@ -122,6 +122,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   std::list<std::string> clean_statements;
 
   auto binary_progress_num = counter->Next();
+  progress_num.push_back(binary_progress_num);
   for (const auto &build_type : BuildTypes) {
     std::list<std::string> all_objects;
     for (const auto &filename : source_files) {
