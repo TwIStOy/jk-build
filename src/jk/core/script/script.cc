@@ -12,6 +12,7 @@
 #include <iterator>
 
 #include "jk/core/rules/build_rule.hh"
+#include "jk/external/rules/external_project.hh"
 #include "jk/lang/cc/rules/cc_binary.hh"
 #include "jk/lang/cc/rules/cc_library.hh"
 #include "jk/lang/cc/rules/cc_test.hh"
@@ -34,6 +35,9 @@ void ScriptInterpreter::HookFunctions() {
   RegHook("cc_library", &rules::NewRuleFromScript<rules::CCLibrary>);
   RegHook("cc_binary", &rules::NewRuleFromScript<rules::CCBinary>);
   RegHook("cc_test", &rules::NewRuleFromScript<rules::CCTest>);
+  RegHook("shell_script", &rules::NewRuleFromScript<external::ExternalProject>);
+  RegHook("external_project",
+          &rules::NewRuleFromScript<external::ExternalProject>);
 }
 
 pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {

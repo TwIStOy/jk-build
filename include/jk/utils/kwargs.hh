@@ -43,9 +43,23 @@ class Kwargs final : public Stringifiable {
 
   std::string Stringify() const final;
 
+  MapType::const_iterator Find(const std::string &str) const;
+
+  MapType::const_iterator Begin() const;
+
+  MapType::const_iterator End() const;
+
  private:
   std::unordered_map<std::string, pybind11::object> value_;
 };
+
+inline Kwargs::MapType::const_iterator Kwargs::Begin() const {
+  return value_.begin();
+}
+
+inline Kwargs::MapType::const_iterator Kwargs::End() const {
+  return value_.end();
+}
 
 }  // namespace utils
 }  // namespace jk

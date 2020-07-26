@@ -136,6 +136,11 @@ bool Kwargs::BooleanOptional(const std::string &name,
   return it->second.cast<bool>();
 }
 
+Kwargs::MapType::const_iterator Kwargs::Find(const std::string &str) const {
+  auto it = value_.find(str);
+  return it;
+}
+
 }  // namespace utils
 }  // namespace jk
 
