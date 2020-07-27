@@ -70,6 +70,13 @@ common::AbsolutePath SourceFile::FullQualifiedObjectPath(
   return common::AbsolutePath{p};
 }
 
+common::AbsolutePath SourceFile::FullQualifiedDotDPath(
+    const common::AbsolutePath &new_root, const std::string &build_type) const {
+  auto p = new_root.Path / build_type / Package->Path.Sub(FileName).Path;
+  p = p.parent_path() / (p.filename().string() + ".d");
+  return common::AbsolutePath{p};
+}
+
 common::AbsolutePath SourceFile::FullQualifiedLintPath(
     const common::AbsolutePath &new_root) const {
   auto p = new_root.Path / Package->Path.Sub(FileName).Path;

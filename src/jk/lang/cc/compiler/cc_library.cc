@@ -190,11 +190,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
       {working_folder.Sub("flags.make").Stringify(),
        working_folder.Sub("toolchain.make").Stringify(),
        source_file->FullQualifiedLintPath(working_folder).Stringify()});
-  auto dot_d_file =
-      source_file->FullQualifiedObjectPath(working_folder, build_type);
-  dot_d_file.Path = dot_d_file.Path.parent_path() /
-                    (dot_d_file.Path.filename().string() + ".o");
-  build->Include(dot_d_file.Stringify());
+  build->Include(source_file->FullQualifiedDotDPath(working_folder, build_type)
+                     .Stringify());
 
   auto print_stmt =
       "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "

@@ -38,6 +38,10 @@ struct SourceFile : public utils::Stringifiable {
       const common::AbsolutePath &new_root,
       const std::string &build_type) const;
 
+  common::AbsolutePath FullQualifiedDotDPath(
+      const common::AbsolutePath &new_root,
+      const std::string &build_type) const;
+
   common::ProjectRelativePath FullQualifiedObjectPath() const;
 
   common::AbsolutePath FullQualifiedLintPath(
