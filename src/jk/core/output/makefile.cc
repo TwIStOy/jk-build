@@ -7,6 +7,7 @@
 #include <string>
 
 #include "jk/common/flags.hh"
+#include "jk/core/builder/custom_command.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/writer/writer.hh"
 #include "jk/version.h"
@@ -29,7 +30,7 @@ void UnixMakefile::Include(fs::path file_path, std::string comments,
 }
 
 void UnixMakefile::AddTarget(std::string target, std::list<std::string> deps,
-                             std::list<std::string> statements,
+                             builder::CustomCommandLines statements,
                              std::string comments, bool phony) {
   Targets.push_back(TargetItem{std::move(target), std::move(deps),
                                std::move(statements), std::move(comments),

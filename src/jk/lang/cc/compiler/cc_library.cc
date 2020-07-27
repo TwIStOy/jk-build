@@ -13,6 +13,7 @@
 #include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
 #include "jk/common/path.hh"
+#include "jk/core/builder/custom_command.hh"
 #include "jk/core/compile/compile.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/output/makefile.hh"
@@ -99,7 +100,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
-  std::list<std::string> clean_statements;
+  core::builder::CustomCommandLines clean_statements;
 
   auto library_progress_num = counter->Next();
   progress_num.push_back(library_progress_num);
@@ -120,19 +121,32 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     auto library_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
     build->AddTarget(library_file.Stringify(), {"jk_force"});
+    auto ar_stmt = core::builder::CustomCommandLine::Make({
+        "@$(AR)",
+        library_file.Stringify(),
+    });
+    std::copy(std::begin(all_objects), std::end(all_objects),
+              std::back_inserter(ar_stmt));
+
     build->AddTarget(
         library_file.Stringify(), all_objects,
-        {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
-         "--progress-dir={} \"Linking CXX static library {}\""_format(
-             utils::JoinString(",", progress_num), project->BuildRoot,
-             library_file.Stringify()),
-         "@$(MKDIR) {}"_format(library_file.Path.parent_path().string()),
-         "@$(AR) {} {}"_format(
-             library_file.Stringify(),
-             utils::JoinString(" ", all_objects.begin(), all_objects.end()))});
-    clean_statements.push_back("$(RM) {}"_format(library_file.Stringify()));
+        core::builder::CustomCommandLines::Multiple(
+            core::builder::CustomCommandLine::Make(
+                {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
+                 "--progress-num={}"_format(
+                     utils::JoinString(",", progress_num)),
+                 "--progress-dir={}"_format(project->BuildRoot),
+                 "Linking CXX static library {}"_format(
+                     library_file.Stringify())}),
+            core::builder::CustomCommandLine::Make(
+                {"@$(MKDIR)", library_file.Path.parent_path().string()}),
+            ar_stmt));
+
+    clean_statements.push_back(core::builder::CustomCommandLine::Make(
+        {"$(RM)", library_file.Stringify()}));
     for (const auto &it : all_objects) {
-      clean_statements.push_back("$(RM) {}"_format(it));
+      clean_statements.push_back(
+          core::builder::CustomCommandLine::Make({"$(RM)", it}));
     }
 
     auto build_target = working_folder.Sub(build_type).Sub("build").Stringify();
@@ -155,19 +169,23 @@ uint32_t MakefileCCLibraryCompiler::LintSourceFile(
     const common::AbsolutePath &working_folder) const {
   auto progress_num = common::Counter()->Next();
 
-  auto print_stmt =
-      "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "
-      "--progress-dir={} \"Linting CXX file {}\""_format(
-          progress_num, project->BuildRoot,
-          project->Resolve(source_file->FullQualifiedPath()));
-  auto lint_stmt = "@$(CPPLINT) {} >/dev/null"_format(
-      project->Resolve(source_file->FullQualifiedPath()));
-  auto mkdir_stmt =
-      "@$(MKDIR) {}"_format(source_file->FullQualifiedLintPath(working_folder)
-                                .Path.parent_path()
-                                .string());
-  auto touch_stmt = "@touch {}"_format(
-      source_file->FullQualifiedLintPath(working_folder).Stringify());
+  auto print_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(PRINT)", "--switch=$(COLOR)", "--green",
+       "--progress-num={}"_format(progress_num),
+       "--progress-dir={}"_format(project->BuildRoot),
+       "Linting CXX file {}"_format(
+           project->Resolve(source_file->FullQualifiedPath()))});
+  auto lint_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(CPPLINT)",
+       project->Resolve(source_file->FullQualifiedPath()).Stringify(),
+       ">/dev/null"});
+  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(MKDIR)", source_file->FullQualifiedLintPath(working_folder)
+                        .Path.parent_path()
+                        .string()});
+  auto touch_stmt = core::builder::CustomCommandLine::Make(
+      {"@touch",
+       source_file->FullQualifiedLintPath(working_folder).Stringify()});
 
   build->AddTarget(
       source_file->FullQualifiedLintPath(working_folder).Stringify(),
@@ -175,7 +193,8 @@ uint32_t MakefileCCLibraryCompiler::LintSourceFile(
           project->Resolve(source_file->FullQualifiedPath()).Stringify(),
           working_folder.Sub("toolchain.make").Stringify(),
       },
-      {print_stmt, lint_stmt, mkdir_stmt, touch_stmt});
+      core::builder::CustomCommandLines::Multiple(print_stmt, lint_stmt,
+                                                  mkdir_stmt, touch_stmt));
   return progress_num;
 }
 
@@ -193,48 +212,49 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
   build->Include(source_file->FullQualifiedDotDPath(working_folder, build_type)
                      .Stringify());
 
-  auto print_stmt =
-      "@$(PRINT) --switch=$(COLOR) --green --progress-num={} "
-      "--progress-dir={} \"Building CXX object {}\""_format(
-          source_file->ProgressNum, project->BuildRoot,
-          source_file->FullQualifiedObjectPath(working_folder, build_type)
-              .Stringify());
+  auto print_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(PRINT)", "--switch=$(COLOR)", "--green",
+       "--progress-num={}"_format(source_file->ProgressNum),
+       "--progress-dir={}"_format(project->BuildRoot),
+       "Building CXX object {}"_format(
+           source_file->FullQualifiedObjectPath(working_folder, build_type))});
 
   auto dep = headers;
   dep.push_back(project->Resolve(source_file->FullQualifiedPath()).Stringify());
-  auto mkdir_stmt = "@$(MKDIR) {}"_format(
-      source_file->FullQualifiedObjectPath(working_folder, build_type)
-          .Path.parent_path()
-          .string());
+  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(MKDIR)",
+       source_file->FullQualifiedObjectPath(working_folder, build_type)
+           .Path.parent_path()
+           .string()});
 
   if (source_file->IsCppSourceFile()) {
-    auto build_stmt =
-        "@$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(CPP_FLAGS) "
-        "$({}_CPP_FLAGS)"
-        " -o {} -c {}"_format(
-            build_type,
-            source_file->FullQualifiedObjectPath(working_folder, build_type)
-                .Stringify(),
-            project->Resolve(source_file->FullQualifiedPath()).Stringify());
+    auto build_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+         "$(CPP_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
+         source_file->FullQualifiedObjectPath(working_folder, build_type)
+             .Stringify(),
+         "-c", project->Resolve(source_file->FullQualifiedPath()).Stringify()});
 
     build->AddTarget(
         source_file->FullQualifiedObjectPath(working_folder, build_type)
             .Stringify(),
-        dep, {print_stmt, mkdir_stmt, build_stmt});
+        dep,
+        core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
+                                                    build_stmt));
   } else if (source_file->IsCSourceFile()) {
-    auto build_stmt =
-        "@$(CXX) $(CXX_DEFINE) $(CXX_INCLUDE) $(CXX_FLAGS) $(C_FLAGS) "
-        "$({}_C_FLAGS)"
-        " -o {} -c {}"_format(
-            build_type,
-            source_file->FullQualifiedObjectPath(working_folder, build_type)
-                .Stringify(),
-            project->Resolve(source_file->FullQualifiedPath()).Stringify());
+    auto build_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+         "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
+         source_file->FullQualifiedObjectPath(working_folder, build_type)
+             .Stringify(),
+         "-c", project->Resolve(source_file->FullQualifiedPath()).Stringify()});
 
     build->AddTarget(
         source_file->FullQualifiedObjectPath(working_folder, build_type)
             .Stringify(),
-        dep, {print_stmt, mkdir_stmt, build_stmt});
+        dep,
+        core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
+                                                    build_stmt));
   } else {
     JK_THROW(core::JKBuildError(
         "unknown file extension: {}",

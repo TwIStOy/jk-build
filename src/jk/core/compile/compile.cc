@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "fmt/core.h"
+#include "jk/cli/cli.hh"
+#include "jk/core/builder/custom_command.hh"
 #include "jk/core/error.h"
 #include "jk/core/output/makefile.hh"
 #include "jk/core/rules/build_rule.hh"
@@ -69,9 +71,10 @@ void MakefileGlobalCompiler::Compile(
 
   makefile->AddTarget(
       "pre", {},
-      {fmt::format(
-          "@$(JK_COMMAND) start_progress --progress-mark={} --progress-dir={}",
-          project->BuildRoot.Sub("progress.mark"), project->BuildRoot)},
+      builder::CustomCommandLines::Single(
+          {"@$(JK_COMMAND)", "start_progress",
+           "--progress-mark={}"_format(project->BuildRoot.Sub("progress.mark")),
+           "--progress-dir={}"_format(project->BuildRoot)}),
       "", true);
   makefile->AddTarget("external", {}, {}, "", true);
 
@@ -88,22 +91,18 @@ void MakefileGlobalCompiler::Compile(
     auto working_folder = rule->WorkingFolder(project->BuildRoot);
     if (rule->Type.IsCC()) {
       for (const auto &output_format : formats) {
-        auto build_stmt =
-            fmt::format("@make -f {} {}", working_folder.Sub("build.make"),
-                        output_format.second);
-
         std::list<std::string> deps;
         for (auto dep : rule->Dependencies) {
           deps.push_back(dep->FullQualifiedTarget(output_format.first));
         }
         deps.push_back("pre");
-        makefile->AddTarget(rule->FullQualifiedTarget(output_format.first),
-                            deps, {build_stmt});
+        makefile->AddTarget(
+            rule->FullQualifiedTarget(output_format.first), deps,
+            builder::CustomCommandLines::Single(
+                {"@make", "-f", working_folder.Sub("build.make").Stringify(),
+                 output_format.second}));
       }
     } else {
-      auto build_stmt = fmt::format("@make -f {} {}",
-                                    working_folder.Sub("build.make"), "build");
-
       std::list<std::string> deps;
       for (auto dep : rule->Dependencies) {
         if (!dep->Type.IsExternal()) {
@@ -113,11 +112,33 @@ void MakefileGlobalCompiler::Compile(
         deps.push_back(dep->FullQualifiedTarget());
       }
       deps.push_back("pre");
-      makefile->AddTarget(rule->FullQualifiedTarget(), deps, {build_stmt}, "",
-                          true);
+      makefile->AddTarget(
+          rule->FullQualifiedTarget(), deps,
+          builder::CustomCommandLines::Single(
+              {"@make", "-f", working_folder.Sub("build.make").Stringify(),
+               "build"}),
+          "", true);
       makefile->AddTarget("external", {rule->FullQualifiedTarget()});
     }
   };
+
+  std::unordered_set<std::string> packages;
+  for (auto rule : rules) {
+    packages.insert("{}/BUILD"_format(rule->Package->Name));
+    auto deps = rule->DependenciesInOrder();
+    for (auto dep : deps) {
+      packages.insert("{}/BUILD"_format(dep->Package->Name));
+    }
+  }
+
+  std::string regen_stmt = "$(JK_COMMAND) {}"_format(utils::JoinString(
+      " ", cli::CommandLineArguments, [](const std::string &str) {
+        return utils::EscapeForShellStyle(str);
+      }));
+
+  makefile->AddTarget(
+      "regen", std::list<std::string>{std::begin(packages), std::end(packages)},
+      {}, "", true);
 
   for (auto rule : rules) {
     rule->RecursiveExecute(gen_target);

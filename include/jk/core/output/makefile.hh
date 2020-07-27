@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "jk/core/builder/custom_command.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/writer/writer.hh"
 
@@ -25,7 +26,7 @@ struct UnixMakefile {
                bool fatal = false);
 
   void AddTarget(std::string target, std::list<std::string> deps,
-                 std::list<std::string> statements = {},
+                 builder::CustomCommandLines statements = {},
                  std::string Comments = "", bool phony = false);
 
   void Write(writer::Writer *writer) const;
@@ -52,7 +53,7 @@ struct UnixMakefile {
   struct TargetItem {
     std::string TargetName;
     std::list<std::string> Dependencies;
-    std::list<std::string> Statements;
+    core::builder::CustomCommandLines Statements;
     std::string Comments;
     bool Phony;
   };

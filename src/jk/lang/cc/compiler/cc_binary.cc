@@ -10,6 +10,7 @@
 
 #include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
+#include "jk/core/builder/custom_command.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/lang/cc/rules/cc_library_helper.hh"
 #include "jk/utils/array.hh"
@@ -122,7 +123,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
-  std::list<std::string> clean_statements;
+  core::builder::CustomCommandLines clean_statements;
 
   auto binary_progress_num = counter->Next();
   progress_num.push_back(binary_progress_num);
@@ -149,20 +150,30 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
       std::copy(std::begin(names), std::end(names),
                 std::back_inserter(binary_deps));
     }
+    auto print_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
+         "--progress-num={}"_format(utils::JoinString(",", progress_num)),
+         "--progress-dir={}"_format(project->BuildRoot),
+         "Linking binary {}"_format(binary_file.Stringify())});
+
+    auto lint_stmt = core::builder::CustomCommandLine::Make({"@$(LINKER)"});
+    std::copy(std::begin(all_objects), std::end(all_objects),
+              std::back_inserter(lint_stmt));
+    std::copy(std::begin(deps_and_flags), std::end(deps_and_flags),
+              std::back_inserter(lint_stmt));
+    lint_stmt.push_back("-g");
+    lint_stmt.push_back("${}{}_LDFLAGS{}"_format("{", build_type, "}"));
+    lint_stmt.push_back("-o");
+    lint_stmt.push_back(binary_file.Stringify());
+
     build->AddTarget(
         binary_file.Stringify(), binary_deps,
-        {"@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
-         "--progress-dir={} \"Linking binary {}\""_format(
-             utils::JoinString(",", progress_num), project->BuildRoot,
-             binary_file.Stringify()),
-         "$(LINKER) {} {} -g ${}{}_LDFLAGS{} -o {} "_format(
-             utils::JoinString(" ", all_objects.begin(), all_objects.end()),
-             utils::JoinString(" ", deps_and_flags.begin(),
-                               deps_and_flags.end()),
-             "{", build_type, "}", binary_file.Stringify())});
-    clean_statements.push_back("$(RM) {}"_format(binary_file.Stringify()));
+        core::builder::CustomCommandLines::Multiple(print_stmt, lint_stmt));
+    clean_statements.push_back(core::builder::CustomCommandLine::Make(
+        {"@$(RM)", "{}"_format(binary_file.Stringify())}));
     for (const auto &obj : all_objects) {
-      clean_statements.push_back("$(RM) {}"_format(obj));
+      clean_statements.push_back(
+          core::builder::CustomCommandLine::Make({"@$(RM)", obj}));
     }
 
     auto build_target = working_folder.Sub(build_type).Sub("build").Stringify();

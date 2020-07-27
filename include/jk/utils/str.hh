@@ -88,6 +88,8 @@ inline std::string Replace(const std::string &old, char from, const T &to) {
   return oss.str();
 }
 
+std::string EscapeForShellStyle(const std::string &raw);
+
 }  // namespace utils
 }  // namespace jk
 

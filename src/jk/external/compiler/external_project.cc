@@ -7,6 +7,7 @@
 
 #include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
+#include "jk/core/builder/custom_command.hh"
 #include "jk/core/output/makefile.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/external/rules/external_project.hh"
@@ -38,17 +39,27 @@ void MakefileExternalProjectCompiler::Compile(
                       true);
 
   auto script_target = working_folder.Sub("build").Stringify();
-  auto print_stmt = fmt::format(
-      "@$(PRINT) --switch=$(COLOR) --green --bold --progress-num={} "
-      "--progress-dir={} \"Installing External Project {}\"",
-      common::Counter()->Next(), project->BuildRoot, rule->FullQualifiedName());
-  auto mkdir_stmt =
-      "@$(MKDIR) {}"_format(project->ProjectRoot.Sub(ExternalInstalledPrefix));
-  auto run_stmt = fmt::format(
-      "@{}/{} {}", project->Resolve(rule->Package->Path), rule->Script,
-      common::FLAGS_platform == common::Platform::k32 ? 32 : 64);
+  auto print_stmt = core::builder::CustomCommandLine::Make({
+      "@$(PRINT)",
+      "--switch=$(COLOR)",
+      "--green",
+      "--bold",
+      "--progress-num={}"_format(common::Counter()->Next()),
+      "--progress-dir={}"_format(project->BuildRoot),
+      "Installing External Project {}"_format(rule->FullQualifiedName()),
+  });
+
+  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(MKDIR)",
+       project->ProjectRoot.Sub(ExternalInstalledPrefix).Stringify()});
+
+  auto run_stmt = core::builder::CustomCommandLine::Make(
+      {"@{}/{}"_format(project->Resolve(rule->Package->Path), rule->Script),
+       "{}"_format(common::FLAGS_platform == common::Platform::k32 ? 32 : 64)});
+
   makefile->AddTarget(script_target, {"jk_force"},
-                      {print_stmt, mkdir_stmt, run_stmt});
+                      core::builder::CustomCommandLines::Multiple(
+                          print_stmt, mkdir_stmt, run_stmt));
 
   makefile->AddTarget("build", {script_target}, {}, "", true);
 

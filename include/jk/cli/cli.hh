@@ -6,10 +6,13 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "args.hxx"
 
 namespace jk::cli {
+
+extern std::vector<std::string> CommandLineArguments;
 
 struct SubCommand {
   std::string Name;
