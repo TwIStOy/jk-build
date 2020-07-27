@@ -39,6 +39,12 @@ std::string RuleType::Stringify() const {
   if (value_ & static_cast<uint8_t>(RuleTypeEnum::kTest)) {
     flags.push_back("test");
   }
+  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kExternal)) {
+    flags.push_back("external");
+  }
+  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kCC)) {
+    flags.push_back("cc");
+  }
   return "RuleType [{}]"_format(
       utils::JoinString("|", flags.begin(), flags.end()));
 }
@@ -160,6 +166,14 @@ BuildRule::BuildRule(BuildPackage *package, std::string name,
 
 std::string BuildRule::FullQualifiedName() const {
   return fmt::format("{}/{}", Package->Name, Name);
+}
+
+std::string BuildRule::FullQualifiedTarget(const std::string &output) const {
+  if (Type.IsCC()) {
+    return fmt::format("{}/{}", FullQualifiedName(), output);
+  } else {
+    return fmt::format("{}/build", FullQualifiedName());
+  }
 }
 
 void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace jk::common {
 
@@ -16,6 +17,8 @@ enum class Platform {
 };
 
 extern Platform FLAGS_platform;
+
+extern std::vector<std::string> FLAGS_BuildTypes;
 
 }  // namespace jk::common
 

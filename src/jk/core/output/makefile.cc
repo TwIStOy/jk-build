@@ -6,6 +6,7 @@
 #include <list>
 #include <string>
 
+#include "jk/common/flags.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/writer/writer.hh"
 #include "jk/version.h"
@@ -50,6 +51,12 @@ void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
 
   DefineEnvironment("PRINT", "jk echo_color");
+
+  if (common::FLAGS_platform == common::Platform::k32) {
+    DefineEnvironment("PLATFORM", "32");
+  } else {
+    DefineEnvironment("PLATFORM", "64");
+  }
 }
 
 static const char *CommonHeader[] = {

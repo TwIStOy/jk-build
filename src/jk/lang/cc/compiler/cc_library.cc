@@ -28,8 +28,6 @@
 
 namespace jk::lang::cc {
 
-std::vector<std::string> BuildTypes = {"DEBUG", "RELEASE", "PROFILING"};
-
 std::string MakefileCCLibraryCompiler::Name() const {
   return "Makefile.cc_library";
 }
@@ -105,7 +103,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   auto library_progress_num = counter->Next();
   progress_num.push_back(library_progress_num);
-  for (const auto &build_type : BuildTypes) {
+  for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
 
     for (const auto &filename : source_files) {
@@ -408,12 +406,6 @@ static std::vector<std::string> PROFILING_CPPFLAGS_EXTRA = {
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
     core::writer::Writer *w, core::rules::CCLibrary *rule) const {
   auto makefile = std::make_unique<core::output::UnixMakefile>("flags.make");
-
-  if (common::FLAGS_platform == common::Platform::k32) {
-    makefile->DefineEnvironment("PLATFORM", "32");
-  } else {
-    makefile->DefineEnvironment("PLATFORM", "64");
-  }
 
   makefile->DefineEnvironment(
       "C_FLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CFlags)));

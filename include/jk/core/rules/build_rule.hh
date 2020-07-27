@@ -14,6 +14,7 @@
 
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
+#include "jk/core/filesystem/project.hh"
 #include "jk/utils/kwargs.hh"
 #include "jk/utils/stack.hh"
 #include "jk/utils/str.hh"
@@ -37,6 +38,7 @@ enum class RuleTypeEnum : uint8_t {
   kBinary   = 1 << 1,
   kTest     = 1 << 2,
   kExternal = 1 << 3,
+  kCC       = 1 << 4,
 };
 // clang-format on
 
@@ -62,12 +64,13 @@ struct RuleType final : public utils::Stringifiable {
   TYPE_SET_GETTER(Binary);
   TYPE_SET_GETTER(Test);
   TYPE_SET_GETTER(External);
+  TYPE_SET_GETTER(CC);
 
   // inherited from |utils::Stringifiable|
   std::string Stringify() const final;
 
  private:
-  uint8_t value_;
+  uint8_t value_{0};
 };
 
 #undef TYPE_SET_GETTER
@@ -83,6 +86,10 @@ struct BuildRule : public utils::Stringifiable {
   //! Return the rule's full qualifed name. This named will automatically be
   //! converted into the rules folder name, just like cmake does.
   std::string FullQualifiedName() const;
+
+  //! Return the rule's full qualifed name. This named will automatically be
+  //! converted into the rules folder name, just like cmake does.
+  std::string FullQualifiedTarget(const std::string &output = "") const;
 
   //! After dependencies has been built, this filed will be available
   //! pstk: package name stack
@@ -109,7 +116,9 @@ struct BuildRule : public utils::Stringifiable {
 
   //! Returns exported names. Other rules which depend on this, will
   //! automatically depend on all exported files.
-  virtual std::vector<std::string> ExportedFilesSimpleName() const = 0;
+  virtual std::vector<std::string> ExportedFilesSimpleName(
+      filesystem::ProjectFileSystem *project,
+      const std::string &build_type) const = 0;
 
   //! Return exported link flags. Other rules which depend on this, will
   //! automatically add these flags into its link flags.

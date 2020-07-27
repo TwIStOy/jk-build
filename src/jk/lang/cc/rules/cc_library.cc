@@ -180,8 +180,13 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
   return expanded_source_files_.get();
 }
 
-std::vector<std::string> CCLibrary::ExportedFilesSimpleName() const {
-  return {ExportedFileName};
+std::vector<std::string> CCLibrary::ExportedFilesSimpleName(
+    filesystem::ProjectFileSystem *project,
+    const std::string &build_type) const {
+  return {WorkingFolder(project->BuildRoot)
+              .Sub(build_type)
+              .Sub(ExportedFileName)
+              .Stringify()};
 }
 
 std::vector<std::string> CCLibrary::ExportedLinkFlags() const {

@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <list>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -19,8 +20,10 @@ namespace rules {
 class CCTest : public CCBinary {
  public:
   CCTest(BuildPackage *package, std::string name)
-      : CCBinary(package, name, {RuleTypeEnum::kBinary, RuleTypeEnum::kTest},
-                 "cc_test") {
+      : CCBinary(
+            package, name,
+            {RuleTypeEnum::kBinary, RuleTypeEnum::kTest, RuleTypeEnum::kCC},
+            "cc_test") {
   }
 };
 

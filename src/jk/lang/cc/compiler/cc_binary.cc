@@ -3,10 +3,13 @@
 
 #include "jk/lang/cc/compiler/cc_binary.hh"
 
+#include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
 #include "jk/common/counter.hh"
+#include "jk/common/flags.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/lang/cc/rules/cc_library_helper.hh"
 #include "jk/utils/array.hh"
@@ -123,7 +126,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 
   auto binary_progress_num = counter->Next();
   progress_num.push_back(binary_progress_num);
-  for (const auto &build_type : BuildTypes) {
+  for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
     for (const auto &filename : source_files) {
       auto source_file =
@@ -138,16 +141,13 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     auto binary_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
     auto deps_and_flags =
-        rule->ResolveDependenciesAndLdFlags(project->BuildRoot, build_type);
+        rule->ResolveDependenciesAndLdFlags(project, build_type);
 
     auto binary_deps = all_objects;
     for (auto dep : rule->Dependencies) {
-      auto names = dep->ExportedFilesSimpleName();
-      auto dep_working_folder = dep->WorkingFolder(project->BuildRoot);
-      for (const auto &name : names) {
-        binary_deps.push_back(
-            dep_working_folder.Sub(build_type).Sub(name).Stringify());
-      }
+      auto names = dep->ExportedFilesSimpleName(project, build_type);
+      std::copy(std::begin(names), std::end(names),
+                std::back_inserter(binary_deps));
     }
     build->AddTarget(
         binary_file.Stringify(), binary_deps,

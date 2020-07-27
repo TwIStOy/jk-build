@@ -13,6 +13,7 @@
 #include "jk/core/output/makefile.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/external/compiler/external_project.hh"
 #include "jk/lang/cc/compiler/cc_binary.hh"
 #include "jk/lang/cc/compiler/cc_library.hh"
 #include "jk/lang/cc/compiler/cc_test.hh"
@@ -39,6 +40,8 @@ CompilerFactory::CompilerFactory() {
   compilers_["Makefile.cc_binary"].reset(
       new lang::cc::MakefileCCBinaryCompiler{});
   compilers_["Makefile.cc_test"].reset(new lang::cc::MakefileCCTestCompiler{});
+  compilers_["Makefile.external_project"].reset(
+      new external::MakefileExternalProjectCompiler{});
 }
 
 Compiler *CompilerFactory::FindCompiler(const std::string &format,
@@ -70,6 +73,7 @@ void MakefileGlobalCompiler::Compile(
           "@$(JK_COMMAND) start_progress --progress-mark={} --progress-dir={}",
           project->BuildRoot.Sub("progress.mark"), project->BuildRoot)},
       "", true);
+  makefile->AddTarget("external", {}, {}, "", true);
 
   std::unordered_set<std::string> recorder;
   auto gen_target = [&makefile, project, &recorder](rules::BuildRule *rule) {
@@ -78,24 +82,40 @@ void MakefileGlobalCompiler::Compile(
     }
     recorder.insert(rule->FullQualifiedName());
 
-    logger->info("Generate global target for {}", rule->FullQualifiedName());
+    logger->info("Generate global target for {}, type: {}",
+                 rule->FullQualifiedName(), rule->Type);
 
-    for (const auto &output_format : formats) {
-      auto working_folder = rule->WorkingFolder(project->BuildRoot);
+    auto working_folder = rule->WorkingFolder(project->BuildRoot);
+    if (rule->Type.IsCC()) {
+      for (const auto &output_format : formats) {
+        auto build_stmt =
+            fmt::format("@make -f {} {}", working_folder.Sub("build.make"),
+                        output_format.second);
 
-      auto build_stmt =
-          fmt::format("@make -f {} {}", working_folder.Sub("build.make"),
-                      output_format.second);
+        std::list<std::string> deps;
+        for (auto dep : rule->Dependencies) {
+          deps.push_back(dep->FullQualifiedTarget(output_format.first));
+        }
+        deps.push_back("pre");
+        makefile->AddTarget(rule->FullQualifiedTarget(output_format.first),
+                            deps, {build_stmt});
+      }
+    } else {
+      auto build_stmt = fmt::format("@make -f {} {}",
+                                    working_folder.Sub("build.make"), "build");
 
       std::list<std::string> deps;
       for (auto dep : rule->Dependencies) {
-        deps.push_back(fmt::format("{}/{}", dep->FullQualifiedName(),
-                                   output_format.first));
+        if (!dep->Type.IsExternal()) {
+          JK_THROW(JKBuildError(
+              "ExternalProject can only depend on another ExternalProject."));
+        }
+        deps.push_back(dep->FullQualifiedTarget());
       }
       deps.push_back("pre");
-      makefile->AddTarget(
-          fmt::format("{}/{}", rule->FullQualifiedName(), output_format.first),
-          deps, {build_stmt}, "", true);
+      makefile->AddTarget(rule->FullQualifiedTarget(), deps, {build_stmt}, "",
+                          true);
+      makefile->AddTarget("external", {rule->FullQualifiedTarget()});
     }
   };
 

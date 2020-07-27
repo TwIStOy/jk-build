@@ -17,21 +17,16 @@
 namespace jk::core::rules {
 
 std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
-    const common::AbsolutePath &build_root,
+    filesystem::ProjectFileSystem *project,
     const std::string &build_type) const {
   std::vector<std::string> res;
 
   res.insert(res.end(), std::begin(LdFlags), std::end(LdFlags));
   for (auto rule : DependenciesInOrder()) {
-    auto exported_files = rule->ExportedFilesSimpleName();
+    auto exported_files = rule->ExportedFilesSimpleName(project, build_type);
 
-    std::transform(std::begin(exported_files), std::end(exported_files),
-                   std::back_inserter(res), [&](const std::string &p) {
-                     return rule->WorkingFolder(build_root)
-                         .Sub(build_type)
-                         .Sub(p)
-                         .Stringify();
-                   });
+    std::copy(std::begin(exported_files), std::end(exported_files),
+              std::back_inserter(res));
     auto exported_ldflags = rule->ExportedLinkFlags();
     res.insert(res.end(), std::begin(exported_ldflags),
                std::end(exported_ldflags));

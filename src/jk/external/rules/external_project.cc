@@ -3,15 +3,19 @@
 
 #include "jk/external/rules/external_project.hh"
 
+#include <algorithm>
+#include <iterator>
+#include <string>
+#include <vector>
+
+#include "jk/common/flags.hh"
 #include "jk/core/rules/build_rule.hh"
 
 namespace jk::external {
 
 ExternalProject::ExternalProject(core::rules::BuildPackage *package,
                                  std::string name)
-    : BuildRule(package, name,
-                {core::rules::RuleTypeEnum::kLibrary,
-                 core::rules::RuleTypeEnum::kExternal},
+    : BuildRule(package, name, {core::rules::RuleTypeEnum::kExternal},
                 "external_project") {
 }
 
@@ -48,8 +52,26 @@ void ExternalProject::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   Headers = kwargs.ListOptional("headers", empty_list);
 }
 
-std::vector<std::string> ExternalProject::ExportedFilesSimpleName() const {
-  return Exports;
+std::vector<std::string> ExternalProject::ExportedFilesSimpleName(
+    core::filesystem::ProjectFileSystem *project,
+    const std::string &build_type) const {
+  (void)build_type;
+  std::vector<std::string> res;
+
+  std::transform(
+      std::begin(Exports), std::end(Exports), std::back_inserter(res),
+      [&](const std::string &p) {
+        return project->ProjectRoot.Sub(".build")
+            .Sub(".lib")
+            .Sub(fmt::format(
+                "m{}",
+                common::FLAGS_platform == common::Platform::k32 ? 32 : 64))
+            .Sub("lib")
+            .Sub(p)
+            .Stringify();
+      });
+
+  return res;
 }
 
 std::vector<std::string> ExternalProject::ExportedLinkFlags() const {

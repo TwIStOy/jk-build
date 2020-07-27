@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/lang/cc/rules/cc_library.hh"
 #include "pybind11/pytypes.h"
@@ -20,13 +21,14 @@ namespace rules {
 class CCBinary : public CCLibrary {
  public:
   CCBinary(BuildPackage *package, std::string name,
-           std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kBinary},
+           std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kBinary,
+                                                        RuleTypeEnum::kCC},
            std::string_view type_name = "cc_binary")
       : CCLibrary(package, name, types, type_name, name) {
   }
 
   std::vector<std::string> ResolveDependenciesAndLdFlags(
-      const common::AbsolutePath &build_root,
+      filesystem::ProjectFileSystem* project,
       const std::string &build_type) const;
 };
 

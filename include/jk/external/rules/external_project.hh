@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
 
@@ -14,7 +15,7 @@ namespace jk::external {
 /*
 external_project(
   name = "glog",
-  install_script = "install_glog.py",
+  script = "install_glog.py",
   export = [],
   ldflags = [],
   deps = [],
@@ -28,7 +29,9 @@ class ExternalProject : public core::rules::BuildRule {
 
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
-  std::vector<std::string> ExportedFilesSimpleName() const override;
+  std::vector<std::string> ExportedFilesSimpleName(
+      core::filesystem::ProjectFileSystem *project,
+      const std::string &build_type) const override;
 
   std::vector<std::string> ExportedLinkFlags() const override;
 

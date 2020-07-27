@@ -22,17 +22,19 @@ namespace rules {
 /// cpp static library
 class CCLibrary : public BuildRule {
  public:
-  CCLibrary(
-      BuildPackage *package, std::string name,
-      std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kLibrary},
-      std::string_view type_name = "cc_library",
-      std::string exported_file_name = "");
+  CCLibrary(BuildPackage *package, std::string name,
+            std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kLibrary,
+                                                         RuleTypeEnum::kCC},
+            std::string_view type_name = "cc_library",
+            std::string exported_file_name = "");
 
   bool IsStable() const override;
 
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
-  std::vector<std::string> ExportedFilesSimpleName() const override;
+  std::vector<std::string> ExportedFilesSimpleName(
+      filesystem::ProjectFileSystem *project,
+      const std::string &build_type) const override;
 
   //! Get all **includes** recursively
   const std::vector<std::string> &ResolveIncludes() const;
