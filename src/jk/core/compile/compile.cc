@@ -46,6 +46,15 @@ CompilerFactory::CompilerFactory() {
   compilers_["Makefile.cc_test"].reset(new lang::cc::MakefileCCTestCompiler{});
   compilers_["Makefile.external_project"].reset(
       new external::MakefileExternalProjectCompiler{});
+
+  compilers_["CompileDatabase.cc_library"].reset(
+      new lang::cc::CompileDatabaseCCLibraryCompiler{});
+  compilers_["CompileDatabase.cc_binary"].reset(
+      new lang::cc::CompileDatabaseCCLibraryCompiler{});
+  compilers_["CompileDatabase.cc_test"].reset(
+      new lang::cc::CompileDatabaseCCLibraryCompiler{});
+  compilers_["CompileDatabase.external_project"].reset(
+      new external::CompileDatabaseExternalProjectCompiler{});
 }
 
 Compiler *CompilerFactory::FindCompiler(const std::string &format,

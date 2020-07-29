@@ -24,6 +24,8 @@ class FileWriter : public Writer {
 
   Writer *Write(const std::string &) override;
 
+  Writer *WriterJSON(const nlohmann::json &j) override;
+
   Writer *Flush() override;
 
  private:

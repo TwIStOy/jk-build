@@ -75,6 +75,10 @@ const std::vector<std::string> &CCLibrary::ResolveIncludes() const {
   std::sort(res.begin(), res.end());
   res.erase(std::unique(res.begin(), res.end()), res.end());
 
+  utils::Logger("cc_library")
+      ->info("BuildRule: {}, ResolvedIncludes: [{}]", FullQualifiedName(),
+             utils::JoinString(", ", res.begin(), res.end()));
+
   resolved_includes_ = std::move(res);
   return resolved_includes_.get();
 }
@@ -95,6 +99,10 @@ const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
   }
   std::sort(res.begin(), res.end());
   res.erase(std::unique(res.begin(), res.end()), res.end());
+
+  utils::Logger("cc_library")
+      ->info("BuildRule: {}, ResolvedDefinitions: [{}]", FullQualifiedName(),
+             utils::JoinString(", ", res.begin(), res.end()));
 
   resolved_definitions_ = std::move(res);
   return resolved_definitions_.get();

@@ -3,30 +3,37 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-#include <sstream>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "jk/core/writer/writer.hh"
+#include "nlohmann/json.hpp"
 
 namespace jk::core::writer {
 
-class BufferWriter : public Writer {
+class JSONMergeWriter : public Writer {
  public:
+  explicit JSONMergeWriter(const std::string &path);
+
   Writer *WriteLine(const std::string &) override;
 
   Writer *NewLine() override;
 
   Writer *Write(const std::string &) override;
 
-  Writer *Flush() override;
-
   Writer *WriterJSON(const nlohmann::json &j) override;
 
-  std::string Buffer() const;
+  Writer *Flush() override;
 
  private:
-  std::ostringstream buffer_;
+  std::string path_;
+  std::unordered_map<std::string, nlohmann::json> data_;
+};
+
+struct JSONMergeWriterFactory : public WriterFactory {
+  std::unique_ptr<Writer> Build(const std::string &key) override;
 };
 
 }  // namespace jk::core::writer

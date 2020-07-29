@@ -66,6 +66,11 @@ Writer *FileWriter::Flush() {
   return this;
 }
 
+Writer *FileWriter::WriterJSON(const nlohmann::json &j) {
+  oss_ << j;
+  return this;
+}
+
 std::unique_ptr<Writer> FileWriterFactory::Build(const std::string &key) {
   return std::unique_ptr<Writer>{new FileWriter{key}};
 }

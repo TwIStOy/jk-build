@@ -67,6 +67,20 @@ void MakefileExternalProjectCompiler::Compile(
   makefile->Write(w.get());
 }
 
+std::string CompileDatabaseExternalProjectCompiler::Name() const {
+  return "CompileDatabase.external_project";
+}
+
+void CompileDatabaseExternalProjectCompiler::Compile(
+    core::filesystem::ProjectFileSystem *project,
+    core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+    core::filesystem::FileNamePatternExpander *expander) const {
+  (void)project;
+  (void)wf;
+  (void)rule;
+  (void)expander;
+}
+
 }  // namespace jk::external
 
 // vim: fdm=marker

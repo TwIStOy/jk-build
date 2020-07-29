@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 
+#include "nlohmann/json.hpp"
+
 namespace jk::core::writer {
 
 struct Writer {
@@ -23,6 +25,8 @@ struct Writer {
   Writer *WriteLineF(const std::string &tpl, const Args &... args) {
     return WriteLine(fmt::format(tpl, args...));
   }
+
+  virtual Writer *WriterJSON(const nlohmann::json &j) = 0;
 
   virtual ~Writer() = default;
 };

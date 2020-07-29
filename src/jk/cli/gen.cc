@@ -20,6 +20,7 @@
 #include "jk/core/rules/dependent.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/core/writer/file_writer.hh"
+#include "jk/core/writer/json_merge_writer.hh"
 #include "jk/utils/logging.hh"
 
 namespace jk::cli {
@@ -35,6 +36,9 @@ void Generate(args::Subparser &parser) {
       common::AbsolutePath{core::filesystem::ProjectRoot()},
       common::AbsolutePath{core::filesystem::BuildRoot()}};
   core::writer::FileWriterFactory writer_factory;
+
+  // generate global compile_commands.json
+  core::writer::JSONMergeWriterFactory json_merge_factory;
 
   std::vector<core::rules::BuildRuleId> rules_id;
   std::transform(
@@ -82,21 +86,34 @@ void Generate(args::Subparser &parser) {
   auto output_format = args::get(format);
 
   auto compile_rule = [&compiled, compiler_factory, &output_format, &project,
-                       &writer_factory](core::rules::BuildRule *rule) {
+                       &writer_factory,
+                       &json_merge_factory](core::rules::BuildRule *rule) {
     auto it = compiled.find(rule->FullQualifiedName());
     if (it != compiled.end()) {
       return;
     }
     compiled.insert(rule->FullQualifiedName());
 
-    auto compiler =
-        compiler_factory->FindCompiler(output_format, rule->TypeName.data());
-    if (!compiler) {
-      JK_THROW(core::JKBuildError("No compiler for (format: {}, TypeName: {})",
-                                  output_format, rule->TypeName));
-    }
+    {
+      // output_format
+      auto compiler =
+          compiler_factory->FindCompiler(output_format, rule->TypeName.data());
+      if (!compiler) {
+        JK_THROW(
+            core::JKBuildError("No compiler for (format: {}, TypeName: {})",
+                               output_format, rule->TypeName));
+      }
 
-    compiler->Compile(&project, &writer_factory, rule);
+      compiler->Compile(&project, &writer_factory, rule);
+    }
+    {
+      // compile_commands.json
+      auto compiler = compiler_factory->FindCompiler("CompileDatabase",
+                                                     rule->TypeName.data());
+      if (compiler) {
+        compiler->Compile(&project, &json_merge_factory, rule);
+      }
+    }
   };
 
   for (const auto &rule : rules) {

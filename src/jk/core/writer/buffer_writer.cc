@@ -27,6 +27,11 @@ Writer *BufferWriter::Flush() {
   return this;
 }
 
+Writer *BufferWriter::WriterJSON(const nlohmann::json &j) {
+  buffer_ << j;
+  return this;
+}
+
 std::string BufferWriter::Buffer() const {
   return buffer_.str();
 }

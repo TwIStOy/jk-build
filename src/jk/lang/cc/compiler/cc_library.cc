@@ -25,6 +25,7 @@
 #include "jk/lang/cc/rules/cc_test.hh"
 #include "jk/lang/cc/source_file.hh"
 #include "jk/utils/array.hh"
+#include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
 namespace jk::lang::cc {
@@ -474,8 +475,12 @@ void CompileDatabaseCCLibraryCompiler::Compile(
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<core::rules::CCLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
+  auto writer =
+      wf->Build(project->ProjectRoot.Sub("compile_commands.json").Stringify());
+
   std::vector<std::string> c_flags;
   std::vector<std::string> cpp_flags;
+
   // generate flags {{{
   {
     auto define = rule->ResolveDefinitions();
@@ -515,11 +520,12 @@ void CompileDatabaseCCLibraryCompiler::Compile(
 
   auto sources = rule->ExpandSourceFiles(project, expander);
   std::vector<json> res;
-  std::transform(
-      std::begin(sources), std::end(sources), std::back_inserter(res),
-      [&working_folder, rule, project, &cpp_flags,
-       &c_flags](const std::string &filename) {
+  std::for_each(
+      std::begin(sources), std::end(sources),
+      [&working_folder, rule, project, &cpp_flags, &c_flags,
+       &writer](const std::string &filename) {
         auto sf = SourceFile::Create(rule, rule->Package, filename);
+
         json res;
         res["file"] =
             project->Resolve(rule->Package->Path).Sub(filename).Stringify();
@@ -527,9 +533,15 @@ void CompileDatabaseCCLibraryCompiler::Compile(
         if (sf->IsCppSourceFile()) {
           std::copy(std::begin(cpp_flags), std::end(cpp_flags),
                     std::back_inserter(command));
+          utils::Logger("compile_database")
+              ->info("{}, cpp source, use [{}]", sf->FullQualifiedPath(),
+                     utils::JoinString(", ", cpp_flags));
         } else {
           std::copy(std::begin(c_flags), std::end(c_flags),
                     std::back_inserter(command));
+          utils::Logger("compile_database")
+              ->info("{}, c source, use [{}]", sf->FullQualifiedPath(),
+                     utils::JoinString(", ", c_flags));
         }
         command.push_back("-o");
         command.push_back(
@@ -537,11 +549,13 @@ void CompileDatabaseCCLibraryCompiler::Compile(
         command.push_back("-c");
         command.push_back(
             project->Resolve(rule->Package->Path).Sub(filename).Stringify());
-        res["command"] = command;
+        res["arguments"] = command;
         res["directory"] = project->ProjectRoot.Stringify();
-        return res;
+
+        writer->WriterJSON(res);
       });
-  // TODO
+
+  writer->Flush();
 }
 
 // }}}

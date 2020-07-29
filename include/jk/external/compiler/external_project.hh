@@ -19,6 +19,15 @@ struct MakefileExternalProjectCompiler final : public core::compile::Compiler {
                    &core::filesystem::kDefaultPatternExpander) const;
 };
 
+struct CompileDatabaseExternalProjectCompiler : public core::compile::Compiler {
+  std::string Name() const override;
+
+  void Compile(
+      core::filesystem::ProjectFileSystem *project,
+      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::FileNamePatternExpander *expander) const override;
+};
+
 }  // namespace jk::external
 
 // vim: fdm=marker
