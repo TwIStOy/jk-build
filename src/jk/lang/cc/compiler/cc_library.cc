@@ -29,6 +29,7 @@
 
 namespace jk::lang::cc {
 
+// makefile {{{
 std::string MakefileCCLibraryCompiler::Name() const {
   return "Makefile.cc_library";
 }
@@ -459,6 +460,91 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   makefile->Write(w);
   return makefile;
 }
+// }}}
+
+// compile database {{{
+
+std::string CompileDatabaseCCLibraryCompiler::Name() const {
+  return "CompileDatabase.cc_library";
+}
+
+void CompileDatabaseCCLibraryCompiler::Compile(
+    core::filesystem::ProjectFileSystem *project,
+    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::FileNamePatternExpander *expander) const {
+  auto rule = _rule->Downcast<core::rules::CCLibrary>();
+  auto working_folder = rule->WorkingFolder(project->BuildRoot);
+  std::vector<std::string> c_flags;
+  std::vector<std::string> cpp_flags;
+  // generate flags {{{
+  {
+    auto define = rule->ResolveDefinitions();
+    std::transform(std::begin(define), std::end(define),
+                   std::back_inserter(cpp_flags), [](const std::string &d) {
+                     return fmt::format("-D{}", d);
+                   });
+    std::transform(std::begin(define), std::end(define),
+                   std::back_inserter(c_flags), [](const std::string &d) {
+                     return fmt::format("-D{}", d);
+                   });
+  }
+  {
+    auto vec = rule->ResolveIncludes();
+    std::transform(std::begin(vec), std::end(vec),
+                   std::back_inserter(cpp_flags), [](const std::string &d) {
+                     return fmt::format("-I{}", d);
+                   });
+    std::transform(std::begin(vec), std::end(vec), std::back_inserter(c_flags),
+                   [](const std::string &d) {
+                     return fmt::format("-I{}", d);
+                   });
+  }
+  std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
+            std::back_inserter(cpp_flags));
+  std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
+            std::back_inserter(c_flags));
+  std::copy(std::begin(rule->CppFlags), std::end(rule->CppFlags),
+            std::back_inserter(cpp_flags));
+  std::copy(std::begin(rule->CFlags), std::end(rule->CFlags),
+            std::back_inserter(c_flags));
+  std::copy(std::begin(DEBUG_CPPFLAGS_EXTRA), std::end(DEBUG_CPPFLAGS_EXTRA),
+            std::back_inserter(cpp_flags));
+  std::copy(std::begin(DEBUG_CFLAGS_EXTRA), std::end(DEBUG_CFLAGS_EXTRA),
+            std::back_inserter(c_flags));
+  // }}}
+
+  auto sources = rule->ExpandSourceFiles(project, expander);
+  std::vector<json> res;
+  std::transform(
+      std::begin(sources), std::end(sources), std::back_inserter(res),
+      [&working_folder, rule, project, &cpp_flags,
+       &c_flags](const std::string &filename) {
+        auto sf = SourceFile::Create(rule, rule->Package, filename);
+        json res;
+        res["file"] =
+            project->Resolve(rule->Package->Path).Sub(filename).Stringify();
+        std::vector<std::string> command{"g++"};
+        if (sf->IsCppSourceFile()) {
+          std::copy(std::begin(cpp_flags), std::end(cpp_flags),
+                    std::back_inserter(command));
+        } else {
+          std::copy(std::begin(c_flags), std::end(c_flags),
+                    std::back_inserter(command));
+        }
+        command.push_back("-o");
+        command.push_back(
+            sf->FullQualifiedObjectPath(working_folder, "DEBUG").Stringify());
+        command.push_back("-c");
+        command.push_back(
+            project->Resolve(rule->Package->Path).Sub(filename).Stringify());
+        res["command"] = command;
+        res["directory"] = project->ProjectRoot.Stringify();
+        return res;
+      });
+  // TODO
+}
+
+// }}}
 
 }  // namespace jk::lang::cc
 

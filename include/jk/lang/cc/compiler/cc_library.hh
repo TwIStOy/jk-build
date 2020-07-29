@@ -54,6 +54,15 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
                       const common::AbsolutePath &working_folder) const;
 };
 
+struct CompileDatabaseCCLibraryCompiler : public core::compile::Compiler {
+  std::string Name() const override;
+
+  void Compile(
+      core::filesystem::ProjectFileSystem *project,
+      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::FileNamePatternExpander *expander) const override;
+};
+
 }  // namespace jk::lang::cc
 
 // vim: fdm=marker

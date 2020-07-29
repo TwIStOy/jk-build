@@ -3,6 +3,7 @@
 
 #include "jk/core/filesystem/project.hh"
 
+#include "boost/optional.hpp"
 #include "jk/common/flags.hh"
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
@@ -28,12 +29,18 @@ static bool HasRootMarker(const fs::path &root) {
   return false;
 }
 
-fs::path ProjectRoot() {
-  auto current = fs::current_path();
+static boost::optional<fs::path> _ProjectRoot;
 
+fs::path ProjectRoot() {
+  if (_ProjectRoot) {
+    return _ProjectRoot.value();
+  }
+
+  auto current = fs::current_path();
   while (current.parent_path() != current) {
     utils::Logger("jk")->info(R"(Checking folder "{}"...)", current.string());
     if (HasRootMarker(current)) {
+      _ProjectRoot = current;
       return current;
     }
     current = current.parent_path();
