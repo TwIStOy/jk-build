@@ -311,19 +311,24 @@ static std::vector<std::string> COMPILE_FLAGS = {
 static std::vector<std::string> CFLAGS = {
     "-D_GNU_SOURCE", "-Werror-implicit-function-declaration"};
 
-static std::vector<std::string> CPPFLAGS = {"-std=c++11",
-                                            "-Wvla",
-                                            "-Wnon-virtual-dtor",
-                                            "-Woverloaded-virtual",
-                                            "-Wno-invalid-offsetof",
-                                            "-Werror=non-virtual-dtor",
-                                            "-D__STDC_FORMAT_MACROS",
-                                            "-DUSE_SYMBOLIZE",
-                                            "-I.",
-                                            "-isystem",
-                                            ".build/.lib/m${PLATFORM}/include",
-                                            "-I.build/include",
-                                            "-I.build/pb/c++"};
+static std::vector<std::string> CPPFLAGS() {
+  std::vector<std::string> tpl = {
+      "-std=c++11",
+      "-Wvla",
+      "-Wnon-virtual-dtor",
+      "-Woverloaded-virtual",
+      "-Wno-invalid-offsetof",
+      "-Werror=non-virtual-dtor",
+      "-D__STDC_FORMAT_MACROS",
+      "-DUSE_SYMBOLIZE",
+      "-I.",
+      "-isystem",
+      ".build/.lib/m{}/include"_format(
+          common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
+      "-I.build/include",
+      "-I.build/pb/c++"};
+  return tpl;
+}
 
 static std::vector<std::string> DEBUG_CFLAGS_EXTRA = {
     "-O0",
@@ -416,15 +421,15 @@ static std::vector<std::string> PROFILING_CPPFLAGS_EXTRA = {
 };
 // }}}
 
-#define DEFINE_FLAGS(tag)                                                 \
-  makefile->DefineEnvironment(                                            \
-      #tag "_C_FLAGS",                                                    \
-      utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CFLAGS,   \
-                                                 tag##_CFLAGS_EXTRA)));   \
-                                                                          \
-  makefile->DefineEnvironment(                                            \
-      #tag "_CPP_FLAGS",                                                  \
-      utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CPPFLAGS, \
+#define DEFINE_FLAGS(tag)                                                   \
+  makefile->DefineEnvironment(                                              \
+      #tag "_C_FLAGS",                                                      \
+      utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CFLAGS,     \
+                                                 tag##_CFLAGS_EXTRA)));     \
+                                                                            \
+  makefile->DefineEnvironment(                                              \
+      #tag "_CPP_FLAGS",                                                    \
+      utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CPPFLAGS(), \
                                                  tag##_CPPFLAGS_EXTRA)));
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
@@ -504,6 +509,10 @@ void CompileDatabaseCCLibraryCompiler::Compile(
                      return fmt::format("-I{}", d);
                    });
   }
+  auto _CPPFLAGS = CPPFLAGS();
+  std::copy(std::begin(_CPPFLAGS), std::end(_CPPFLAGS),
+            std::back_inserter(cpp_flags));
+  std::copy(std::begin(CFLAGS), std::end(CFLAGS), std::back_inserter(c_flags));
   std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
             std::back_inserter(cpp_flags));
   std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
