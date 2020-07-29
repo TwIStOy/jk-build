@@ -5,7 +5,9 @@
 
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "jk/common/path.hh"
 #include "jk/core/writer/writer.hh"
@@ -25,6 +27,8 @@ class FileWriter : public Writer {
   Writer *Flush() override;
 
  private:
+  std::string path_;
+  std::ostringstream oss_;
   std::ofstream ofs_;
 };
 

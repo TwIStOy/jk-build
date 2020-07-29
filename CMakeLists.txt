@@ -86,6 +86,8 @@ target_link_libraries(libjk PUBLIC spdlog::spdlog)
 target_link_libraries(jk PRIVATE libjk)
 target_link_libraries(jk_test PRIVATE libjk)
 
+add_subdirectory(third-party/nlohmann_json)
+target_link_libraries(libjk PUBLIC nlohmann_json::nlohmann_json)
 
 # --- source fies ---
 

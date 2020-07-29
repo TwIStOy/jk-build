@@ -19,6 +19,8 @@
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/lang/cc/source_file.hh"
+#include "jk/utils/logging.hh"
+#include "jk/utils/str.hh"
 
 namespace jk {
 namespace core {
@@ -106,17 +108,6 @@ const std::vector<std::string> &CCLibrary::FlagsForCppFiles() const {
   std::vector<std::string> res;
   res.insert(res.end(), CppFlags.begin(), CppFlags.end());
   res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
-  // auto &includes = ResolveIncludes();
-  // std::transform(includes.begin(), includes.end(), std::back_inserter(res),
-  //                [](const std::string &inc) {
-  //                  return fmt::format("-I{}", inc);
-  //                });
-  //
-  // auto &defines = ResolveDefinitions();
-  // std::transform(defines.begin(), defines.end(), std::back_inserter(res),
-  //                [](const std::string &inc) {
-  //                  return fmt::format("-D{}", inc);
-  //                });
 
   resolved_cpp_flags_ = std::move(res);
   return resolved_cpp_flags_.get();
@@ -130,17 +121,6 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
   std::vector<std::string> res;
   res.insert(res.end(), CFlags.begin(), CFlags.end());
   res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
-  // auto &includes = ResolveIncludes();
-  // std::transform(includes.begin(), includes.end(), std::back_inserter(res),
-  //                [](const std::string &inc) {
-  //                  return fmt::format("-I{}", inc);
-  //                });
-  //
-  // auto &defines = ResolveDefinitions();
-  // std::transform(defines.begin(), defines.end(), std::back_inserter(res),
-  //                [](const std::string &inc) {
-  //                  return fmt::format("-D{}", inc);
-  //                });
 
   resolved_c_flags_ = std::move(res);
   return resolved_c_flags_.get();
@@ -174,6 +154,11 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
       }
     }
   }
+
+  std::sort(std::begin(result), std::end(result));
+  utils::Logger("cc")->info(
+      "SourceFiles in {}: [{}]", FullQualifiedName(),
+      utils::JoinString(", ", std::begin(result), std::end(result)));
 
   expanded_source_files_ = std::move(result);
 

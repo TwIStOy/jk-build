@@ -18,6 +18,7 @@
 #include "jk/utils/kwargs.hh"
 #include "jk/utils/stack.hh"
 #include "jk/utils/str.hh"
+#include "nlohmann/json.hpp"
 #include "pybind11/embed.h"
 #include "pybind11/eval.h"
 #include "pybind11/pybind11.h"
@@ -26,6 +27,9 @@
 #include "pybind11/stl_bind.h"
 
 namespace jk {
+
+using nlohmann::json;
+
 namespace core {
 namespace rules {
 
@@ -131,6 +135,9 @@ struct BuildRule : public utils::Stringifiable {
   //! should hint `JK` to make dependencies between source files and these
   //! headers.
   virtual std::vector<std::string> ExportedHeaders() const = 0;
+
+  //! Return json object in cache
+  virtual json CacheState() const;
 
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);

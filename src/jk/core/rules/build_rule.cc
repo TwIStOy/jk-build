@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
+#include <iterator>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -263,6 +264,22 @@ void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,
   for (auto it : Dependencies) {
     it->RecursiveExecute(func, recorder);
   }
+}
+
+json BuildRule::CacheState() const {
+  json res;
+
+  res["name"] = FullQualifiedName();
+  res["package"] = Package->Name;
+  res["type_name"] = TypeName;
+  std::vector<std::string> deps;
+  std::transform(std::begin(Dependencies), std::end(Dependencies),
+                 std::back_inserter(deps), [](BuildRule *r) {
+                   return r->FullQualifiedName();
+                 });
+  res["deps"] = deps;
+
+  return res;
 }
 
 }  // namespace rules

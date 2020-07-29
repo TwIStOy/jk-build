@@ -3,6 +3,8 @@
 
 #include "jk/core/compile/compile.hh"
 
+#include <algorithm>
+#include <iterator>
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
@@ -65,12 +67,13 @@ void MakefileGlobalCompiler::Compile(
   output::UnixMakefilePtr makefile{new output::UnixMakefile(
       project->ProjectRoot.Sub("Makefile").Stringify())};
 
-  makefile->DefineCommon(project);
+  auto regen_target = project->BuildRoot.Sub("build_files.mark").Stringify();
 
+  makefile->DefineCommon(project);
   makefile->AddTarget("all", {"debug"}, {}, "", true);
 
   makefile->AddTarget(
-      "pre", {},
+      "pre", {regen_target},
       builder::CustomCommandLines::Single(
           {"@$(JK_COMMAND)", "start_progress",
            "--progress-mark={}"_format(project->BuildRoot.Sub("progress.mark")),
@@ -131,14 +134,17 @@ void MakefileGlobalCompiler::Compile(
     }
   }
 
-  std::string regen_stmt = "$(JK_COMMAND) {}"_format(utils::JoinString(
-      " ", cli::CommandLineArguments, [](const std::string &str) {
-        return utils::EscapeForShellStyle(str);
-      }));
+  auto regen_stmt = builder::CustomCommandLine::Make({"-@$(JK_COMMAND)"});
+  std::copy(std::next(std::begin(cli::CommandLineArguments)),
+            std::end(cli::CommandLineArguments),
+            std::back_inserter(regen_stmt));
+  auto regen_touch_stmt =
+      builder::CustomCommandLine::Make({"@touch", regen_target});
 
   makefile->AddTarget(
-      "regen", std::list<std::string>{std::begin(packages), std::end(packages)},
-      {}, "", true);
+      regen_target,
+      std::list<std::string>{std::begin(packages), std::end(packages)},
+      builder::CustomCommandLines::Multiple(regen_stmt, regen_touch_stmt));
 
   for (auto rule : rules) {
     rule->RecursiveExecute(gen_target);

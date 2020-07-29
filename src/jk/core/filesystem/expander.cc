@@ -19,7 +19,7 @@ static auto logger = utils::Logger("expander");
 
 std::list<std::string> DefaultPatternExpander::Expand(
     const std::string &pattern, const common::AbsolutePath &path) {
-  logger->info("Try to expand pattern {} at {}", pattern, path);
+  // logger->info("Try to expand pattern {} at {}", pattern, path);
 
   glob_t glob_result;
   memset(&glob_result, 0, sizeof(glob_result));

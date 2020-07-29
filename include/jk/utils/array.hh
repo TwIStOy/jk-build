@@ -16,6 +16,25 @@ template<typename T, typename U, typename = typename T::const_iterator,
          typename value_type = typename T::value_type,
          typename = std::enable_if_t<
              std::is_same_v<typename T::value_type, typename U::value_type>>>
+bool SameArrayInOrder(const T &lhs, const U &rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  auto lit = lhs.begin();
+  auto rit = rhs.begin();
+  for (; lit != lhs.end(); ++lit, ++rit) {
+    if (*lit != *rit) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template<typename T, typename U, typename = typename T::const_iterator,
+         typename = typename U::const_iterator,
+         typename value_type = typename T::value_type,
+         typename = std::enable_if_t<
+             std::is_same_v<typename T::value_type, typename U::value_type>>>
 bool SameArray(const T &lhs, const U &rhs) {
   std::set<value_type> lparts{lhs.begin(), lhs.end()};
   std::set<value_type> rparts{rhs.begin(), rhs.end()};
