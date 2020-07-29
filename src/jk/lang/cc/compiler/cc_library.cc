@@ -542,15 +542,9 @@ void CompileDatabaseCCLibraryCompiler::Compile(
         if (sf->IsCppSourceFile()) {
           std::copy(std::begin(cpp_flags), std::end(cpp_flags),
                     std::back_inserter(command));
-          utils::Logger("compile_database")
-              ->info("{}, cpp source, use [{}]", sf->FullQualifiedPath(),
-                     utils::JoinString(", ", cpp_flags));
         } else {
           std::copy(std::begin(c_flags), std::end(c_flags),
                     std::back_inserter(command));
-          utils::Logger("compile_database")
-              ->info("{}, c source, use [{}]", sf->FullQualifiedPath(),
-                     utils::JoinString(", ", c_flags));
         }
         command.push_back("-o");
         command.push_back(

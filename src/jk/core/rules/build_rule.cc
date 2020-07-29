@@ -47,7 +47,7 @@ std::string RuleType::Stringify() const {
     flags.push_back("cc");
   }
   return "RuleType [{}]"_format(
-      utils::JoinString("|", flags.begin(), flags.end()));
+      utils::JoinString(" | ", flags.begin(), flags.end()));
 }
 
 std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
@@ -121,30 +121,31 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
   std::reverse(std::begin(after_sorted), std::end(after_sorted));
   topological_sorting_result_ = after_sorted;
   logger->info(
-      "after topological sort: [{}]",
+      "{}, deps: [{}]", *this,
       utils::JoinString(", ", after_sorted, [](const BuildRule *const rule) {
-        return rule->FullQualifiedName();
+        return "{}"_format(*rule);
       }));
   return after_sorted;
 }
 
 std::string BuildRule::Stringify() const {
-  std::ostringstream oss;
-  oss << "BuildRule { ";
-
-  std::vector<std::string> fields;
-
-  fields.push_back("Package = {}"_format(Package->Name));
-  fields.push_back("Name = {}"_format(Name));
-  fields.push_back("Type = {}"_format(Type));
-  fields.push_back("TypeName = {}"_format(TypeName));
-  fields.push_back("Dependencies = [{}]"_format(utils::JoinString(
-      ", ", dependencies_str_.begin(), dependencies_str_.end())));
-
-  oss << utils::JoinString(", ", fields.begin(), fields.end());
-
-  oss << " }";
-  return oss.str();
+  return R"(<Rule "{}:{}">)"_format(Package->Name, Name);
+  // std::ostringstream oss;
+  // oss << "BuildRule { ";
+  //
+  // std::vector<std::string> fields;
+  //
+  // fields.push_back("Package = {}"_format(Package->Name));
+  // fields.push_back("Name = {}"_format(Name));
+  // fields.push_back("Type = {}"_format(Type));
+  // fields.push_back("TypeName = {}"_format(TypeName));
+  // fields.push_back("Dependencies = [{}]"_format(utils::JoinString(
+  //     ", ", dependencies_str_.begin(), dependencies_str_.end())));
+  //
+  // oss << utils::JoinString(", ", fields.begin(), fields.end());
+  //
+  // oss << " }";
+  // return oss.str();
 }
 
 RuleType MergeType(std::initializer_list<RuleTypeEnum> types) {
@@ -189,7 +190,7 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
     return;
   }
 
-  logger->info("<Rule: {}> build dependencies", FullQualifiedName());
+  logger->info("{} build dependencies", *this);
 
   if (!rstk->Push(FullQualifiedName())) {
     JK_THROW(JKBuildError(

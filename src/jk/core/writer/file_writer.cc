@@ -51,8 +51,9 @@ Writer *FileWriter::Flush() {
       auto old_content = boost::algorithm::trim_copy(oss.str());
       auto new_content = boost::algorithm::trim_copy(content);
       if (old_content == new_content) {
-        logger->info("Because of content not change, write to file {} omitted.",
-                     path_);
+        logger->info(
+            "Because of content not change, write to file \"{}\" omitted.",
+            path_);
         return this;
       }
     }

@@ -97,8 +97,7 @@ void MakefileGlobalCompiler::Compile(
     }
     recorder.insert(rule->FullQualifiedName());
 
-    logger->info("Generate global target for {}, type: {}",
-                 rule->FullQualifiedName(), rule->Type);
+    logger->info("Generate global target for {}, type: {}", *rule, rule->Type);
 
     auto working_folder = rule->WorkingFolder(project->BuildRoot);
     if (rule->Type.IsCC()) {

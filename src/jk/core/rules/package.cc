@@ -24,7 +24,7 @@ static auto logger = utils::Logger("Package");
 
 BuildPackage::BuildPackage(std::string name, common::ProjectRelativePath path)
     : Name(std::move(name)), Path(std::move(path)) {
-  logger->info("New BuildPackage({}, {})", Name, Path.Stringify());
+  logger->info(R"(New BuildPackage at "{}")", Path);
 }
 
 void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
