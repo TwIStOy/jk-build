@@ -172,6 +172,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
                                           working_folder.Sub("DEBUG")
                                               .Sub("library/base/base3.cpp.o")
                                               .Stringify(),
+                                          "jk_force",
                                       }));
   }
 
@@ -292,9 +293,12 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
     auto library_target =
         working_folder.Sub("DEBUG").Sub(rule->ExportedFileName).Stringify();
     auto library_dep = MergeDependencies(makefile->Targets, library_target);
+    UNSCOPED_INFO(
+        fmt::format("library_dep: [{}]", utils::JoinString(", ", library_dep)));
     REQUIRE(utils::SameArray(
         library_dep,
         std::vector<std::string>{
+            "jk_force",
             working_folder.Sub("DEBUG/library/memory/memory1.cpp.o")
                 .Stringify(),
             working_folder.Sub("DEBUG/library/memory/memory2.cpp.o")
