@@ -85,8 +85,7 @@ void MakefileCMakeLibrary::Compile(
             make_stmt));
   }
 
-  auto export_build_target = working_folder.Sub("build");
-  makefile->AddTarget(export_build_target, {build_target}, {}, "", true);
+  makefile->AddTarget("build", {build_target}, {}, "", true);
 
   auto w = wf->Build(working_folder.Sub("build.make"));
   makefile->Write(w.get());
