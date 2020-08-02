@@ -12,18 +12,19 @@
 
 namespace jk::rules::external {
 
-/*
-shell_script(
-  name = "glog",
-  script = "install_glog.py",
-  export = [],
-  ldflags = [],
-  deps = [],
-)
+/**
+ * external_library(
+ *   name = "name",
+ *   anchor = [],
+ *   url = "",
+ *   sha256 = "",
+ *   type = "",
+ *   header_only = true,
+ * )
  */
-class ShellScript : public core::rules::BuildRule {
+class ExternalLibrary : public core::rules::BuildRule {
  public:
-  ShellScript(core::rules::BuildPackage *package, std::string name);
+  ExternalLibrary(core::rules::BuildPackage *package, std::string name);
 
   bool IsStable() const override;
 
@@ -38,11 +39,12 @@ class ShellScript : public core::rules::BuildRule {
   std::vector<std::string> ExportedHeaders() const override;
 
   // --- Fields Start ---
-  std::string Script;
-  std::vector<std::string> Exports;
-  std::vector<std::string> LdFlags;
-  std::vector<std::string> Headers;
-  // --- Fields End ---
+  std::string Url;
+  std::string Sha256;
+  std::string ArchiveType;
+  std::vector<std::string> Anchors;
+  bool HeaderOnly;
+  // ---- Fields End ----
 };
 
 }  // namespace jk::rules::external
