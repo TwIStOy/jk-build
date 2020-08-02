@@ -20,6 +20,9 @@ extern Platform FLAGS_platform;
 
 extern std::vector<std::string> FLAGS_BuildTypes;
 
+std::string ToString(common::Platform plt);
+
 }  // namespace jk::common
 
 // vim: fdm=marker
+

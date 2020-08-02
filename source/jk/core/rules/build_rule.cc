@@ -129,7 +129,7 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
 }
 
 std::string BuildRule::Stringify() const {
-  return R"(<Rule "{}:{}">)"_format(Package->Name, Name);
+  return R"(<Rule:{} "{}:{}">)"_format(TypeName, Package->Name, Name);
   // std::ostringstream oss;
   // oss << "BuildRule { ";
   //

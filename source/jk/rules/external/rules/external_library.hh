@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "jk/core/filesystem/project.hh"
@@ -18,13 +19,15 @@ namespace jk::rules::external {
  *   anchor = [],
  *   url = "",
  *   sha256 = "",
- *   type = "",
+ *   type = "tar.gz" | "zip" | "tar",
  *   header_only = true,
+ *   output_file = "",
  * )
  */
 class ExternalLibrary : public core::rules::BuildRule {
  public:
-  ExternalLibrary(core::rules::BuildPackage *package, std::string name);
+  ExternalLibrary(core::rules::BuildPackage *package, std::string name,
+                  std::string_view rule_type_name = "external_library");
 
   bool IsStable() const override;
 
@@ -41,6 +44,7 @@ class ExternalLibrary : public core::rules::BuildRule {
   // --- Fields Start ---
   std::string Url;
   std::string Sha256;
+  std::string OutputFile;
   std::string ArchiveType;
   std::vector<std::string> Anchors;
   bool HeaderOnly;

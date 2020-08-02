@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <memory>
+
 #include "jk/common/path.hh"
 
 namespace jk {
@@ -22,6 +23,8 @@ struct ProjectFileSystem {
 
   //! Resolve relative path to absolute from **BuildRoot**
   common::AbsolutePath ResolveBuild(const common::ProjectRelativePath &rp);
+
+  common::AbsolutePath ExternalInstalledPrefix();
 };
 
 fs::path ProjectRoot();

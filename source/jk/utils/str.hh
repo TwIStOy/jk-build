@@ -5,13 +5,14 @@
 
 #include <fmt/format.h>
 
-#include <boost/optional.hpp>
 #include <iterator>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+
+#include "boost/optional.hpp"
 
 namespace jk {
 
@@ -22,8 +23,22 @@ namespace utils {
 struct Stringifiable {
   virtual std::string Stringify() const = 0;
 
+  operator std::string() const;
+
   virtual ~Stringifiable() = default;
 };
+
+template<typename T, typename = std::enable_if<
+                         std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
+inline std::string ToString(const T &v) {
+  return v.Stringify();
+}
+
+template<typename T, typename = std::enable_if<
+                         std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
+inline std::string ToString(T *v) {
+  return v->Stringify();
+}
 
 inline bool StringEndWith(std::string_view full_string,
                           std::string_view ending) {
@@ -89,7 +104,6 @@ inline std::string Replace(const std::string &old, char from, const T &to) {
 }
 
 std::string EscapeForShellStyle(const std::string &raw);
-
 
 }  // namespace utils
 }  // namespace jk

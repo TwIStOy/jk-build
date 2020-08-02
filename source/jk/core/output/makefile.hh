@@ -65,4 +65,8 @@ struct UnixMakefile {
 
 using UnixMakefilePtr = std::unique_ptr<UnixMakefile>;
 
+inline UnixMakefilePtr NewUnixMakefile(const std::string &n) {
+  return UnixMakefilePtr{new UnixMakefile{n}};
+}
+
 }  // namespace jk::core::output

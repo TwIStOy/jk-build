@@ -1,33 +1,49 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
-#include "jk/rules/external/rules/shell_script.hh"
+#include "jk/rules/external/rules/cmake_project.hh"
 
-#include <algorithm>
-#include <iterator>
-#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "jk/common/flags.hh"
-#include "jk/core/rules/build_rule.hh"
+#include "jk/core/error.h"
+#include "jk/rules/external/rules/external_library.hh"
+#include "jk/utils/logging.hh"
 
 namespace jk::rules::external {
 
-ShellScript::ShellScript(core::rules::BuildPackage *package, std::string name)
-    : BuildRule(package, name, {core::rules::RuleTypeEnum::kExternal},
-                "shell_script") {
+CMakeLibrary::CMakeLibrary(core::rules::BuildPackage *package, std::string name)
+    : ExternalLibrary(package, name, "cmake_library") {
 }
 
-bool ShellScript::IsStable() const {
-  return true;
-}
-
-void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
-  core::rules::BuildRule::ExtractFieldFromArguments(kwargs);
-
+void CMakeLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
+  ExternalLibrary::ExtractFieldFromArguments(kwargs);
   auto empty_list = boost::make_optional<std::vector<std::string>>({});
 
-  Script = kwargs.StringRequired("script");
+  {
+    auto it = kwargs.Find("var");
+    if (it != kwargs.End()) {
+      if (!it->second.get_type().is(pybind11::dict().get_type())) {
+        JK_THROW(core::JKBuildError("field 'var' expect type dict"));
+      }
+
+      CMakeVariable =
+          it->second.cast<std::unordered_map<std::string, std::string>>();
+    }
+  }
+
+  {
+    auto it = kwargs.Find("job");
+    if (it != kwargs.End()) {
+      if (!it->second.get_type().is(pybind11::int_().get_type())) {
+        JK_THROW(core::JKBuildError("field 'define' expect type int"));
+      }
+
+      JobNumber = it->second.cast<uint32_t>();
+    }
+  }
+
   do {
     auto it = kwargs.Find("export");
     if (it == kwargs.End()) {
@@ -48,10 +64,9 @@ void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   } while (0);
 
   LdFlags = kwargs.ListOptional("ldflags", empty_list);
-  Headers = kwargs.ListOptional("headers", empty_list);
 }
 
-std::vector<std::string> ShellScript::ExportedFilesSimpleName(
+std::vector<std::string> CMakeLibrary::ExportedFilesSimpleName(
     core::filesystem::ProjectFileSystem *project,
     const std::string &build_type) const {
   (void)build_type;
@@ -73,14 +88,11 @@ std::vector<std::string> ShellScript::ExportedFilesSimpleName(
   return res;
 }
 
-std::vector<std::string> ShellScript::ExportedLinkFlags() const {
+std::vector<std::string> CMakeLibrary::ExportedLinkFlags() const {
   return LdFlags;
-}
-
-std::vector<std::string> ShellScript::ExportedHeaders() const {
-  return Headers;
 }
 
 }  // namespace jk::rules::external
 
 // vim: fdm=marker
+

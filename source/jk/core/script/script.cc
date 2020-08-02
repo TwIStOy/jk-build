@@ -15,6 +15,7 @@
 #include "jk/rules/cc/rules/cc_binary.hh"
 #include "jk/rules/cc/rules/cc_library.hh"
 #include "jk/rules/cc/rules/cc_test.hh"
+#include "jk/rules/external/rules/cmake_project.hh"
 #include "jk/rules/external/rules/shell_script.hh"
 
 namespace jk {
@@ -37,6 +38,8 @@ void ScriptInterpreter::HookFunctions() {
   RegHook("cc_test", &rules::NewRuleFromScript<::jk::rules::cc::CCTest>);
   RegHook("shell_script",
           &rules::NewRuleFromScript<::jk::rules::external::ShellScript>);
+  RegHook("cmake_library",
+          &rules::NewRuleFromScript<::jk::rules::external::CMakeLibrary>);
 }
 
 pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {

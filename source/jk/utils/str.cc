@@ -18,6 +18,10 @@ std::string EscapeForShellStyle(const std::string &raw) {
   return result;
 }
 
+Stringifiable::operator std::string() const {
+  return Stringify();
+}
+
 }  // namespace jk::utils
 
 // vim: fdm=marker

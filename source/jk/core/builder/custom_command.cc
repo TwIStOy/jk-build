@@ -4,6 +4,7 @@
 #include "jk/core/builder/custom_command.hh"
 
 #include <string>
+#include <vector>
 
 #include "jk/utils/str.hh"
 
@@ -11,6 +12,14 @@ namespace jk::core::builder {
 
 CustomCommandLine CustomCommandLine::Make(
     std::initializer_list<std::string> ilist) {
+  CustomCommandLine res;
+  for (auto &i : ilist) {
+    res.push_back(std::move(i));
+  }
+  return res;
+}
+
+CustomCommandLine CustomCommandLine::FromVec(std::vector<std::string> ilist) {
   CustomCommandLine res;
   for (auto &i : ilist) {
     res.push_back(std::move(i));

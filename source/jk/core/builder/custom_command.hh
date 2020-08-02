@@ -19,6 +19,8 @@ struct CustomCommandLine final : public std::vector<std::string>,
                                  public utils::Stringifiable {
   static CustomCommandLine Make(std::initializer_list<std::string> ilist);
 
+  static CustomCommandLine FromVec(std::vector<std::string> ilist);
+
   std::string Stringify() const final;
 };
 

@@ -30,6 +30,20 @@ struct Compiler {
   virtual ~Compiler() = default;
 };
 
+struct NopCompiler final : public Compiler {
+  explicit NopCompiler(std::string name);
+
+  std::string Name() const final;
+
+  void Compile(filesystem::ProjectFileSystem *project,
+               writer::WriterFactory *wf, rules::BuildRule *rule,
+               filesystem::FileNamePatternExpander *expander =
+                   &filesystem::kDefaultPatternExpander) const final;
+
+ private:
+  std::string name_;
+};
+
 struct MakefileGlobalCompiler {
   void Compile(filesystem::ProjectFileSystem *project,
                writer::WriterFactory *wf,

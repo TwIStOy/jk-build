@@ -22,6 +22,7 @@
 #include "jk/rules/cc/compiler/cc_library.hh"
 #include "jk/rules/cc/compiler/cc_test.hh"
 #include "jk/rules/cc/source_file.hh"
+#include "jk/rules/external/compiler/cmake_project.hh"
 #include "jk/rules/external/compiler/shell_script.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
@@ -34,10 +35,28 @@ using fmt::operator"" _format;
 
 auto logger = utils::Logger("compiler");
 
+NopCompiler::NopCompiler(std::string name) : name_(std::move(name)) {
+}
+
+std::string NopCompiler::Name() const {
+  return name_;
+}
+
+void NopCompiler::Compile(filesystem::ProjectFileSystem *,
+                          writer::WriterFactory *, rules::BuildRule *,
+                          filesystem::FileNamePatternExpander *) const {
+}
+
 CompilerFactory *CompilerFactory::Instance() {
   static CompilerFactory factory;
   return &factory;
 }
+
+#define NOP_COMPILER(name)                             \
+  do {                                                 \
+    std::string __name = (name);                       \
+    compilers_[__name].reset(new NopCompiler(__name)); \
+  } while (0);
 
 CompilerFactory::CompilerFactory() {
   compilers_["Makefile.cc_library"].reset(
@@ -46,8 +65,10 @@ CompilerFactory::CompilerFactory() {
       new ::jk::rules::cc::MakefileCCBinaryCompiler{});
   compilers_["Makefile.cc_test"].reset(
       new ::jk::rules::cc::MakefileCCTestCompiler{});
-  compilers_["Makefile.external_project"].reset(
+  compilers_["Makefile.shell_script"].reset(
       new ::jk::rules::external::MakefileShellScriptCompiler{});
+  compilers_["Makefile.cmake_library"].reset(
+      new ::jk::rules::external::MakefileCMakeLibrary{});
 
   compilers_["CompileDatabase.cc_library"].reset(
       new ::jk::rules::cc::CompileDatabaseCCLibraryCompiler{});
@@ -55,8 +76,8 @@ CompilerFactory::CompilerFactory() {
       new ::jk::rules::cc::CompileDatabaseCCLibraryCompiler{});
   compilers_["CompileDatabase.cc_test"].reset(
       new ::jk::rules::cc::CompileDatabaseCCLibraryCompiler{});
-  compilers_["CompileDatabase.external_project"].reset(
-      new ::jk::rules::external::CompileDatabaseShellScriptCompiler{});
+  NOP_COMPILER("CompileDatabase.shell_script");
+  NOP_COMPILER("CompileDatabase.cmake_library");
 }
 
 Compiler *CompilerFactory::FindCompiler(const std::string &format,

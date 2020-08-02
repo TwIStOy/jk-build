@@ -56,6 +56,11 @@ fs::path BuildRoot() {
   return ProjectRoot() / ".build" / "x86_64";
 }
 
+common::AbsolutePath ProjectFileSystem::ExternalInstalledPrefix() {
+  return ProjectRoot.Sub(".build").Sub(".lib").Sub(fmt::format(
+      "m{}", common::FLAGS_platform == common::Platform::k32 ? 32 : 64));
+}
+
 }  // namespace jk::core::filesystem
 
 // vim: fdm=marker
