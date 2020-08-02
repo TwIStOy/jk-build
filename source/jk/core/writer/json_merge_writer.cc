@@ -6,6 +6,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "jk/utils/logging.hh"
@@ -33,7 +34,8 @@ JSONMergeWriter::JSONMergeWriter(const std::string &path) : path_(path) {
     }
   } catch (...) {
     utils::Logger("writer")->warn(
-        "Load old compile_commands.json failed. Old data will be omitted.");
+        "Read and parse compile_commands.json failed. Old file will be "
+        "ignored.");
     data_.clear();
   }
 }

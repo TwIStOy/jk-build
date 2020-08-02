@@ -25,6 +25,8 @@
 
 namespace jk::rules::cc {
 
+static auto logger = utils::Logger("cc_library");
+
 CCLibrary::CCLibrary(BuildPackage *package, std::string name,
                      std::initializer_list<RuleTypeEnum> types,
                      std::string_view type_name, std::string exported_file_name)
@@ -74,9 +76,8 @@ const std::vector<std::string> &CCLibrary::ResolveIncludes() const {
   std::sort(res.begin(), res.end());
   res.erase(std::unique(res.begin(), res.end()), res.end());
 
-  utils::Logger("cc_library")
-      ->debug("BuildRule: {}, ResolvedIncludes: [{}]", FullQualifiedName(),
-              utils::JoinString(", ", res.begin(), res.end()));
+  logger->debug("BuildRule: {}, ResolvedIncludes: [{}]", FullQualifiedName(),
+                utils::JoinString(", ", res.begin(), res.end()));
 
   resolved_includes_ = std::move(res);
   return resolved_includes_.get();
@@ -99,9 +100,8 @@ const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
   std::sort(res.begin(), res.end());
   res.erase(std::unique(res.begin(), res.end()), res.end());
 
-  utils::Logger("cc_library")
-      ->debug("BuildRule: {}, ResolvedDefinitions: [{}]", FullQualifiedName(),
-              utils::JoinString(", ", res.begin(), res.end()));
+  logger->debug("BuildRule: {}, ResolvedDefinitions: [{}]", FullQualifiedName(),
+                utils::JoinString(", ", res.begin(), res.end()));
 
   resolved_definitions_ = std::move(res);
   return resolved_definitions_.get();
@@ -163,12 +163,12 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
   }
 
   std::sort(std::begin(result), std::end(result));
-  utils::Logger("cc")->info(
+  logger->info(
       "SourceFiles in {}: [{}]", *this,
-      utils::JoinString(", ", std::begin(result), std::end(result)),
-      [](const std::string &filename) -> std::string {
-        return fmt::format("\"{}\"", filename);
-      });
+      utils::JoinString(", ", std::begin(result), std::end(result),
+                        [](const std::string &filename) -> std::string {
+                          return fmt::format(R"("{}")", filename);
+                        }));
 
   expanded_source_files_ = std::move(result);
 

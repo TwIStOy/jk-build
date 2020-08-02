@@ -16,6 +16,7 @@ std::shared_ptr<spdlog::logger> Logger(std::string_view);
 
 #define LOG(logger, lvl, ...) \
   SPDLOG_LOGGER_CALL(logger, ::spdlog::level::lvl, __VA_ARGS__)
+
 #define JK_THROW(e)                                                        \
   do {                                                                     \
     LOG(::jk::utils::Logger("default"), critical, "JKBuildError: {}", #e); \

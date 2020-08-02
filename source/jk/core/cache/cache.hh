@@ -21,9 +21,7 @@ struct BuildRuleCache {
   std::string Name;
   std::vector<std::string> SourceFiles;
 };
-
-void to_json(json &j, const BuildRuleCache &r);
-void from_json(const json &j, BuildRuleCache &r);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BuildRuleCache, Name, SourceFiles);
 
 class CacheDatabase {
  public:

@@ -52,30 +52,35 @@ CompilerFactory *CompilerFactory::Instance() {
   return &factory;
 }
 
-#define NOP_COMPILER(name)                             \
-  do {                                                 \
-    std::string __name = (name);                       \
-    compilers_[__name].reset(new NopCompiler(__name)); \
+#define NOP_COMPILER(name)                                 \
+  do {                                                     \
+    std::string __name = (name);                           \
+    logger->debug("Register nop compiler for {}", __name); \
+    compilers_[__name].reset(new NopCompiler(__name));     \
+  } while (0);
+#define REG_COMPILER(name, cls)                                 \
+  do {                                                          \
+    std::string __name = (name);                                \
+    logger->debug("Register {} compiler for {}", #cls, __name); \
+    compilers_[__name].reset(new cls{});                        \
   } while (0);
 
 CompilerFactory::CompilerFactory() {
-  compilers_["Makefile.cc_library"].reset(
-      new ::jk::rules::cc::MakefileCCLibraryCompiler);
-  compilers_["Makefile.cc_binary"].reset(
-      new ::jk::rules::cc::MakefileCCBinaryCompiler{});
-  compilers_["Makefile.cc_test"].reset(
-      new ::jk::rules::cc::MakefileCCTestCompiler{});
-  compilers_["Makefile.shell_script"].reset(
-      new ::jk::rules::external::MakefileShellScriptCompiler{});
-  compilers_["Makefile.cmake_library"].reset(
-      new ::jk::rules::external::MakefileCMakeLibrary{});
+  REG_COMPILER("Makefile.cc_library",
+               ::jk::rules::cc::MakefileCCLibraryCompiler);
+  REG_COMPILER("Makefile.cc_binary", ::jk::rules::cc::MakefileCCBinaryCompiler);
+  REG_COMPILER("Makefile.cc_test", ::jk::rules::cc::MakefileCCTestCompiler);
+  REG_COMPILER("Makefile.shell_script",
+               ::jk::rules::external::MakefileShellScriptCompiler);
+  REG_COMPILER("Makefile.cmake_library",
+               ::jk::rules::external::MakefileCMakeLibrary);
 
-  compilers_["CompileDatabase.cc_library"].reset(
-      new ::jk::rules::cc::CompileDatabaseCCLibraryCompiler{});
-  compilers_["CompileDatabase.cc_binary"].reset(
-      new ::jk::rules::cc::CompileDatabaseCCLibraryCompiler{});
-  compilers_["CompileDatabase.cc_test"].reset(
-      new ::jk::rules::cc::CompileDatabaseCCLibraryCompiler{});
+  REG_COMPILER("CompileDatabase.cc_library",
+               ::jk::rules::cc::CompileDatabaseCCLibraryCompiler);
+  REG_COMPILER("CompileDatabase.cc_binary",
+               ::jk::rules::cc::CompileDatabaseCCLibraryCompiler);
+  REG_COMPILER("CompileDatabase.cc_test",
+               ::jk::rules::cc::CompileDatabaseCCLibraryCompiler);
   NOP_COMPILER("CompileDatabase.shell_script");
   NOP_COMPILER("CompileDatabase.cmake_library");
 }

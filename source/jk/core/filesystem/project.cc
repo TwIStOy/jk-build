@@ -3,6 +3,8 @@
 
 #include "jk/core/filesystem/project.hh"
 
+#include <string>
+
 #include "boost/optional.hpp"
 #include "jk/common/flags.hh"
 #include "jk/core/error.h"
@@ -38,8 +40,9 @@ fs::path ProjectRoot() {
 
   auto current = fs::current_path();
   while (current.parent_path() != current) {
-    utils::Logger("jk")->info(R"(Checking folder "{}"...)", current.string());
+    utils::Logger("jk")->debug(R"(Checking folder "{}"...)", current.string());
     if (HasRootMarker(current)) {
+      utils::Logger("jk")->info("Project Root: {}", current.string());
       _ProjectRoot = current;
       return current;
     }

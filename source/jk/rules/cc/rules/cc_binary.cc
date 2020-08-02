@@ -13,8 +13,12 @@
 
 #include "jk/core/rules/build_rule.hh"
 #include "jk/utils/logging.hh"
+#include "jk/utils/str.hh"
 
 namespace jk::rules::cc {
+
+static auto logger = utils::Logger("cc_binary");
+
 std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
     core::filesystem::ProjectFileSystem *project,
     const std::string &build_type) const {
@@ -30,6 +34,12 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
     res.insert(res.end(), std::begin(exported_ldflags),
                std::end(exported_ldflags));
   }
+
+  logger->debug("Resolved dep and flags: [{}]",
+                utils::JoinString(", ", std::begin(res), std::end(res),
+                                  [](const std::string &s) {
+                                    return "\"{}\""_format(s);
+                                  }));
 
   return res;
 }

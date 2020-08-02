@@ -22,10 +22,11 @@ namespace rules {
 
 static auto logger = utils::Logger("Package");
 
-BuildPackage::BuildPackage(std::string name, common::ProjectRelativePath path)
+BuildPackage::BuildPackage(std::string name,  // {{{
+                           common::ProjectRelativePath path)
     : Name(std::move(name)), Path(std::move(path)) {
-  logger->info(R"(New BuildPackage at "{}")", Path);
-}
+  logger->debug(R"(New BuildPackage at "{}")", Path);
+}  // }}}
 
 void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
   if (initialized_) {

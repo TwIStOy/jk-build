@@ -16,13 +16,12 @@ namespace jk::utils {
 static std::vector<spdlog::sink_ptr> Sinks() {
   auto fileSink =
       std::make_shared<spdlog::sinks::basic_file_sink_mt>("jk-build.log");
-
-  fileSink->set_level(spdlog::level::debug);
+  fileSink->set_level(spdlog::level::trace);
   // [I2020-06-25 12:01:02.0003] 123-123 <logger> logging.cc:23] my logs
-  fileSink->set_pattern("[%L%Y-%m-%d %H:%M:%S.%e] %P-%t <%n> %@] %v");
+  fileSink->set_pattern("[%L%Y-%m-%d %H:%M:%S.%e] <%n> %@] %v");
 
   auto consoleSink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
-  consoleSink->set_pattern("%+");
+  consoleSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e][%15n][%^%8l%$] %v");
   consoleSink->set_level(spdlog::level::info);
 
   return {fileSink, consoleSink};
@@ -41,11 +40,9 @@ std::shared_ptr<spdlog::logger> Logger(std::string_view name) {
     return logger;
   }
 
-  // logger = std::make_shared<spdlog::async_logger>(
-  //     name.cbegin(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
-  //     spdlog::async_overflow_policy::overrun_oldest);
   logger = std::make_shared<spdlog::logger>(name.cbegin(), sinks.begin(),
                                             sinks.end());
+  logger->set_level(spdlog::level::trace);
   spdlog::register_logger(logger);
   return logger;
 }

@@ -13,15 +13,6 @@
 
 namespace jk::core::cache {
 
-void to_json(json &j, const BuildRuleCache &r) {
-  j = json{{"name", r.Name}, {"source_files", r.SourceFiles}};
-}
-
-void from_json(const json &j, BuildRuleCache &r) {
-  j.at("name").get_to(r.Name);
-  j.at("source_files").get_to(r.SourceFiles);
-}
-
 CacheDatabase::CacheDatabase() {
 }
 

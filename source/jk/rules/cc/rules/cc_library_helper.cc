@@ -19,6 +19,7 @@ std::list<std::string> MergeDepHeaders(
           return project->Resolve(dep->Package->Path.Sub(filename)).Stringify();
         });
   }
+
   return all_dep_headers;
 }
 

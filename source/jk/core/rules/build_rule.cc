@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "fmt/core.h"
@@ -27,9 +28,9 @@ namespace jk {
 namespace core {
 namespace rules {
 
-static auto logger = utils::Logger("BuildRule");
+static auto logger = utils::Logger("rule");
 
-std::string RuleType::Stringify() const {
+std::string RuleType::Stringify() const {  // {{{
   std::vector<std::string> flags;
   if (value_ & static_cast<uint8_t>(RuleTypeEnum::kLibrary)) {
     flags.push_back("library");
@@ -48,9 +49,9 @@ std::string RuleType::Stringify() const {
   }
   return "RuleType [{}]"_format(
       utils::JoinString(" | ", flags.begin(), flags.end()));
-}
+}  // }}}
 
-std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
+std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
   if (topological_sorting_result_) {
     return topological_sorting_result_.value();
   }
@@ -120,43 +121,27 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {
 
   std::reverse(std::begin(after_sorted), std::end(after_sorted));
   topological_sorting_result_ = after_sorted;
-  logger->info(
+  logger->debug(
       "{}, deps: [{}]", *this,
       utils::JoinString(", ", after_sorted, [](const BuildRule *const rule) {
         return "{}"_format(*rule);
       }));
   return after_sorted;
-}
+}  // }}}
 
-std::string BuildRule::Stringify() const {
+std::string BuildRule::Stringify() const {  // {{{
   return R"(<Rule:{} "{}:{}">)"_format(TypeName, Package->Name, Name);
-  // std::ostringstream oss;
-  // oss << "BuildRule { ";
-  //
-  // std::vector<std::string> fields;
-  //
-  // fields.push_back("Package = {}"_format(Package->Name));
-  // fields.push_back("Name = {}"_format(Name));
-  // fields.push_back("Type = {}"_format(Type));
-  // fields.push_back("TypeName = {}"_format(TypeName));
-  // fields.push_back("Dependencies = [{}]"_format(utils::JoinString(
-  //     ", ", dependencies_str_.begin(), dependencies_str_.end())));
-  //
-  // oss << utils::JoinString(", ", fields.begin(), fields.end());
-  //
-  // oss << " }";
-  // return oss.str();
-}
+}  // }}}
 
-RuleType MergeType(std::initializer_list<RuleTypeEnum> types) {
+RuleType MergeType(std::initializer_list<RuleTypeEnum> types) {  // {{{
   RuleType rtp;
   for (auto tp : types) {
     rtp.SetType(tp);
   }
   return rtp;
-}
+}  // }}}
 
-BuildRule::BuildRule(BuildPackage *package, std::string name,
+BuildRule::BuildRule(BuildPackage *package, std::string name,  // {{{
                      std::initializer_list<RuleTypeEnum> types,
                      std::string_view type_name)
     : Package(package),
@@ -164,33 +149,34 @@ BuildRule::BuildRule(BuildPackage *package, std::string name,
       Type(MergeType(types)),
       TypeName(type_name) {
   package->Rules[Name].reset(this);
-}
+}  // }}}
 
-std::string BuildRule::FullQualifiedName() const {
+std::string BuildRule::FullQualifiedName() const {  // {{{
   return fmt::format("{}/{}", Package->Name, Name);
-}
+}  // }}}
 
-std::string BuildRule::FullQualifiedTarget(const std::string &output) const {
+std::string BuildRule::FullQualifiedTarget(  // {{{
+    const std::string &output) const {
   if (Type.IsCC()) {
     return fmt::format("{}/{}", FullQualifiedName(), output);
   } else {
     return fmt::format("{}/build", FullQualifiedName());
   }
-}
+}  // }}}
 
-void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
+void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {  // {{{
   dependencies_str_ =
       kwargs.ListOptional("deps", boost::optional<utils::Kwargs::ListType>{{}});
-}
+}  // }}}
 
-void BuildRule::BuildDependencies(BuildPackageFactory *factory,
+void BuildRule::BuildDependencies(BuildPackageFactory *factory,  // {{{
                                   utils::CollisionNameStack *pstk,
                                   utils::CollisionNameStack *rstk) {
   if (dependencies_has_built_) {
     return;
   }
 
-  logger->info("{} build dependencies", *this);
+  logger->debug("{} build dependencies", *this);
 
   if (!rstk->Push(FullQualifiedName())) {
     JK_THROW(JKBuildError(
@@ -243,14 +229,14 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,
   rstk->Pop();
 
   dependencies_has_built_ = true;
-}
+}  // }}}
 
-common::AbsolutePath BuildRule::WorkingFolder(
+common::AbsolutePath BuildRule::WorkingFolder(  // {{{
     const common::AbsolutePath &build_root) const {
   return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@"));
-}
+}  // }}}
 
-void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,
+void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
                                  std::unordered_set<std::string> *recorder) {
   if (recorder) {
     auto it = recorder->find(this->FullQualifiedName());
@@ -265,9 +251,9 @@ void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,
   for (auto it : Dependencies) {
     it->RecursiveExecute(func, recorder);
   }
-}
+}  // }}}
 
-json BuildRule::CacheState() const {
+json BuildRule::CacheState() const {  // {{{
   json res;
 
   res["name"] = FullQualifiedName();
@@ -281,9 +267,11 @@ json BuildRule::CacheState() const {
   res["deps"] = deps;
 
   return res;
-}
+}  // }}}
 
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
+
+// vim: fdm=marker
 

@@ -3,6 +3,14 @@
 
 #include "jk/rules/cc/source_file.hh"
 
+#include <algorithm>
+#include <list>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
@@ -15,7 +23,7 @@ namespace jk {
 namespace rules {
 namespace cc {
 
-auto logger = utils::Logger("SourceFile");
+auto logger = utils::Logger("source_file");
 
 static std::unordered_set<std::string> CppExtensions = {
     ".cc", ".cpp", ".cxx", ".CC", ".CPP", ".CXX",
@@ -27,6 +35,7 @@ static std::unordered_set<std::string> CExtensions = {
 std::string SourceFile::Stringify() const {
   return "SourceFile({})"_format(FullQualifiedPath());
 }
+
 std::unordered_map<std::string, std::unique_ptr<SourceFile>>
     SourceFile::source_files_;
 

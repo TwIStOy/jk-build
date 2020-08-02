@@ -10,6 +10,7 @@
 #include <fstream>
 #include <functional>
 #include <iterator>
+#include <utility>
 
 #include "jk/core/rules/build_rule.hh"
 #include "jk/rules/cc/rules/cc_binary.hh"
@@ -17,10 +18,13 @@
 #include "jk/rules/cc/rules/cc_test.hh"
 #include "jk/rules/external/rules/cmake_project.hh"
 #include "jk/rules/external/rules/shell_script.hh"
+#include "jk/utils/logging.hh"
 
 namespace jk {
 namespace core {
 namespace script {
+
+static auto logger = utils::Logger("script");
 
 ScriptInterpreter *ScriptInterpreter::Instance() {
   static ScriptInterpreter interp;
@@ -29,6 +33,7 @@ ScriptInterpreter *ScriptInterpreter::Instance() {
 
 void ScriptInterpreter::RegHook(const std::string &name,
                                 HookFunctionType func) {
+  logger->debug("Registering script hook: {}", name);
   hook_functions_.push_back(HookFunction{name, std::move(func)});
 }
 
@@ -77,6 +82,8 @@ void ScriptInterpreter::EvalScriptContent(rules::BuildPackage *pkg,
 
 void ScriptInterpreter::EvalScript(rules::BuildPackage *pkg,
                                    std::string_view filename) {
+  logger->debug("Eval script {}", filename);
+
   std::ifstream ifs(filename.data());
   std::string content(std::istreambuf_iterator<char>{ifs},
                       std::istreambuf_iterator<char>{});
