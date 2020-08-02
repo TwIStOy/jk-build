@@ -53,6 +53,10 @@ struct AbsolutePath final : public utils::Stringifiable {
 };
 
 inline void AssumeFolder(const fs::path &rp) {
+  if (rp == "/") {
+    return;
+  }
+
   if (fs::exists(rp)) {
     if (fs::is_directory(rp)) {
       return;

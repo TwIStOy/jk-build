@@ -22,6 +22,8 @@ extern std::vector<std::string> FLAGS_BuildTypes;
 
 std::string ToString(common::Platform plt);
 
+extern uint32_t FLAGS_terminal_columns;
+
 }  // namespace jk::common
 
 // vim: fdm=marker

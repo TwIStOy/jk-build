@@ -5,6 +5,8 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
+#include <cctype>
 #include <iterator>
 #include <sstream>
 #include <string>
@@ -101,6 +103,19 @@ inline std::string Replace(const std::string &old, char from, const T &to) {
   }
 
   return oss.str();
+}
+
+inline std::string ToLower(const std::string &s) {
+  std::string res;
+  std::transform(std::begin(s), std::end(s), std::back_inserter(res),
+                 [](char ch) {
+                   return std::tolower(ch);
+                 });
+  return res;
+}
+
+inline bool EqualIgnoreCase(const std::string &lhs, const std::string &rhs) {
+  return ToLower(lhs) == ToLower(rhs);
 }
 
 std::string EscapeForShellStyle(const std::string &raw);

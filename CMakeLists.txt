@@ -10,21 +10,8 @@ set(PYBIND11_CPP_STANDARD -std=c++1z)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
-
-# set(CMAKE_CXX_CPPLINT "cpplint")
-
 # include(CodeCoverage)
 # append_coverage_compiler_flags()
-
-# set(CMAKE_CXX_FLAGS_DEBUG -fsanitize=address
-#                           -fno-inline
-#                           -fno-omit-frame-pointer
-#                           -fno-builtin
-#                           -fno-optimize-sibling-calls
-#                           -Wframe-larger-than=65535
-#                           -fno-omit-frame-pointer
-# )
-
 
 add_executable(jk "")
 add_library(libjk STATIC "")
@@ -54,7 +41,19 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 find_package(Threads REQUIRED)
 
+find_package(CURL REQUIRED)
+if (CURL_FOUND)
+  include_directories(${CURL_INCLUDE_DIRS})
+  target_link_libraries(libjk PUBLIC ${CURL_LIBRARIES})
+endif()
+
 find_package(OpenSSL REQUIRED)
+
+target_link_libraries(libjk PUBLIC OpenSSL::SSL)
+target_link_libraries(libjk PUBLIC OpenSSL::Crypto)
+
+# set -gx LDFLAGS "-L/usr/local/opt/openssl@1.1/lib"
+# set -gx CPPFLAGS "-I/usr/local/opt/openssl@1.1/include"
 
 # --- boost section ---
 set(Boost_USE_STATIC_LIBS ON)

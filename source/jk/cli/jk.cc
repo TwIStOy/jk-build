@@ -8,6 +8,7 @@
 #include "args.hxx"
 #include "fmt/core.h"
 #include "jk/cli/cli.hh"
+#include "jk/cli/download.hh"
 #include "jk/cli/echo_color.hh"
 #include "jk/cli/gen.hh"
 #include "jk/cli/progress.hh"
@@ -28,6 +29,7 @@ Cli::Cli() {
   NewSubCommand("echo_color", "Echo color", &EchoColor);
   NewSubCommand("gen", "Generate...", &Generate);
   NewSubCommand("start_progress", "Start progres...", &StartProgress);
+  NewSubCommand("download", "Download file...", &DownloadFile);
   // Add commands
 }
 
