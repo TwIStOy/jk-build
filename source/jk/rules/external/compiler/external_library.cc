@@ -56,7 +56,8 @@ MakefileExternalLibraryCompiler::DownloadAndDecompress(
     });
     auto download_stmt = core::builder::CustomCommandLine::Make(
         {"@$(DOWNLOAD)", "$(URL)",
-         working_folder.Sub(rule->OutputFile).Stringify(), rule->Sha256});
+         working_folder.Sub(rule->OutputFile).Stringify(), rule->Sha256,
+         "$COLUMNS"});
     auto download_touch_stmt =
         core::builder::CustomCommandLine::Make({"@touch", download_target});
     makefile->AddTarget(download_target, {},
