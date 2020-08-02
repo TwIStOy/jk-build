@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -17,22 +18,22 @@ namespace jk::utils {
 
 class ProgressBar {
  public:
-  inline explicit ProgressBar(uint32_t total, uint32_t bar_width = 0,
-                              char base = '=', bool arrow = true)
-      : total_(total), base_(base), arrow_(arrow) {
+  inline explicit ProgressBar(uint32_t bar_width = 0, char base = '=',
+                              bool arrow = true)
+      : base_(base), arrow_(arrow) {
     if (bar_width == 0) {
       bar_width_ = common::FLAGS_terminal_columns - 7;
     }
   }
 
-  inline void Update(uint32_t now, uint32_t total) {
-    now_ = now;
-    total_ = total;
-  }
+  inline void Print(std::ostream &out, double now, double total) {
+    auto percent = now / total;
+    if (total < 1e-6) {
+      percent = 0;
+    }
 
-  inline void Print(std::ostream &out) {
-    auto percent = static_cast<double>(now_) / total_;
     int32_t place_numbers = bar_width_ * percent;
+    place_numbers = std::max<int32_t>(place_numbers, bar_width_);
 
     std::ostringstream oss;
 
@@ -64,11 +65,10 @@ class ProgressBar {
     oss << fmt::format("] {:3d}%", static_cast<int32_t>(percent * 100));
 
     out << oss.str();
+    out.flush();
   }
 
  private:
-  uint32_t total_;
-  uint32_t now_{0};
   uint32_t bar_width_;
   char base_;
   bool arrow_;

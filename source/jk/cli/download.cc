@@ -132,8 +132,7 @@ static int FileDownloadProgressCallback(void *clientp, double dltotal,
   static_cast<void>(ultotal);
   static_cast<void>(ulnow);
 
-  helper->Update(dlnow, dltotal);
-  helper->Print(std::cout);
+  helper->Print(std::cout, dlnow, dltotal);
 
   return 0;
 }
@@ -202,7 +201,7 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
     ::curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, inactivity_timeout);
   }
 
-  utils::ProgressBar bar{0};
+  utils::ProgressBar bar;
 
   res = ::curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
   CheckCurlResult(res, "DOWNLOAD cannot set noprogress value");
@@ -214,8 +213,6 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
   res = ::curl_easy_setopt(curl, CURLOPT_PROGRESSDATA,
                            reinterpret_cast<void *>(&bar));
   CheckCurlResult(res, "DOWNLOAD cannot set progress data");
-
-  std::cout << "Perform..." << std::endl;
 
   res = ::curl_easy_perform(curl);
   guard.release();
