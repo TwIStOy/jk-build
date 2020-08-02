@@ -66,8 +66,7 @@ if (Boost_FOUND)
   target_link_libraries(libjk PUBLIC ${Boost_SYSTEM_LIBRARIES})
 endif()
 
-include_directories(.)
-include_directories(./include)
+include_directories(./source)
 include_directories(third-party/include)
 
 # --- third-party section ---
@@ -91,11 +90,11 @@ target_link_libraries(libjk PUBLIC nlohmann_json::nlohmann_json)
 
 # --- source fies ---
 
-file(GLOB_RECURSE JK_SOURCE_FILES ./src/*.cc)
-file(GLOB_RECURSE JK_TEST_FILES ./test/*.cc)
+file(GLOB_RECURSE JK_SOURCE_FILES ./source/jk/*.cc)
+file(GLOB_RECURSE JK_TEST_FILES ./source/test/*.cc)
 
 target_sources(libjk PRIVATE ${JK_SOURCE_FILES})
-target_sources(jk PRIVATE src/main.cc)
+target_sources(jk PRIVATE source/main.cc)
 target_sources(jk_test PRIVATE ${JK_TEST_FILES})
 
 install(TARGETS jk)
