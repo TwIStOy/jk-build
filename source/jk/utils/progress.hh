@@ -26,14 +26,17 @@ class ProgressBar {
     }
   }
 
-  inline void Print(std::ostream &out, double now, double total) {
-    auto percent = now / total;
-    if (total < 1e-6) {
+  inline void Print(std::ostream &out, uint64_t now, uint64_t total,
+                    const std::string &msg) {
+    auto percent = static_cast<double>(now) / total;
+    if (total == 0) {
       percent = 0;
     }
+    auto width = bar_width_;
+    width -= msg.length() + 1;
 
-    int32_t place_numbers = bar_width_ * percent;
-    place_numbers = std::max<int32_t>(place_numbers, bar_width_);
+    int32_t place_numbers = width * percent;
+    place_numbers = std::min<int32_t>(place_numbers, width);
 
     std::ostringstream oss;
 
@@ -47,7 +50,7 @@ class ProgressBar {
 
       place_numbers = std::max<int32_t>(place_numbers, 0);
     }
-    auto rest = bar_width_;
+    auto rest = width;
 
     oss << '[';
     for (auto i = 0; i < place_numbers; i++) {
@@ -63,6 +66,7 @@ class ProgressBar {
       oss << ' ';
     }
     oss << fmt::format("] {:3d}%", static_cast<int32_t>(percent * 100));
+    oss << " " << msg;
 
     out << oss.str();
     out.flush();

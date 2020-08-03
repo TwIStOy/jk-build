@@ -6,6 +6,7 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -17,6 +18,7 @@
 #include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
+#include "jk/utils/bytes.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/progress.hh"
 #include "jk/utils/str.hh"
@@ -124,15 +126,34 @@ static size_t FileCommandCurlDebugCallback(::CURL *, curl_infotype type,
   return 0;
 }
 
-static int FileDownloadProgressCallback(void *clientp, double dltotal,
-                                        double dlnow, double ultotal,
-                                        double ulnow) {
+static curl_off_t previous_dl = 0;
+static std::chrono::time_point<std::chrono::high_resolution_clock> previous_ts;
+static int FileDownloadProgressCallback(void *clientp, curl_off_t dltotal,
+                                        curl_off_t dlnow, curl_off_t ultotal,
+                                        curl_off_t ulnow) {
   utils::ProgressBar *helper = reinterpret_cast<utils::ProgressBar *>(clientp);
 
   static_cast<void>(ultotal);
   static_cast<void>(ulnow);
 
-  helper->Print(std::cout, dlnow, dltotal);
+  auto ts = std::chrono::high_resolution_clock::now();
+  auto delta = dlnow - previous_dl;
+  if (delta == 0) {
+    return 0;
+  }
+
+  std::chrono::duration<double> diff = ts - previous_ts;
+
+  previous_ts = ts;
+  previous_dl = dlnow;
+
+  auto speed = delta / diff.count();
+
+  auto msg =
+      "{}/{} {}/s"_format(utils::BytesCount(dlnow), utils::BytesCount(dltotal),
+                          utils::BytesCount(speed));
+
+  helper->Print(std::cout, dlnow, dltotal, msg);
 
   return 0;
 }
@@ -206,14 +227,15 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
   res = ::curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
   CheckCurlResult(res, "DOWNLOAD cannot set noprogress value");
 
-  res = ::curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION,
+  res = ::curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
                            FileDownloadProgressCallback);
   CheckCurlResult(res, "DOWNLOAD cannot set progress function");
 
-  res = ::curl_easy_setopt(curl, CURLOPT_PROGRESSDATA,
+  res = ::curl_easy_setopt(curl, CURLOPT_XFERINFODATA,
                            reinterpret_cast<void *>(&bar));
   CheckCurlResult(res, "DOWNLOAD cannot set progress data");
 
+  previous_ts = std::chrono::high_resolution_clock::now();
   res = ::curl_easy_perform(curl);
   guard.release();
   ::curl_easy_cleanup(curl);
