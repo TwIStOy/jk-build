@@ -12,6 +12,7 @@
 #include <iterator>
 #include <utility>
 
+#include "jk/common/flags.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/rules/cc/rules/cc_binary.hh"
 #include "jk/rules/cc/rules/cc_library.hh"
@@ -68,7 +69,13 @@ pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {
 }
 
 void ScriptInterpreter::AddConnomLocals(pybind11::dict *locals) {
-  locals->operator[]("platform") = 32;
+  if (common::FLAGS_platform == common::Platform::k32) {
+    locals->operator[]("platform") = 32;
+    locals->operator[]("PLATFORM") = 32;
+  } else {
+    locals->operator[]("platform") = 64;
+    locals->operator[]("PLATFORM") = 64;
+  }
   // TODO(hawtian): fill common
 }
 
@@ -89,6 +96,8 @@ void ScriptInterpreter::EvalScript(rules::BuildPackage *pkg,
                       std::istreambuf_iterator<char>{});
 
   EvalScriptContent(pkg, content);
+
+  logger->debug("Eval script {} done.", filename);
 }
 
 ScriptInterpreter::ScriptInterpreter() {
