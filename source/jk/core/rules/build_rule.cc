@@ -155,6 +155,16 @@ std::string BuildRule::FullQualifiedName() const {  // {{{
   return fmt::format("{}/{}", Package->Name, Name);
 }  // }}}
 
+std::string BuildRule::FullQuotedQualifiedName() const {  // {{{
+  auto str = FullQualifiedName();
+  for (auto &ch : str) {
+    if (ch == '/') {
+      ch = '_';
+    }
+  }
+  return str;
+}  // }}}
+
 std::string BuildRule::FullQualifiedTarget(  // {{{
     const std::string &output) const {
   if (Type.IsCC()) {
@@ -268,6 +278,11 @@ json BuildRule::CacheState() const {  // {{{
 
   return res;
 }  // }}}
+
+std::unordered_map<std::string, std::string> BuildRule::ExportedEnvironmentVar()
+    const {
+  return {};
+}
 
 }  // namespace rules
 }  // namespace core

@@ -99,7 +99,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
 
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateToolchain(w.get());
+    auto makefile = compiler->GenerateToolchain(w.get(), rule);
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
@@ -112,7 +112,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
 
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateToolchain(w.get());
+    auto makefile = compiler->GenerateToolchain(w.get(), rule);
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
@@ -228,7 +228,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
 
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateToolchain(w.get());
+    auto makefile = compiler->GenerateToolchain(w.get(), rule);
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
@@ -241,7 +241,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
 
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateToolchain(w.get());
+    auto makefile = compiler->GenerateToolchain(w.get(), rule);
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");

@@ -12,17 +12,24 @@
 #include "jk/core/compile/compile.hh"
 #include "jk/core/output/makefile.hh"
 #include "jk/core/writer/writer.hh"
+#include "jk/rules/cc/compiler/cc_library.hh"
 #include "jk/rules/cc/rules/proto_library.hh"
 
 namespace jk::rules::cc {
 
-struct MakefileProtoLibraryCompiler : public core::compile::Compiler {
+struct MakefileProtoLibraryCompiler : public MakefileCCLibraryCompiler {
   std::string Name() const override;
 
   void Compile(
       core::filesystem::ProjectFileSystem *project,
       core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
+
+  core::output::UnixMakefilePtr GenerateBuild(
+      core::filesystem::ProjectFileSystem *project,
+      const common::AbsolutePath &working_folder, core::writer::Writer *w,
+      ProtoLibrary *rule,
+      core::filesystem::FileNamePatternExpander *expander) const;
 };
 
 }  // namespace jk::rules::cc

@@ -3,12 +3,19 @@
 
 #include "jk/rules/cc/rules/proto_library.hh"
 
+#include <algorithm>
+#include <unordered_set>
+#include <utility>
+
+#include "jk/core/rules/package.hh"
+
 namespace jk::rules::cc {
 
+static auto logger = utils::Logger("proto_library");
+
 ProtoLibrary::ProtoLibrary(BuildPackage *package, std::string name)
-    : BuildRule(package, name, {RuleTypeEnum::kLibrary, RuleTypeEnum::kCC},
-                "proto_library"),
-      ExportedFileName(fmt::format("lib{}.a", name)) {
+    : CCLibrary(package, name, {RuleTypeEnum::kLibrary, RuleTypeEnum::kCC},
+                "proto_library", fmt::format("lib{}.a", name)) {
 }
 
 bool ProtoLibrary::IsStable() const {
@@ -18,7 +25,10 @@ bool ProtoLibrary::IsStable() const {
 void ProtoLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   BuildRule::ExtractFieldFromArguments(kwargs);
 
+  auto empty_list = boost::make_optional<std::vector<std::string>>({});
+
   Sources = kwargs.ListRequired("srcs");
+  Sources = kwargs.ListOptional("excludes", empty_list);
 }
 
 std::vector<std::string> ProtoLibrary::ExportedFilesSimpleName(

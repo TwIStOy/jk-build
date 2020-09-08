@@ -47,6 +47,9 @@ struct SourceFile : public utils::Stringifiable {
   common::AbsolutePath FullQualifiedLintPath(
       const common::AbsolutePath &new_root) const;
 
+  common::AbsolutePath FullQualifiedPbPath(
+      const common::AbsolutePath &new_root) const;
+
   bool IsCppSourceFile() const;
   bool IsCSourceFile() const;
   bool IsSourceFile() const;

@@ -13,6 +13,7 @@
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
+#include "jk/rules/cc/rules/cc_library.hh"
 #include "pybind11/pytypes.h"
 
 namespace jk::rules::cc {
@@ -21,7 +22,7 @@ using core::rules::BuildPackage;
 using core::rules::BuildRule;
 using core::rules::RuleTypeEnum;
 
-class ProtoLibrary : public BuildRule {
+class ProtoLibrary : public CCLibrary {
  public:
   ProtoLibrary(BuildPackage *package, std::string name);
 
@@ -37,11 +38,8 @@ class ProtoLibrary : public BuildRule {
       core::filesystem::ProjectFileSystem *project,
       const std::string &build_type) const override;
 
-  // --- Fields Start ---
-  std::vector<std::string> Sources;
-  // --- Fields End ---
-
-  const std::string ExportedFileName;
+ private:
+  mutable boost::optional<std::vector<std::string>> expanded_proto_files_;
 };
 
 }  // namespace jk::rules::cc

@@ -91,6 +91,9 @@ struct BuildRule : public utils::Stringifiable {
   //! converted into the rules folder name, just like cmake does.
   std::string FullQualifiedName() const;
 
+  //! Return the rule's full quoted qualifed name.
+  std::string FullQuotedQualifiedName() const;
+
   //! Return the rule's full qualifed name. This named will automatically be
   //! converted into the rules folder name, just like cmake does.
   std::string FullQualifiedTarget(const std::string &output = "") const;
@@ -135,6 +138,9 @@ struct BuildRule : public utils::Stringifiable {
   //! should hint `JK` to make dependencies between source files and these
   //! headers.
   virtual std::vector<std::string> ExportedHeaders() const = 0;
+
+  virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar()
+      const;
 
   //! Return json object in cache
   virtual json CacheState() const;

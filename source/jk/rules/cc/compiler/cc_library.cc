@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include "fmt/core.h"
+#include "fmt/format.h"
 #include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
 #include "jk/common/path.hh"
@@ -59,8 +61,9 @@ void MakefileCCLibraryCompiler ::Compile(
   //   3. build.make: main build file, include how to all sources files
   GenerateFlags(wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
                 rule);
+
   GenerateToolchain(
-      wf->Build(working_folder.Sub("toolchain.make").Stringify()).get());
+      wf->Build(working_folder.Sub("toolchain.make").Stringify()).get(), rule);
 
   GenerateBuild(project, working_folder,
                 wf->Build(working_folder.Sub("build.make").Stringify()).get(),
@@ -82,7 +85,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   build->AddTarget("all", {"DEBUG"}, {}, "", true);
 
-  build->AddTarget("jk_force", {}, {}, "This target is always oudated.", true);
+  build->AddTarget("jk_force", {}, {}, "This target is always outdated.", true);
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
@@ -264,7 +267,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 }
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
-    core::writer::Writer *w) const {
+    core::writer::Writer *w, CCLibrary *rule) const {
   auto makefile =
       std::make_unique<core::output::UnixMakefile>("toolchain.make");
 
@@ -283,6 +286,18 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   makefile->DefineEnvironment("CPPLINT", "cpplint");
 
   makefile->DefineEnvironment("MKDIR", "mkdir -p");
+
+  auto deps = rule->DependenciesInOrder();
+  for (auto dep : deps) {
+    for (const auto &[k, v] : dep->ExportedEnvironmentVar()) {
+      makefile->DefineEnvironment(
+          fmt::format("{}_{}", dep->FullQuotedQualifiedName(), k), v);
+    }
+  }
+  for (const auto &[k, v] : rule->ExportedEnvironmentVar()) {
+    makefile->DefineEnvironment(
+        fmt::format("{}_{}", rule->FullQuotedQualifiedName(), k), v);
+  }
 
   makefile->Write(w);
   return makefile;

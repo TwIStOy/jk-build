@@ -33,7 +33,7 @@ void MakefileCCBinaryCompiler::Compile(
   GenerateFlags(wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
                 rule);
   GenerateToolchain(
-      wf->Build(working_folder.Sub("toolchain.make").Stringify()).get());
+      wf->Build(working_folder.Sub("toolchain.make").Stringify()).get(), rule);
 
   GenerateBuild(project, working_folder,
                 wf->Build(working_folder.Sub("build.make").Stringify()).get(),
