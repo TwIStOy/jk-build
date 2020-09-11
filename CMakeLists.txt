@@ -67,6 +67,7 @@ endif()
 
 include_directories(./source)
 include_directories(third-party/include)
+include_directories(third-party/toml11)
 
 # --- third-party section ---
 add_subdirectory(third-party/fmt)

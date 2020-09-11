@@ -30,6 +30,12 @@ struct MakefileProtoLibraryCompiler : public MakefileCCLibraryCompiler {
       const common::AbsolutePath &working_folder, core::writer::Writer *w,
       ProtoLibrary *rule,
       core::filesystem::FileNamePatternExpander *expander) const;
+
+  void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
+                      const std::string &build_type, SourceFile *source_file,
+                      const std::list<std::string> &headers,
+                      core::output::UnixMakefile *build,
+                      const common::AbsolutePath &working_folder) const;
 };
 
 }  // namespace jk::rules::cc

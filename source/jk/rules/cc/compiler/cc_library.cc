@@ -63,6 +63,7 @@ void MakefileCCLibraryCompiler ::Compile(
                 rule);
 
   GenerateToolchain(
+      project,
       wf->Build(working_folder.Sub("toolchain.make").Stringify()).get(), rule);
 
   GenerateBuild(project, working_folder,
@@ -98,6 +99,10 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   // lint sources first
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
+    if (rule->IsNolint(
+            project->Resolve(source_file->FullQualifiedPath()).Stringify())) {
+      continue;
+    }
 
     progress_num.push_back(
         LintSourceFile(project, source_file, build.get(), working_folder));
@@ -207,12 +212,18 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
     SourceFile *source_file, const std::list<std::string> &headers,
     core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
+  std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
+                              working_folder.Sub("toolchain.make").Stringify()};
+  if (!source_file->Rule->Downcast<CCLibrary>()->IsNolint(
+          project->Resolve(source_file->FullQualifiedPath()))) {
+    deps.push_back(
+        source_file->FullQualifiedLintPath(working_folder).Stringify());
+  }
+
   build->AddTarget(
       source_file->FullQualifiedObjectPath(working_folder, build_type)
           .Stringify(),
-      {working_folder.Sub("flags.make").Stringify(),
-       working_folder.Sub("toolchain.make").Stringify(),
-       source_file->FullQualifiedLintPath(working_folder).Stringify()});
+      deps);
   build->Include(source_file->FullQualifiedDotDPath(working_folder, build_type)
                      .Stringify());
 
@@ -267,7 +278,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 }
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
-    core::writer::Writer *w, CCLibrary *rule) const {
+    core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+    CCLibrary *rule) const {
   auto makefile =
       std::make_unique<core::output::UnixMakefile>("toolchain.make");
 
@@ -283,7 +295,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
 
   makefile->DefineEnvironment("RM", "rm", "The command to remove a file.");
 
-  makefile->DefineEnvironment("CPPLINT", "cpplint");
+  makefile->DefineEnvironment(
+      "CPPLINT", toml::find_or<std::string>(project->Configuration(), "cpplint",
+                                            "cpplint"));
 
   makefile->DefineEnvironment("MKDIR", "mkdir -p");
 

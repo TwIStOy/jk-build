@@ -13,6 +13,11 @@
 
 namespace jk::core::filesystem {
 
+ProjectFileSystem::ProjectFileSystem(common::AbsolutePath ProjectRoot,
+                                     common::AbsolutePath BuildRoot)
+    : ProjectRoot(ProjectRoot), BuildRoot(BuildRoot) {
+}
+
 common::AbsolutePath ProjectFileSystem::Resolve(
     const common::ProjectRelativePath &rp) {
   return ProjectRoot.Sub(rp.Path);
@@ -29,6 +34,21 @@ static bool HasRootMarker(const fs::path &root) {
     return true;
   }
   return false;
+}
+
+const toml::value &ProjectFileSystem::Configuration() const {
+  if (config_) {
+    return config_.value();
+  }
+
+  auto file = ProjectRoot.Path / "JK_ROOT";
+  if (boost::filesystem::exists(file)) {
+    config_ = toml::parse(file.string());
+  } else {
+    config_ = toml::value();
+  }
+
+  return config_.value();
 }
 
 static boost::optional<fs::path> _ProjectRoot;

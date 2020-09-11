@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "jk/core/filesystem/expander.hh"
@@ -50,6 +51,8 @@ class CCLibrary : public BuildRule {
   //! All compile flags for c files.
   const std::vector<std::string> &FlagsForCFiles() const;
 
+  bool IsNolint(const std::string &name) const;
+
   //! Expand source files.
   const std::vector<std::string> &ExpandSourceFiles(
       core::filesystem::ProjectFileSystem *project,
@@ -74,11 +77,17 @@ class CCLibrary : public BuildRule {
   const std::string ExportedFileName;
 
  private:
+  void LoadNolintFiles(
+      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::FileNamePatternExpander *expander) const;
+
+ private:
   mutable boost::optional<std::vector<std::string>> resolved_includes_;
   mutable boost::optional<std::vector<std::string>> resolved_definitions_;
   mutable boost::optional<std::vector<std::string>> resolved_c_flags_;
   mutable boost::optional<std::vector<std::string>> resolved_cpp_flags_;
   mutable boost::optional<std::vector<std::string>> expanded_source_files_;
+  mutable boost::optional<std::unordered_set<std::string>> nolint_files_;
 };
 
 }  // namespace jk::rules::cc

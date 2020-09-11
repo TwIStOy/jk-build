@@ -6,12 +6,16 @@
 #include <memory>
 
 #include "jk/common/path.hh"
+#include "toml.hpp"
 
 namespace jk {
 namespace core {
 namespace filesystem {
 
 struct ProjectFileSystem {
+  ProjectFileSystem(common::AbsolutePath ProjectRoot,
+                    common::AbsolutePath BuildRoot);
+
   //! Root path of this project. All packages path will be relative with this.
   common::AbsolutePath ProjectRoot;
 
@@ -25,6 +29,11 @@ struct ProjectFileSystem {
   common::AbsolutePath ResolveBuild(const common::ProjectRelativePath &rp);
 
   common::AbsolutePath ExternalInstalledPrefix();
+
+  const toml::value &Configuration() const;
+
+ private:
+  mutable boost::optional<toml::value> config_;
 };
 
 fs::path ProjectRoot();

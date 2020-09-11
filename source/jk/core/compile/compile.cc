@@ -21,6 +21,7 @@
 #include "jk/rules/cc/compiler/cc_binary.hh"
 #include "jk/rules/cc/compiler/cc_library.hh"
 #include "jk/rules/cc/compiler/cc_test.hh"
+#include "jk/rules/cc/compiler/proto_library.hh"
 #include "jk/rules/cc/source_file.hh"
 #include "jk/rules/external/compiler/cmake_project.hh"
 #include "jk/rules/external/compiler/shell_script.hh"
@@ -74,6 +75,8 @@ CompilerFactory::CompilerFactory() {
                ::jk::rules::external::MakefileShellScriptCompiler);
   REG_COMPILER("Makefile.cmake_library",
                ::jk::rules::external::MakefileCMakeLibrary);
+  REG_COMPILER("Makefile.proto_library",
+               ::jk::rules::cc::MakefileProtoLibraryCompiler);
 
   REG_COMPILER("CompileDatabase.cc_library",
                ::jk::rules::cc::CompileDatabaseCCLibraryCompiler);

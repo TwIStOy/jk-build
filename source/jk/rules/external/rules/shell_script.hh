@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "jk/core/filesystem/project.hh"
@@ -37,11 +38,15 @@ class ShellScript : public core::rules::BuildRule {
 
   std::vector<std::string> ExportedHeaders() const override;
 
+  std::unordered_map<std::string, std::string> ExportedEnvironmentVar()
+      const override;
+
   // --- Fields Start ---
   std::string Script;
   std::vector<std::string> Exports;
   std::vector<std::string> LdFlags;
   std::vector<std::string> Headers;
+  std::unordered_map<std::string, std::string> ExportBin;
   // --- Fields End ---
 };
 

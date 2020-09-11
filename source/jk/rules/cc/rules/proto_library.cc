@@ -28,7 +28,7 @@ void ProtoLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   auto empty_list = boost::make_optional<std::vector<std::string>>({});
 
   Sources = kwargs.ListRequired("srcs");
-  Sources = kwargs.ListOptional("excludes", empty_list);
+  Excludes = kwargs.ListOptional("excludes", empty_list);
 }
 
 std::vector<std::string> ProtoLibrary::ExportedFilesSimpleName(

@@ -6,6 +6,8 @@
 #include <glob.h>
 
 #include <algorithm>
+#include <boost/algorithm/string/trim.hpp>
+#include <fstream>
 #include <iterator>
 #include <string>
 #include <unordered_set>
@@ -133,12 +135,49 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
   return resolved_c_flags_.get();
 }
 
+void CCLibrary::LoadNolintFiles(
+    core::filesystem::ProjectFileSystem *project,
+    core::filesystem::FileNamePatternExpander *expander) const {
+  if (nolint_files_) {
+    return;
+  }
+
+  auto p = project->Resolve(Package->Path).Sub("nolint.txt");
+  if (!boost::filesystem::exists(p.Path)) {
+    return;
+  }
+
+  std::unordered_set<std::string> nolint_files;
+  std::string line;
+  std::ifstream ifs(p.Path.string());
+  while (std::getline(ifs, line)) {
+    boost::algorithm::trim(line);
+    auto expanded = expander->Expand(line, project->Resolve(Package->Path));
+    for (const auto &f : expanded) {
+      nolint_files.insert(f);
+    }
+  }
+
+  logger->info("NOLINT files: [{}]", utils::JoinString(", ", nolint_files));
+
+  nolint_files_ = std::move(nolint_files);
+}
+
+bool CCLibrary::IsNolint(const std::string &name) const {
+  if (!nolint_files_) {
+    return false;
+  }
+  return nolint_files_->count(name) > 0;
+}
+
 const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
     core::filesystem::ProjectFileSystem *project,
     core::filesystem::FileNamePatternExpander *expander) const {
   if (expanded_source_files_) {
     return expanded_source_files_.get();
   }
+
+  LoadNolintFiles(project, expander);
 
   std::vector<std::string> result;
   std::unordered_set<std::string> excludes;

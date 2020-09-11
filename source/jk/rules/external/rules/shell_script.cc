@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iterator>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "jk/common/flags.hh"
@@ -46,6 +47,24 @@ void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
     JK_THROW(
         core::JKBuildError("field '{}' expect type list or str", "export"));
   } while (0);
+  do {
+    auto it = kwargs.Find("export_bin");
+    if (it == kwargs.End()) {
+      break;
+    }
+    if (!it->second.get_type().is(pybind11::dict().get_type())) {
+      JK_THROW(core::JKBuildError("field '{}' expect type dict", "export_bin"));
+    }
+
+    ExportBin.clear();
+    for (auto k : it->second) {
+      if (!k.get_type().is(pybind11::str().get_type())) {
+        JK_THROW(core::JKBuildError("key in field '{}' expect type str",
+                                    "export_bin"));
+      }
+    }
+    ExportBin = it->second.cast<std::unordered_map<std::string, std::string>>();
+  } while (0);
 
   LdFlags = kwargs.ListOptional("ldflags", empty_list);
   Headers = kwargs.ListOptional("headers", empty_list);
@@ -79,6 +98,11 @@ std::vector<std::string> ShellScript::ExportedLinkFlags() const {
 
 std::vector<std::string> ShellScript::ExportedHeaders() const {
   return Headers;
+}
+
+std::unordered_map<std::string, std::string>
+ShellScript::ExportedEnvironmentVar() const {
+  return ExportBin;
 }
 
 }  // namespace jk::rules::external

@@ -32,8 +32,9 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
   core::output::UnixMakefilePtr GenerateFlags(core::writer::Writer *w,
                                               CCLibrary *rule) const;
 
-  core::output::UnixMakefilePtr GenerateToolchain(core::writer::Writer *w,
-                                                  CCLibrary *rule) const;
+  core::output::UnixMakefilePtr GenerateToolchain(
+      core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+      CCLibrary *rule) const;
 
   core::output::UnixMakefilePtr GenerateBuild(
       core::filesystem::ProjectFileSystem *project,
