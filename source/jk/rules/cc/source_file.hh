@@ -34,6 +34,10 @@ struct SourceFile : public utils::Stringifiable {
 
   common::ProjectRelativePath FullQualifiedPath() const;
 
+  // used for generated files
+  common::AbsolutePath FullQualifiedPath(
+      const common::AbsolutePath &new_root) const;
+
   common::AbsolutePath FullQualifiedObjectPath(
       const common::AbsolutePath &new_root,
       const std::string &build_type) const;

@@ -72,6 +72,11 @@ common::ProjectRelativePath SourceFile::FullQualifiedPath() const {
   return Package->Path.Sub(FileName);
 }
 
+common::AbsolutePath SourceFile::FullQualifiedPath(
+    const common::AbsolutePath &new_root) const {
+  return new_root.Sub(FullQualifiedPath().Path);
+}
+
 common::AbsolutePath SourceFile::FullQualifiedObjectPath(
     const common::AbsolutePath &new_root, const std::string &build_type) const {
   auto p = new_root.Path / build_type / Package->Path.Sub(FileName).Path;

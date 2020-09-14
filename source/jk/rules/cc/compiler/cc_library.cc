@@ -452,17 +452,21 @@ static std::vector<std::string> PROFILING_CPPFLAGS_EXTRA = {
 #define DEFINE_FLAGS(tag)                                                   \
   makefile->DefineEnvironment(                                              \
       #tag "_C_FLAGS",                                                      \
-      utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CFLAGS,     \
+      utils::JoinString(" ", utils::ConcatArrays(compile_flags, CFLAGS,     \
                                                  tag##_CFLAGS_EXTRA)));     \
                                                                             \
   makefile->DefineEnvironment(                                              \
       #tag "_CPP_FLAGS",                                                    \
-      utils::JoinString(" ", utils::ConcatArrays(COMPILE_FLAGS, CPPFLAGS(), \
+      utils::JoinString(" ", utils::ConcatArrays(compile_flags, CPPFLAGS(), \
                                                  tag##_CPPFLAGS_EXTRA)));
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
     core::writer::Writer *w, CCLibrary *rule) const {
   auto makefile = std::make_unique<core::output::UnixMakefile>("flags.make");
+
+  auto git_desc = R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
+  auto compile_flags = COMPILE_FLAGS;
+  compile_flags.push_back(fmt::format(git_desc, rule->Package->Path));
 
   makefile->DefineEnvironment(
       "C_FLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CFlags)));

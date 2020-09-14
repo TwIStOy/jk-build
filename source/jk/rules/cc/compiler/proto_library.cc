@@ -169,67 +169,64 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
     const common::AbsolutePath &working_folder) const {
   // TODO(hawtian): impl this
 
-  // std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
-  //                             working_folder.Sub("toolchain.make").Stringify()};
-  // build->AddTarget(
-  //     source_file->FullQualifiedObjectPath(working_folder, build_type)
-  //         .Stringify(),
-  //     deps);
-  // build->Include(source_file->FullQualifiedDotDPath(working_folder,
-  // build_type)
-  //                    .Stringify());
-  //
-  // auto print_stmt = core::builder::CustomCommandLine::Make(
-  //     {"@$(PRINT)", "--switch=$(COLOR)", "--green",
-  //      "--progress-num={}"_format(source_file->ProgressNum),
-  //      "--progress-dir={}"_format(project->BuildRoot),
-  //      "Building CXX object {}"_format(
-  //          source_file->FullQualifiedObjectPath(working_folder,
-  //          build_type))});
-  //
-  // auto dep = headers;
-  // dep.push_back(project->Resolve(source_file->FullQualifiedPath()).Stringify());
-  // auto mkdir_stmt = core::builder::CustomCommandLine::Make(
-  //     {"@$(MKDIR)",
-  //      source_file->FullQualifiedObjectPath(working_folder, build_type)
-  //          .Path.parent_path()
-  //          .string()});
-  //
-  // if (source_file->IsCppSourceFile()) {
-  //   auto build_stmt = core::builder::CustomCommandLine::Make(
-  //       {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
-  //        "$(CPP_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
-  //        source_file->FullQualifiedObjectPath(working_folder, build_type)
-  //            .Stringify(),
-  //        "-c",
-  //        project->Resolve(source_file->FullQualifiedPath()).Stringify()});
-  //
-  //   build->AddTarget(
-  //       source_file->FullQualifiedObjectPath(working_folder, build_type)
-  //           .Stringify(),
-  //       dep,
-  //       core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
-  //                                                   build_stmt));
-  // } else if (source_file->IsCSourceFile()) {
-  //   auto build_stmt = core::builder::CustomCommandLine::Make(
-  //       {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
-  //        "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
-  //        source_file->FullQualifiedObjectPath(working_folder, build_type)
-  //            .Stringify(),
-  //        "-c",
-  //        project->Resolve(source_file->FullQualifiedPath()).Stringify()});
-  //
-  //   build->AddTarget(
-  //       source_file->FullQualifiedObjectPath(working_folder, build_type)
-  //           .Stringify(),
-  //       dep,
-  //       core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
-  //                                                   build_stmt));
-  // } else {
-  //   JK_THROW(core::JKBuildError(
-  //       "unknown file extension: {}",
-  //       source_file->FullQualifiedPath().Path.extension().string()));
-  // }
+  std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
+                              working_folder.Sub("toolchain.make").Stringify()};
+  build->AddTarget(
+      source_file->FullQualifiedObjectPath(working_folder, build_type)
+          .Stringify(),
+      deps);
+  build->Include(source_file->FullQualifiedDotDPath(working_folder, build_type)
+                     .Stringify());
+
+  auto print_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(PRINT)", "--switch=$(COLOR)", "--green",
+       "--progress-num={}"_format(source_file->ProgressNum),
+       "--progress-dir={}"_format(project->BuildRoot),
+       "Building proto CXX object {}"_format(
+           source_file->FullQualifiedObjectPath(working_folder, build_type))});
+
+  auto dep = headers;
+  dep.push_back(source_file->FullQualifiedPath(working_folder).Stringify());
+  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(MKDIR)",
+       source_file->FullQualifiedObjectPath(working_folder, build_type)
+           .Path.parent_path()
+           .string()});
+
+  if (source_file->IsCppSourceFile()) {
+    auto build_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+         "$(CPP_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
+         source_file->FullQualifiedObjectPath(working_folder, build_type)
+             .Stringify(),
+         "-c", source_file->FullQualifiedPath(working_folder).Stringify()});
+
+    build->AddTarget(
+        source_file->FullQualifiedObjectPath(working_folder, build_type)
+            .Stringify(),
+        dep,
+        core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
+                                                    build_stmt));
+  } else if (source_file->IsCSourceFile()) {
+    auto build_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+         "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
+         source_file->FullQualifiedObjectPath(working_folder, build_type)
+             .Stringify(),
+         "-c", source_file->FullQualifiedPath(working_folder).Stringify()});
+
+    build->AddTarget(
+        source_file->FullQualifiedObjectPath(working_folder, build_type)
+            .Stringify(),
+        dep,
+        core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
+                                                    build_stmt));
+  } else {
+    JK_THROW(core::JKBuildError("unknown file extension: {}",
+                                source_file->FullQualifiedPath(working_folder)
+                                    .Path.extension()
+                                    .string()));
+  }
 }
 
 }  // namespace jk::rules::cc
