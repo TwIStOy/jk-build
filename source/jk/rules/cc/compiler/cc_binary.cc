@@ -150,25 +150,28 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
       std::copy(std::begin(names), std::end(names),
                 std::back_inserter(binary_deps));
     }
+    auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(MKDIR)", binary_file.Path.parent_path().string()});
+
     auto print_stmt = core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
          "--progress-num={}"_format(utils::JoinString(",", progress_num)),
          "--progress-dir={}"_format(project->BuildRoot),
          "Linking binary {}"_format(binary_file.Stringify())});
 
-    auto lint_stmt = core::builder::CustomCommandLine::Make({"@$(LINKER)"});
+    auto link_stmt = core::builder::CustomCommandLine::Make({"@$(LINKER)"});
     std::copy(std::begin(all_objects), std::end(all_objects),
-              std::back_inserter(lint_stmt));
+              std::back_inserter(link_stmt));
     std::copy(std::begin(deps_and_flags), std::end(deps_and_flags),
-              std::back_inserter(lint_stmt));
-    lint_stmt.push_back("-g");
-    lint_stmt.push_back("${}{}_LDFLAGS{}"_format("{", build_type, "}"));
-    lint_stmt.push_back("-o");
-    lint_stmt.push_back(binary_file.Stringify());
+              std::back_inserter(link_stmt));
+    link_stmt.push_back("-g");
+    link_stmt.push_back("${}{}_LDFLAGS{}"_format("{", build_type, "}"));
+    link_stmt.push_back("-o");
+    link_stmt.push_back(binary_file.Stringify());
 
-    build->AddTarget(
-        binary_file.Stringify(), binary_deps,
-        core::builder::CustomCommandLines::Multiple(print_stmt, lint_stmt));
+    build->AddTarget(binary_file.Stringify(), binary_deps,
+                     core::builder::CustomCommandLines::Multiple(
+                         print_stmt, mkdir_stmt, link_stmt));
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"@$(RM)", "{}"_format(binary_file.Stringify())}));
     for (const auto &obj : all_objects) {
