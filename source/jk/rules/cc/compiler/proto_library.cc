@@ -73,8 +73,8 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
   // genereate ".cc" and ".h" files
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
-    auto num = counter->Next();
-    progress_num.push_back(num);
+    auto num = source_file->ProgressNum;
+    progress_num.push_back(source_file->ProgressNum);
     auto print_stmt = core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)", "--green",
          "--progress-num={}"_format(num),
@@ -100,6 +100,14 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"$(RM)",
          "{}.h"_format(source_file->FullQualifiedPbPath(working_folder))}));
+  }
+
+  for (const auto &filename : source_files) {
+    auto cc_filename =
+        filename.substr(0, filename.find_last_of('.')) + ".pb.cc";
+    auto source_file = SourceFile::Create(rule, rule->Package, cc_filename);
+
+    progress_num.push_back(source_file->ProgressNum);
   }
 
   for (const auto &build_type : common::FLAGS_BuildTypes) {
@@ -167,8 +175,6 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
     SourceFile *source_file, const std::list<std::string> &headers,
     core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
-  // TODO(hawtian): impl this
-
   std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
                               working_folder.Sub("toolchain.make").Stringify()};
   build->AddTarget(

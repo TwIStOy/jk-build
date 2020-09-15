@@ -99,6 +99,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   // lint sources first
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
+    progress_num.push_back(source_file->ProgressNum);
+
     if (rule->IsNolint(
             project->Resolve(source_file->FullQualifiedPath()).Stringify())) {
       continue;
@@ -106,7 +108,6 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
     progress_num.push_back(
         LintSourceFile(project, source_file, build.get(), working_folder));
-    progress_num.push_back(source_file->ProgressNum);
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
