@@ -29,8 +29,9 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
       core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 
-  core::output::UnixMakefilePtr GenerateFlags(core::writer::Writer *w,
-                                              CCLibrary *rule) const;
+  core::output::UnixMakefilePtr GenerateFlags(
+      core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+      CCLibrary *rule) const;
 
   core::output::UnixMakefilePtr GenerateToolchain(
       core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,

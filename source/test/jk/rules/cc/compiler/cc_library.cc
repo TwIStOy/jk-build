@@ -76,7 +76,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
   SECTION("flags.make") {
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateFlags(w.get(), rule);
+    auto makefile = compiler->GenerateFlags(&project, w.get(), rule);
 
     REQUIRE(utils::SameArray(makefile->Environments["C_FLAGS"].Value,
                              std::vector<std::string>{}));
@@ -204,7 +204,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
   SECTION("flags.make") {
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateFlags(w.get(), rule);
+    auto makefile = compiler->GenerateFlags(&project, w.get(), rule);
 
     REQUIRE(utils::SameArray(makefile->Environments["C_FLAGS"].Value,
                              std::vector<std::string>{}));

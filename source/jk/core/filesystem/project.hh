@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "jk/common/path.hh"
+#include "jk/core/filesystem/configuration.hh"
 #include "toml.hpp"
 
 namespace jk {
@@ -30,10 +31,10 @@ struct ProjectFileSystem {
 
   common::AbsolutePath ExternalInstalledPrefix();
 
-  const toml::value &Configuration() const;
+  const Configuration &Config() const;
 
  private:
-  mutable boost::optional<toml::value> config_;
+  mutable boost::optional<Configuration> config_;
 };
 
 fs::path ProjectRoot();

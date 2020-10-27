@@ -59,7 +59,8 @@ void MakefileCCLibraryCompiler ::Compile(
   //     - AR
   //     - RM
   //   3. build.make: main build file, include how to all sources files
-  GenerateFlags(wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
+  GenerateFlags(project,
+                wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
                 rule);
 
   GenerateToolchain(
@@ -259,7 +260,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
                                                     build_stmt));
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+        {"@$(GCC)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
          "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
@@ -290,15 +291,19 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
     makefile->DefineEnvironment("CXX", "g++ -m32");
   }
 
+  if (common::FLAGS_platform == common::Platform::k64) {
+    makefile->DefineEnvironment("GCC", "gcc -m64");
+  } else {
+    makefile->DefineEnvironment("GCC", "gcc -m32");
+  }
+
   makefile->DefineEnvironment("LINKER", "g++");
 
   makefile->DefineEnvironment("AR", "ar rcs");
 
   makefile->DefineEnvironment("RM", "rm", "The command to remove a file.");
 
-  makefile->DefineEnvironment(
-      "CPPLINT", toml::find_or<std::string>(project->Configuration(), "cpplint",
-                                            "cpplint"));
+  makefile->DefineEnvironment("CPPLINT", project->Config().cpplint_path);
 
   makefile->DefineEnvironment("MKDIR", "mkdir -p");
 
@@ -318,155 +323,42 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   return makefile;
 }
 
-// {{{
-static std::vector<std::string> COMPILE_FLAGS = {
-    "-MMD",
-    "-msse3",
-    "-fPIC",
-    "-fstrict-aliasing",
-    "-Wall",
-    "-Wextra",
-    "-Wtrigraphs",
-    "-Wuninitialized",
-    "-Wwrite-strings",
-    "-Wpointer-arith",
-    "-Wredundant-decls",
-    "-Wunused",
-    "-Wmissing-include-dirs",
-    "-Wno-missing-field-initializers",
-    "-Werror",
-};
-
-static std::vector<std::string> CFLAGS = {
-    "-D_GNU_SOURCE", "-Werror-implicit-function-declaration"};
-
-static std::vector<std::string> CPPFLAGS() {
-  std::vector<std::string> tpl = {
-      "-std=c++11",
-      "-Wvla",
-      "-Wnon-virtual-dtor",
-      "-Woverloaded-virtual",
-      "-Wno-invalid-offsetof",
-      "-Werror=non-virtual-dtor",
-      "-D__STDC_FORMAT_MACROS",
-      "-DUSE_SYMBOLIZE",
-      "-I.",
-      "-isystem",
-      ".build/.lib/m{}/include"_format(
-          common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
-      "-I.build/include",
-      "-I.build/pb/c++"};
-  return tpl;
+static std::vector<std::string> cincludes() {
+  return {"-I.", "-isystem",
+          ".build/.lib/m{}/include"_format(
+              common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
+          "-I.build/include"};
 }
 
-static std::vector<std::string> DEBUG_CFLAGS_EXTRA = {
-    "-O0",
-    "-ggdb3",
-    "-Wformat=2",
-    "-Wstrict-aliasing",
-    "-fsanitize=address",
-    "-fno-inline",
-    "-fno-omit-frame-pointer",
-    "-fno-builtin",
-    "-fno-optimize-sibling-calls",
-    "-Wframe-larger-than=65535",
-    "-fno-omit-frame-pointer",
-};
+static std::vector<std::string> cppincludes() {
+  return {"-I.", "-isystem",
+          ".build/.lib/m{}/include"_format(
+              common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
+          "-I.build/include", "-I.build/pb/c++"};
+}
 
-static std::vector<std::string> DEBUG_CPPFLAGS_EXTRA = {
-    "-O0",
-    "-ggdb3",
-    "-Wformat=2",
-    "-Wstrict-aliasing",
-    "-fsanitize=address",
-    "-fno-inline",
-    "-fno-omit-frame-pointer",
-    "-fno-builtin",
-    "-fno-optimize-sibling-calls",
-    "-Wframe-larger-than=65535",
-    "-fno-omit-frame-pointer",
-    "-ftest-coverage",
-    "-fprofile-arcs"};
-
-static std::vector<std::string> RELEASE_CFLAGS_EXTRA = {
-    "-DNDEBUG",
-    "-O3",
-    "-ggdb3",
-    "-Wformat=2",
-    "-Wstrict-aliasing",
-    "-fno-builtin-malloc",
-    "-fno-builtin-calloc",
-    "-fno-builtin-realloc",
-    "-fno-builtin-free3",
-    "-Wframe-larger-than=65535",
-    "-fno-omit-frame-pointer",
-};
-
-static std::vector<std::string> RELEASE_CPPFLAGS_EXTRA = {
-    "-DNDEBUG",
-    "-DUSE_TCMALLOC=1",
-    "-DNDEBUG",
-    "-O3",
-    "-ggdb3",
-    "-Wformat=2",
-    "-Wstrict-aliasing",
-    "-fno-builtin-malloc",
-    "-fno-builtin-calloc",
-    "-fno-builtin-realloc",
-    "-fno-builtin-free",
-    "-Wframe-larger-than=65535",
-    "-fno-omit-frame-pointer",
-};
-
-static std::vector<std::string> PROFILING_CFLAGS_EXTRA = {
-    "-DNDEBUG",
-    "-O3",
-    "-ggdb3",
-    "-Wformat=2",
-    "-Wstrict-aliasing",
-    "-fno-builtin-malloc",
-    "-fno-builtin-calloc",
-    "-fno-builtin-realloc",
-    "-fno-builtin-free3",
-    "-Wframe-larger-than=65535",
-    "-fno-omit-frame-pointer",
-};
-
-static std::vector<std::string> PROFILING_CPPFLAGS_EXTRA = {
-    "-DNDEBUG",
-    "-DUSE_TCMALLOC=1",
-    "-DHEAP_PROFILING",
-    "-DNDEBUG",
-    "-O3",
-    "-ggdb3",
-    "-Wformat=2",
-    "-Wstrict-aliasing",
-    "-fno-builtin-malloc",
-    "-fno-builtin-calloc",
-    "-fno-builtin-realloc",
-    "-fno-builtin-free",
-    "-Wframe-larger-than=65535",
-    "-fno-omit-frame-pointer",
-};
-// }}}
-
-#define DEFINE_FLAGS(tag)                                                   \
-  makefile->DefineEnvironment(                                              \
-      #tag "_C_FLAGS",                                                      \
-      utils::JoinString(" ", utils::ConcatArrays(compile_flags, CFLAGS,     \
-                                                 tag##_CFLAGS_EXTRA)));     \
-                                                                            \
-  makefile->DefineEnvironment(                                              \
-      #tag "_CPP_FLAGS",                                                    \
-      utils::JoinString(" ", utils::ConcatArrays(compile_flags, CPPFLAGS(), \
-                                                 tag##_CPPFLAGS_EXTRA)));
+#define DEFINE_FLAGS(tag)                                                     \
+  makefile->DefineEnvironment(                                                \
+      #tag "_C_FLAGS",                                                        \
+      utils::JoinString(                                                      \
+          " ", utils::ConcatArrays(compile_flags, project->Config().cflags,   \
+                                   cincludes(),                               \
+                                   project->Config().tag##_cflags_extra)));   \
+                                                                              \
+  makefile->DefineEnvironment(                                                \
+      #tag "_CPP_FLAGS",                                                      \
+      utils::JoinString(                                                      \
+          " ", utils::ConcatArrays(compile_flags, project->Config().cppflags, \
+                                   cppincludes(),                             \
+                                   project->Config().tag##_cppflags_extra)));
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
-    core::writer::Writer *w, CCLibrary *rule) const {
+    core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+    CCLibrary *rule) const {
   auto makefile = std::make_unique<core::output::UnixMakefile>("flags.make");
 
   auto git_desc = R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
-  auto compile_flags = COMPILE_FLAGS;
+  auto compile_flags = project->Config().compile_flags;
   compile_flags.push_back(fmt::format(git_desc, rule->Package->Path));
 
   makefile->DefineEnvironment(
@@ -475,9 +367,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   makefile->DefineEnvironment(
       "CPP_FLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CppFlags)));
 
-  DEFINE_FLAGS(DEBUG);
-  DEFINE_FLAGS(RELEASE);
-  DEFINE_FLAGS(PROFILING);
+  DEFINE_FLAGS(debug);
+  DEFINE_FLAGS(release);
+  DEFINE_FLAGS(profiling);
 
   makefile->DefineEnvironment(
       "CXX_FLAGS",
@@ -542,10 +434,10 @@ void CompileDatabaseCCLibraryCompiler::Compile(
                      return fmt::format("-I{}", d);
                    });
   }
-  auto _CPPFLAGS = CPPFLAGS();
-  std::copy(std::begin(_CPPFLAGS), std::end(_CPPFLAGS),
-            std::back_inserter(cpp_flags));
-  std::copy(std::begin(CFLAGS), std::end(CFLAGS), std::back_inserter(c_flags));
+
+  cpp_flags =
+      utils::ConcatArrays(cpp_flags, project->Config().cppflags, cppincludes());
+  c_flags = utils::ConcatArrays(c_flags, project->Config().cflags, cincludes());
   std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
             std::back_inserter(cpp_flags));
   std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
@@ -554,9 +446,11 @@ void CompileDatabaseCCLibraryCompiler::Compile(
             std::back_inserter(cpp_flags));
   std::copy(std::begin(rule->CFlags), std::end(rule->CFlags),
             std::back_inserter(c_flags));
-  std::copy(std::begin(DEBUG_CPPFLAGS_EXTRA), std::end(DEBUG_CPPFLAGS_EXTRA),
+  std::copy(std::begin(project->Config().debug_cppflags_extra),
+            std::end(project->Config().debug_cppflags_extra),
             std::back_inserter(cpp_flags));
-  std::copy(std::begin(DEBUG_CFLAGS_EXTRA), std::end(DEBUG_CFLAGS_EXTRA),
+  std::copy(std::begin(project->Config().debug_cflags_extra),
+            std::end(project->Config().debug_cflags_extra),
             std::back_inserter(c_flags));
   // }}}
 
@@ -571,11 +465,13 @@ void CompileDatabaseCCLibraryCompiler::Compile(
         json res;
         res["file"] =
             project->Resolve(rule->Package->Path).Sub(filename).Stringify();
-        std::vector<std::string> command{"g++"};
+        std::vector<std::string> command;
         if (sf->IsCppSourceFile()) {
+          command.push_back("g++");
           std::copy(std::begin(cpp_flags), std::end(cpp_flags),
                     std::back_inserter(command));
         } else {
+          command.push_back("gcc");
           std::copy(std::begin(c_flags), std::end(c_flags),
                     std::back_inserter(command));
         }

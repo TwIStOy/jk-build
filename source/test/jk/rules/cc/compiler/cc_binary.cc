@@ -88,7 +88,7 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
   SECTION("flags.make") {
     auto w = writer_factory.Build("flags.make");
 
-    auto makefile = compiler->GenerateFlags(w.get(), rule);
+    auto makefile = compiler->GenerateFlags(&project, w.get(), rule);
 
     REQUIRE(utils::SameArray(makefile->Environments["C_FLAGS"].Value,
                              std::vector<std::string>{}));

@@ -141,7 +141,7 @@ void MakefileGlobalCompiler::Compile(
         makefile->AddTarget(
             rule->FullQualifiedTarget(output_format.first), deps,
             builder::CustomCommandLines::Single(
-                {"@make", "-f", working_folder.Sub("build.make").Stringify(),
+                {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
                  output_format.second}));
       }
     } else {
@@ -157,7 +157,7 @@ void MakefileGlobalCompiler::Compile(
       makefile->AddTarget(
           rule->FullQualifiedTarget(), deps,
           builder::CustomCommandLines::Single(
-              {"@make", "-f", working_folder.Sub("build.make").Stringify(),
+              {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
                "build"}),
           "", true);
       makefile->AddTarget("external", {rule->FullQualifiedTarget()});

@@ -30,7 +30,8 @@ void MakefileProtoLibraryCompiler::Compile(
   auto rule = _rule->Downcast<ProtoLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
 
-  GenerateFlags(wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
+  GenerateFlags(project,
+                wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
                 rule);
 
   GenerateToolchain(

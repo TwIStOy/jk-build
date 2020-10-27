@@ -41,4 +41,3 @@ struct CustomCommandLines final : public std::vector<CustomCommandLine> {
 }  // namespace jk::core::builder
 
 // vim: fdm=marker
-

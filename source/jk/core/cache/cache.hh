@@ -25,15 +25,16 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BuildRuleCache, Name, SourceFiles);
 
 class CacheDatabase {
  public:
-  CacheDatabase();
-
-  explicit CacheDatabase(common::AbsolutePath file_path);
+  explicit CacheDatabase(const common::AbsolutePath &file_path);
 
   bool IsUpToDate(rules::BuildRule *rule,
                   filesystem::ProjectFileSystem *project,
                   filesystem::FileNamePatternExpander *expander);
 
   void WriteCache(common::AbsolutePath file_path);
+
+ private:
+  void LoadCacheFile(const common::AbsolutePath &file);
 
  private:
   std::unordered_map<std::string, BuildRuleCache> rule_cache_;
@@ -43,4 +44,3 @@ class CacheDatabase {
 }  // namespace jk::core::cache
 
 // vim: fdm=marker
-

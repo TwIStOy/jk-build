@@ -36,16 +36,16 @@ static bool HasRootMarker(const fs::path &root) {
   return false;
 }
 
-const toml::value &ProjectFileSystem::Configuration() const {
+const Configuration &ProjectFileSystem::Config() const {
   if (config_) {
     return config_.value();
   }
 
   auto file = ProjectRoot.Path / "JK_ROOT";
   if (boost::filesystem::exists(file)) {
-    config_ = toml::parse(file.string());
+    config_ = Configuration(toml::parse(file.string()));
   } else {
-    config_ = toml::value();
+    config_ = Configuration(toml::value());
   }
 
   return config_.value();

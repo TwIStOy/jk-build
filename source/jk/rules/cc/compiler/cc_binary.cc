@@ -30,7 +30,8 @@ void MakefileCCBinaryCompiler::Compile(
   auto rule = _rule->Downcast<CCBinary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
 
-  GenerateFlags(wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
+  GenerateFlags(project,
+                wf->Build(working_folder.Sub("flags.make").Stringify()).get(),
                 rule);
   GenerateToolchain(
       project,
@@ -41,42 +42,9 @@ void MakefileCCBinaryCompiler::Compile(
                 rule, expander);
 }
 
-static std::vector<std::string> LDFLAGS = {
-    "-L.build/.lib/m${PLATFORM}/lib",
-    "-m${PLATFORM}",
-    "-levent",
-    "-levent_pthreads",
-    "-pthread",
-    "-lpthread",
-    "-Wl,--no-as-needed",
-    "-ldl",
-    "-lrt",
-};
-
-static std::vector<std::string> RELEASE_LDFLAGS = {
-    "${LDFLAGS}",
-    "-Wl,-Bstatic,-ltcmalloc_minimal",
-    "-Wl,-Bdynamic",
-};
-
-static std::vector<std::string> PROFILING_LDFLAGS = {
-    "${LDFLAGS}",
-    "-Wl,--whole-archive",
-    "-Wl,-Bstatic,-ltcmalloc_and_profiler",
-    "-Wl,--no-whole-archive",
-    "-Wl,-Bdynamic",
-};
-
 static std::vector<std::string> DEBUG_LDFLAGS_BEFORE = {
     "-ftest-coverage",
     "-fprofile-arcs",
-};
-
-static std::vector<std::string> DEBUG_LDFLAGS_AFTER = {
-    "-static-libasan",
-    "-Wl,-Bstatic,-lasan",
-    "-Wl,-Bdynamic",
-    "-ldl",
 };
 
 core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
@@ -96,15 +64,21 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 
   build->DefineEnvironment(
       "DEBUG_LDFLAGS",
-      utils::JoinString(" ", utils::ConcatArrays(DEBUG_LDFLAGS_BEFORE, LDFLAGS,
-                                                 DEBUG_LDFLAGS_AFTER)));
+      utils::JoinString(
+          " ",
+          utils::ConcatArrays(DEBUG_LDFLAGS_BEFORE, project->Config().ld_flags,
+                              project->Config().debug_ld_flags_extra)));
   build->DefineEnvironment(
       "RELEASE_LDFLAGS",
-      utils::JoinString(" ", utils::ConcatArrays(LDFLAGS, RELEASE_LDFLAGS)));
+      utils::JoinString(
+          " ", utils::ConcatArrays(project->Config().ld_flags,
+                                   project->Config().release_ld_flags_extra)));
 
   build->DefineEnvironment(
       "PROFILING_LDFLAGS",
-      utils::JoinString(" ", utils::ConcatArrays(LDFLAGS, PROFILING_LDFLAGS)));
+      utils::JoinString(" ", utils::ConcatArrays(
+                                 project->Config().ld_flags,
+                                 project->Config().profiling_ld_flags_extra)));
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
