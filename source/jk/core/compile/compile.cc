@@ -180,9 +180,10 @@ void MakefileGlobalCompiler::Compile(
   auto regen_touch_stmt =
       builder::CustomCommandLine::Make({"@touch", regen_target});
 
+  std::list<std::string> regen_deps{std::begin(packages), std::end(packages)};
+  regen_deps.push_back((project->ProjectRoot.Path / "JK_ROOT").string());
   makefile->AddTarget(
-      regen_target,
-      std::list<std::string>{std::begin(packages), std::end(packages)},
+      regen_target, regen_deps,
       builder::CustomCommandLines::Multiple(regen_stmt, regen_touch_stmt));
 
   for (auto rule : rules) {

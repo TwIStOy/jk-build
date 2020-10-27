@@ -3,6 +3,8 @@
 
 #include "jk/core/output/makefile.hh"
 
+#include <algorithm>
+#include <cctype>
 #include <list>
 #include <string>
 #include <utility>
@@ -20,8 +22,13 @@ UnixMakefile::UnixMakefile(const std::string &filename) : filename_(filename) {
 
 void UnixMakefile::DefineEnvironment(const std::string &key, std::string value,
                                      std::string comments) {
-  Environments[key] =
-      EnvironmentItem{key, std::move(value), std::move(comments)};
+  std::string upper_key = key;
+  std::transform(upper_key.begin(), upper_key.end(), upper_key.begin(),
+                 [](char ch) {
+                   return std::toupper(ch);
+                 });
+  Environments[upper_key] =
+      EnvironmentItem{upper_key, std::move(value), std::move(comments)};
 }
 
 void UnixMakefile::Include(fs::path file_path, std::string comments,

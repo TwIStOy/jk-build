@@ -21,13 +21,17 @@ static auto logger = utils::Logger("Configuration");
 template<typename T>
 static T extract_value(const toml::value &value, const char *name,
                        const T &default_value) {
-  if (const auto exp = toml::expect<T>(value.at(name)); exp.is_ok()) {
-    logger->info("{} use value from project-level configuration", name);
-    return exp.unwrap();
-  } else {
-    logger->info("{} use its default value", name);
-    return default_value;
+  if (value.count(name) > 0) {
+    if (const auto exp = toml::expect<T>(value.at(name)); exp.is_ok()) {
+      logger->info("{} use value from project-level configuration", name);
+      return exp.unwrap();
+    } else {
+      logger->info("{} use its default value", name);
+      return default_value;
+    }
   }
+  logger->info("{} use its default value", name);
+  return default_value;
 }
 
 // {{{
@@ -137,6 +141,7 @@ Configuration::Configuration(const toml::value &value)
       EXTRACT_VALUE(release_ld_flags_extra, DEFAULT_RELEASE_LDFLAGS_EXTRA),
       EXTRACT_VALUE(profiling_ld_flags_extra, DEFAULT_PROFILING_LDFLAGS_EXTRA),
       EXTRACT_VALUE(debug_ld_flags_extra, DEFAULT_DEBUG_LDFLAGS_EXTRA) {
+  cppflags.push_back(fmt::format("-std=c++{}", cxx_standard));
 }
 
 }  // namespace jk::core::filesystem
