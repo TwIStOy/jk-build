@@ -89,10 +89,7 @@ class CCLibrary : public BuildRule {
       core::filesystem::ProjectFileSystem *project,
       core::filesystem::FileNamePatternExpander *expander) const;
 
-  const std::vector<IncludeArgument> &ResolveIncludesInternal() const;
-
  private:
-  mutable std::optional<std::vector<IncludeArgument>> resolved_includes_;
   mutable std::optional<std::vector<std::string>> resolved_definitions_;
   mutable std::optional<std::vector<std::string>> resolved_c_flags_;
   mutable std::optional<std::vector<std::string>> resolved_cpp_flags_;

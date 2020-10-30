@@ -62,34 +62,6 @@ void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   // clang-format on
 }
 
-const std::vector<IncludeArgument> &CCLibrary::ResolveIncludesInternal() const {
-  if (resolved_includes_) {
-    return resolved_includes_.value();
-  }
-
-  std::vector<IncludeArgument> res;
-  std::transform(std::begin(Includes), std::end(Includes),
-                 std::back_inserter(res), [](const auto &x) {
-                   return IncludeArgument{x};
-                 });
-  // res.insert(res.end(), std::begin(ExtraIncludes), std::end(ExtraIncludes));
-
-  for (const auto &dep : Dependencies) {
-    if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {
-      auto tmp = dep->Downcast<CCLibrary>()->ResolveIncludesInternal();
-      res.insert(res.end(), tmp.begin(), tmp.end());
-    }
-  }
-  std::sort(res.begin(), res.end());
-  res.erase(std::unique(res.begin(), res.end()), res.end());
-
-  logger->debug("BuildRule: {}, ResolvedIncludes: [{}]", FullQualifiedName(),
-                utils::JoinString(", ", res.begin(), res.end()));
-
-  resolved_includes_ = std::move(res);
-  return resolved_includes_.value();
-}
-
 std::vector<std::string> CCLibrary::ResolveIncludes(
     IncludesResolvingContext *ctx) const {
   std::vector<std::string> res;
