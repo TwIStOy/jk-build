@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cctype>
 #include <iterator>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -40,6 +41,10 @@ template<typename T, typename = std::enable_if<
                          std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
 inline std::string ToString(T *v) {
   return v->Stringify();
+}
+
+inline std::ostream &operator<<(std::ostream &oss, const Stringifiable &rhs) {
+  return oss << rhs.Stringify();
 }
 
 inline bool StringEndWith(std::string_view full_string,

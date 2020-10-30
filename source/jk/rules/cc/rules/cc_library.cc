@@ -21,6 +21,7 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/rules/cc/include_argument.hh"
 #include "jk/rules/cc/source_file.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
@@ -61,17 +62,21 @@ void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   // clang-format on
 }
 
-const std::vector<std::string> &CCLibrary::ResolveIncludes() const {
+const std::vector<IncludeArgument> &CCLibrary::ResolveIncludesInternal() const {
   if (resolved_includes_) {
-    return resolved_includes_.get();
+    return resolved_includes_.value();
   }
 
-  std::vector<std::string> res;
-  res.insert(res.end(), Includes.begin(), Includes.end());
+  std::vector<IncludeArgument> res;
+  std::transform(std::begin(Includes), std::end(Includes),
+                 std::back_inserter(res), [](const auto &x) {
+                   return IncludeArgument{x};
+                 });
+  // res.insert(res.end(), std::begin(ExtraIncludes), std::end(ExtraIncludes));
 
   for (const auto &dep : Dependencies) {
     if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {
-      auto tmp = dep->Downcast<CCLibrary>()->ResolveIncludes();
+      auto tmp = dep->Downcast<CCLibrary>()->ResolveIncludesInternal();
       res.insert(res.end(), tmp.begin(), tmp.end());
     }
   }
@@ -82,12 +87,44 @@ const std::vector<std::string> &CCLibrary::ResolveIncludes() const {
                 utils::JoinString(", ", res.begin(), res.end()));
 
   resolved_includes_ = std::move(res);
-  return resolved_includes_.get();
+  return resolved_includes_.value();
+}
+
+std::vector<std::string> CCLibrary::ResolveIncludes(
+    IncludesResolvingContext *ctx) const {
+  std::vector<std::string> res;
+
+  std::copy(std::begin(Includes), std::end(Includes), std::back_inserter(res));
+  std::transform(std::begin(ExtraIncludes), std::end(ExtraIncludes),
+                 std::back_inserter(res),
+                 [this, ctx](const IncludeArgument &x) -> std::string {
+                   if (x.IsTrivial()) {
+                     return x.StrValue();
+                   } else {
+                     switch (x.PlacehoderValue()) {
+                       case IncludeArgument::Placehoder::WorkingFolder: {
+                         return WorkingFolder(ctx->Project()->BuildRoot);
+                       }
+                     }
+                   }
+                 });
+
+  for (const auto &dep : Dependencies) {
+    if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {
+      auto tmp = dep->Downcast<CCLibrary>()->ResolveIncludes(ctx);
+      res.insert(res.end(), tmp.begin(), tmp.end());
+    }
+  }
+
+  std::sort(res.begin(), res.end());
+  res.erase(std::unique(res.begin(), res.end()), res.end());
+
+  return res;
 }
 
 const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
   if (resolved_definitions_) {
-    return resolved_definitions_.get();
+    return resolved_definitions_.value();
   }
 
   std::vector<std::string> res;
@@ -106,12 +143,12 @@ const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
                 utils::JoinString(", ", res.begin(), res.end()));
 
   resolved_definitions_ = std::move(res);
-  return resolved_definitions_.get();
+  return resolved_definitions_.value();
 }
 
 const std::vector<std::string> &CCLibrary::FlagsForCppFiles() const {
   if (resolved_cpp_flags_) {
-    return resolved_cpp_flags_.get();
+    return resolved_cpp_flags_.value();
   }
 
   std::vector<std::string> res;
@@ -119,12 +156,12 @@ const std::vector<std::string> &CCLibrary::FlagsForCppFiles() const {
   res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
 
   resolved_cpp_flags_ = std::move(res);
-  return resolved_cpp_flags_.get();
+  return resolved_cpp_flags_.value();
 }
 
 const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
   if (resolved_c_flags_) {
-    return resolved_c_flags_.get();
+    return resolved_c_flags_.value();
   }
 
   std::vector<std::string> res;
@@ -132,7 +169,7 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
   res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
 
   resolved_c_flags_ = std::move(res);
-  return resolved_c_flags_.get();
+  return resolved_c_flags_.value();
 }
 
 void CCLibrary::LoadNolintFiles(
@@ -174,7 +211,7 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
     core::filesystem::ProjectFileSystem *project,
     core::filesystem::FileNamePatternExpander *expander) const {
   if (expanded_source_files_) {
-    return expanded_source_files_.get();
+    return expanded_source_files_.value();
   }
 
   LoadNolintFiles(project, expander);
@@ -211,7 +248,7 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
 
   expanded_source_files_ = std::move(result);
 
-  return expanded_source_files_.get();
+  return expanded_source_files_.value();
 }
 
 std::vector<std::string> CCLibrary::ExportedFilesSimpleName(

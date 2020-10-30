@@ -16,6 +16,7 @@ static auto logger = utils::Logger("proto_library");
 ProtoLibrary::ProtoLibrary(BuildPackage *package, std::string name)
     : CCLibrary(package, name, {RuleTypeEnum::kLibrary, RuleTypeEnum::kCC},
                 "proto_library", fmt::format("lib{}.a", name)) {
+  ExtraIncludes.push_back(IncludeArgument::Placehoder::WorkingFolder);
 }
 
 bool ProtoLibrary::IsStable() const {

@@ -33,6 +33,11 @@
 
 namespace jk::rules::cc {
 
+core::filesystem::ProjectFileSystem *IncludesResolvingContextImpl::Project()
+    const {
+  return project_;
+}
+
 // makefile {{{
 std::string MakefileCCLibraryCompiler::Name() const {
   return "Makefile.cc_library";
@@ -361,6 +366,10 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   auto compile_flags = project->Config().compile_flags;
   compile_flags.push_back(fmt::format(git_desc, rule->Package->Path));
 
+  // environments
+  makefile->DefineEnvironment(
+      "WORKING_FOLDER", rule->WorkingFolder(project->BuildRoot).Stringify());
+
   makefile->DefineEnvironment(
       "C_FLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CFlags)));
 
@@ -375,8 +384,10 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
       "CXX_FLAGS",
       utils::JoinString(" ", rule->CxxFlags.begin(), rule->CxxFlags.end()));
 
+  IncludesResolvingContextImpl includes_resolving_context(project);
+
   const auto &define = rule->ResolveDefinitions();
-  const auto &include = rule->ResolveIncludes();
+  const auto &include = rule->ResolveIncludes(&includes_resolving_context);
   makefile->DefineEnvironment(
       "CXX_DEFINE", utils::JoinString(" ", define.begin(), define.end(),
                                       [](const std::string &inc) {
@@ -424,7 +435,8 @@ void CompileDatabaseCCLibraryCompiler::Compile(
                    });
   }
   {
-    auto vec = rule->ResolveIncludes();
+    IncludesResolvingContextImpl includes_resolving_context(project);
+    auto vec = rule->ResolveIncludes(&includes_resolving_context);
     std::transform(std::begin(vec), std::end(vec),
                    std::back_inserter(cpp_flags), [](const std::string &d) {
                      return fmt::format("-I{}", d);

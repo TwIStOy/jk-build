@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "jk/common/path.hh"
@@ -20,6 +21,17 @@
 namespace jk::rules::cc {
 
 extern std::vector<std::string> BuildTypes;
+
+struct IncludesResolvingContextImpl final
+    : public CCLibrary::IncludesResolvingContext {
+  explicit IncludesResolvingContextImpl(core::filesystem::ProjectFileSystem *p)
+      : project_(p) {
+  }
+
+  core::filesystem::ProjectFileSystem *Project() const override;
+
+  core::filesystem::ProjectFileSystem *project_;
+};
 
 struct MakefileCCLibraryCompiler : public core::compile::Compiler {
   std::string Name() const override;

@@ -83,7 +83,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
          "Compiling proto file into .cc/.h {}"_format(
              source_file->FullQualifiedPath())});
     auto protoc = core::builder::CustomCommandLine::Make(
-        {"${third_party_protobuf_PROTOC}",
+        {"${THIRD_PARTY_PROTOBUF_PROTOC}",
          "--python_out={}"_format(working_folder),
          "--cpp_out={}"_format(working_folder),
          "-I{}"_format(project->ProjectRoot),

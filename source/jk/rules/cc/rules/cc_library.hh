@@ -5,15 +5,18 @@
 
 #include <initializer_list>
 #include <list>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include "jk/common/path.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
+#include "jk/rules/cc/include_argument.hh"
 #include "pybind11/pytypes.h"
 
 namespace jk::rules::cc {
@@ -25,6 +28,8 @@ using core::rules::RuleTypeEnum;
 /// cpp static library
 class CCLibrary : public BuildRule {
  public:
+  struct IncludesResolvingContext;
+
   CCLibrary(BuildPackage *package, std::string name,
             std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kLibrary,
                                                          RuleTypeEnum::kCC},
@@ -40,7 +45,7 @@ class CCLibrary : public BuildRule {
       const std::string &build_type) const override;
 
   //! Get all **includes** recursively
-  const std::vector<std::string> &ResolveIncludes() const;
+  std::vector<std::string> ResolveIncludes(IncludesResolvingContext *ctx) const;
 
   //! Get all **definitions** recursively
   const std::vector<std::string> &ResolveDefinitions() const;
@@ -76,18 +81,29 @@ class CCLibrary : public BuildRule {
 
   const std::string ExportedFileName;
 
+ protected:
+  std::vector<IncludeArgument> ExtraIncludes;
+
  private:
   void LoadNolintFiles(
       core::filesystem::ProjectFileSystem *project,
       core::filesystem::FileNamePatternExpander *expander) const;
 
+  const std::vector<IncludeArgument> &ResolveIncludesInternal() const;
+
  private:
-  mutable boost::optional<std::vector<std::string>> resolved_includes_;
-  mutable boost::optional<std::vector<std::string>> resolved_definitions_;
-  mutable boost::optional<std::vector<std::string>> resolved_c_flags_;
-  mutable boost::optional<std::vector<std::string>> resolved_cpp_flags_;
-  mutable boost::optional<std::vector<std::string>> expanded_source_files_;
-  mutable boost::optional<std::unordered_set<std::string>> nolint_files_;
+  mutable std::optional<std::vector<IncludeArgument>> resolved_includes_;
+  mutable std::optional<std::vector<std::string>> resolved_definitions_;
+  mutable std::optional<std::vector<std::string>> resolved_c_flags_;
+  mutable std::optional<std::vector<std::string>> resolved_cpp_flags_;
+  mutable std::optional<std::vector<std::string>> expanded_source_files_;
+  mutable std::optional<std::unordered_set<std::string>> nolint_files_;
+};
+
+struct CCLibrary::IncludesResolvingContext {
+  virtual ~IncludesResolvingContext() = default;
+
+  virtual core::filesystem::ProjectFileSystem *Project() const = 0;
 };
 
 }  // namespace jk::rules::cc
