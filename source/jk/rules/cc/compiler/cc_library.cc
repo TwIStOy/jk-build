@@ -55,8 +55,8 @@ void MakefileCCLibraryCompiler ::Compile(
   //     - C_FLAGS
   //     - CXX_FLAGS
   //     - CPP_FLAGS
-  //     - CXX_DEFINE
-  //     - CXX_INCLUDE
+  //     - CPP_DEFINE
+  //     - CPP_INCLUDE
   //     flags.make -> 3 versions(debug, release, profile)
   //   2. toolchain.make: include compiler settings, some variables will be
   //   defined:
@@ -251,8 +251,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 
   if (source_file->IsCppSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
-         "$(CPP_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
+        {"@$(CXX)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
+         "$(CXX_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", project->Resolve(source_file->FullQualifiedPath()).Stringify()});
@@ -265,7 +265,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
                                                     build_stmt));
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(GCC)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+        {"@$(GCC)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
          "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
@@ -389,12 +389,12 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   const auto &define = rule->ResolveDefinitions();
   const auto &include = rule->ResolveIncludes(&includes_resolving_context);
   makefile->DefineEnvironment(
-      "CXX_DEFINE", utils::JoinString(" ", define.begin(), define.end(),
+      "CPP_DEFINE", utils::JoinString(" ", define.begin(), define.end(),
                                       [](const std::string &inc) {
                                         return fmt::format("-D{}", inc);
                                       }));
   makefile->DefineEnvironment(
-      "CXX_INCLUDE", utils::JoinString(" ", include.begin(), include.end(),
+      "CPP_INCLUDE", utils::JoinString(" ", include.begin(), include.end(),
                                        [](const std::string &inc) {
                                          return fmt::format("-I{}", inc);
                                        }));
@@ -420,13 +420,13 @@ void CompileDatabaseCCLibraryCompiler::Compile(
       wf->Build(project->ProjectRoot.Sub("compile_commands.json").Stringify());
 
   std::vector<std::string> c_flags;
-  std::vector<std::string> cpp_flags;
+  std::vector<std::string> cxx_flags;
 
   // generate flags {{{
   {
     auto define = rule->ResolveDefinitions();
     std::transform(std::begin(define), std::end(define),
-                   std::back_inserter(cpp_flags), [](const std::string &d) {
+                   std::back_inserter(cxx_flags), [](const std::string &d) {
                      return fmt::format("-D{}", d);
                    });
     std::transform(std::begin(define), std::end(define),
@@ -438,7 +438,7 @@ void CompileDatabaseCCLibraryCompiler::Compile(
     IncludesResolvingContextImpl includes_resolving_context(project);
     auto vec = rule->ResolveIncludes(&includes_resolving_context);
     std::transform(std::begin(vec), std::end(vec),
-                   std::back_inserter(cpp_flags), [](const std::string &d) {
+                   std::back_inserter(cxx_flags), [](const std::string &d) {
                      return fmt::format("-I{}", d);
                    });
     std::transform(std::begin(vec), std::end(vec), std::back_inserter(c_flags),
@@ -447,20 +447,26 @@ void CompileDatabaseCCLibraryCompiler::Compile(
                    });
   }
 
-  cpp_flags =
-      utils::ConcatArrays(cpp_flags, project->Config().cppflags, cppincludes());
+  cxx_flags =
+      utils::ConcatArrays(cxx_flags, project->Config().cppflags, cppincludes());
   c_flags = utils::ConcatArrays(c_flags, project->Config().cflags, cincludes());
-  std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
-            std::back_inserter(cpp_flags));
+
+  std::copy(std::begin(rule->CppFlags), std::end(rule->CppFlags),
+            std::back_inserter(cxx_flags));
+
   std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
             std::back_inserter(c_flags));
-  std::copy(std::begin(rule->CppFlags), std::end(rule->CppFlags),
-            std::back_inserter(cpp_flags));
+
+  std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
+            std::back_inserter(cxx_flags));
+
   std::copy(std::begin(rule->CFlags), std::end(rule->CFlags),
             std::back_inserter(c_flags));
+
   std::copy(std::begin(project->Config().debug_cppflags_extra),
             std::end(project->Config().debug_cppflags_extra),
-            std::back_inserter(cpp_flags));
+            std::back_inserter(cxx_flags));
+
   std::copy(std::begin(project->Config().debug_cflags_extra),
             std::end(project->Config().debug_cflags_extra),
             std::back_inserter(c_flags));
@@ -470,7 +476,7 @@ void CompileDatabaseCCLibraryCompiler::Compile(
   std::vector<json> res;
   std::for_each(
       std::begin(sources), std::end(sources),
-      [&working_folder, rule, project, &cpp_flags, &c_flags,
+      [&working_folder, rule, project, &cxx_flags, &c_flags,
        &writer](const std::string &filename) {
         auto sf = SourceFile::Create(rule, rule->Package, filename);
 
@@ -480,7 +486,7 @@ void CompileDatabaseCCLibraryCompiler::Compile(
         std::vector<std::string> command;
         if (sf->IsCppSourceFile()) {
           command.push_back("g++");
-          std::copy(std::begin(cpp_flags), std::end(cpp_flags),
+          std::copy(std::begin(cxx_flags), std::end(cxx_flags),
                     std::back_inserter(command));
         } else {
           command.push_back("gcc");

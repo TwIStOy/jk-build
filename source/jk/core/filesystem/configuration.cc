@@ -41,7 +41,8 @@ static T extract_value(const toml::value &value, const char *name,
         "-Wtrigraphs", "-Wuninitialized", "-Wwrite-strings",            \
         "-Wpointer-arith", "-Wredundant-decls", "-Wunused",             \
         "-Wmissing-include-dirs", "-Wno-missing-field-initializers",    \
-        "-Werror", "-w",                                                \
+        "-Wno-error=deprecated", "-Wno-error=deprecated-declarations",  \
+        "-Werror",                                                      \
   }
 
 #define DEFAULT_C_FLAGS \

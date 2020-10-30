@@ -202,7 +202,7 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
 
   if (source_file->IsCppSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+        {"@$(CXX)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
          "$(CPP_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
@@ -216,7 +216,7 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
                                                     build_stmt));
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CXX_DEFINE)", "$(CXX_INCLUDE)", "$(CXX_FLAGS)",
+        {"@$(CXX)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
          "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
