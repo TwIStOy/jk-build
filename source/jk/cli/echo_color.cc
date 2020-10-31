@@ -70,7 +70,7 @@ void EchoColor(args::Subparser &parser) {
   COLOR(blue);
   COLOR(magenta);
   COLOR(cyan);
-  args::Flag bold(parser, "BLOD", "BOLD", {"bold"});
+  args::Flag bold(parser, "BOLD", "BOLD", {"bold"});
 
   args::ValueFlag<std::string> progress_dir(
       parser, "DIR", "Progress-dir", {"progress-dir"}, args::Options::Required);

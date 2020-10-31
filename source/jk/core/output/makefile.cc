@@ -61,6 +61,8 @@ void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
 
   DefineEnvironment("PRINT", "jk echo_color");
 
+  DefineEnvironment("JK_VERBOSE_FLAG", "V$(VERBOSE)");
+
   if (common::FLAGS_platform == common::Platform::k32) {
     DefineEnvironment("PLATFORM", "32");
   } else {
@@ -87,6 +89,50 @@ std::string UnixMakefile::WriteToString() const {
   for (auto line : CommonHeader) {
     oss << line << std::endl;
   }
+  oss << Separator << std::endl;
+
+  if (default_target_) {
+    WriteComment(oss, "Default Target");
+    oss << default_target_.value() << ":" << std::endl;
+    oss << Separator << std::endl;
+  }
+
+  WriteComment(oss, "Delete rule output on recipe failure.");
+  oss << ".DELETE_ON_ERROR:" << std::endl;
+
+  oss << Separator << std::endl;
+  WriteComment(oss, "Special targets provided by jk.");
+
+  oss << std::endl;
+
+  oss << R"(
+# Disable implicit rules so canonical targets will work.
+.SUFFIXES:
+
+# Disable VCS-based implicit rules.
+% : %,v
+
+# Disable VCS-based implicit rules.
+% : RCS/%
+
+# Disable VCS-based implicit rules.
+% : RCS/%,v
+
+# Disable VCS-based implicit rules.
+% : SCCS/s.%
+
+# Disable VCS-based implicit rules.
+% : s.%
+
+.SUFFIXES: .hpux_make_needs_suffix_list
+
+# Command-line flag to silence nested $(MAKE).
+$(VERBOSE)MAKESILENT = -s
+
+# Suppress display of executed commands.
+$(VERBOSE).SILENT:
+  )" << std::endl;
+
   oss << Separator << std::endl;
 
   WriteComment(oss, "Set environment variables for the build.");
@@ -133,4 +179,3 @@ void UnixMakefile::Write(writer::Writer *writer) const {
 }
 
 }  // namespace jk::core::output
-

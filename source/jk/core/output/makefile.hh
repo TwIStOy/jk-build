@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <list>
+#include <optional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -33,6 +34,8 @@ struct UnixMakefile {
 
   std::string WriteToString() const;
 
+  void DefaultTarget(std::string target);
+
  private:
   static void WriteComment(std::ostream &, const std::string &str);
 
@@ -61,6 +64,9 @@ struct UnixMakefile {
   std::unordered_map<std::string, EnvironmentItem> Environments;
   std::list<IncludeItem> Includes;
   std::list<TargetItem> Targets;
+
+ private:
+  std::optional<std::string> default_target_;
 };
 
 using UnixMakefilePtr = std::unique_ptr<UnixMakefile>;

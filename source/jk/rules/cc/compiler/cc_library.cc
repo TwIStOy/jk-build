@@ -297,9 +297,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   }
 
   if (common::FLAGS_platform == common::Platform::k64) {
-    makefile->DefineEnvironment("GCC", "gcc -m64");
+    makefile->DefineEnvironment("CC", "gcc -m64");
   } else {
-    makefile->DefineEnvironment("GCC", "gcc -m32");
+    makefile->DefineEnvironment("CC", "gcc -m32");
   }
 
   makefile->DefineEnvironment("LINKER", "g++");

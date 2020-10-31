@@ -111,6 +111,7 @@ void MakefileGlobalCompiler::Compile(
 
   makefile->DefineCommon(project);
   makefile->AddTarget("all", {"debug"}, {}, "", true);
+  makefile->DefaultTarget("all");
 
   makefile->AddTarget(
       "pre", {regen_target},
