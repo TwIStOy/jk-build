@@ -203,7 +203,7 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
   if (source_file->IsCppSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
-         "$(CPPFLAGS)", "$({}_CPPFLAGS)"_format(build_type), "-o",
+         "$(CPPFLAGS)", "$({}_CXXFLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", source_file->FullQualifiedPath(working_folder).Stringify()});

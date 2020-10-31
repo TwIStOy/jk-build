@@ -45,6 +45,10 @@ void UnixMakefile::AddTarget(std::string target, std::list<std::string> deps,
                                phony});
 }
 
+void UnixMakefile::DefaultTarget(std::string target) {
+  default_target_ = target;
+}
+
 void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
   DefineEnvironment("SHELL", "/bin/bash",
                     "The shell in which to execute make rules.");

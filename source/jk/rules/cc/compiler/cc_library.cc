@@ -263,7 +263,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
   if (source_file->IsCppSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
-         "$(CXXFLAGS)", "$({}_CPPFLAGS)"_format(build_type), "-o",
+         "$(CXXFLAGS)", "$({}_CXXFLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", project->Resolve(source_file->FullQualifiedPath()).Stringify()});
