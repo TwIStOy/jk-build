@@ -3,6 +3,9 @@
 
 #include "jk/cli/cli.hh"
 
+#include <vector>
+#include <string>
+
 #include "args.hxx"
 
 namespace jk::cli {
@@ -16,6 +19,7 @@ void SubCommand::Register(args::Group &group, std::function<void()> func) {
         Callback(p);
       }));
 }
+
 
 }  // namespace jk::cli
 

@@ -48,7 +48,7 @@ static T extract_value(const toml::value &value, const char *name,
 #define DEFAULT_C_FLAGS \
   { "-D_GNU_SOURCE", "-Werror-implicit-function-declaration", }
 
-#define DEFAULT_CPP_FLAGS                                    \
+#define DEFAULT_CXX_FLAGS                                    \
   {                                                          \
     "-Wvla", "-Wnon-virtual-dtor", "-Woverloaded-virtual",   \
         "-Wno-invalid-offsetof", "-Werror=non-virtual-dtor", \
@@ -63,7 +63,7 @@ static T extract_value(const toml::value &value, const char *name,
         "-fno-omit-frame-pointer",                                            \
   }
 
-#define DEFAULT_DEBUG_CPPFLAGS_EXTRA                                          \
+#define DEFAULT_DEBUG_CXXFLAGS_EXTRA                                          \
   {                                                                           \
     "-O0", "-ggdb3", "-Wformat=2", "-Wstrict-aliasing", "-fsanitize=address", \
         "-fno-inline", "-fno-omit-frame-pointer", "-fno-builtin",             \
@@ -79,7 +79,7 @@ static T extract_value(const toml::value &value, const char *name,
         "-fno-omit-frame-pointer",                                            \
   }
 
-#define DEFAULT_RELEASE_CPPFLAGS_EXTRA                                         \
+#define DEFAULT_RELEASE_CXXFLAGS_EXTRA                                         \
   {                                                                            \
     "-DNDEBUG", "-DUSE_TCMALLOC=1", "-DNDEBUG", "-O3", "-ggdb3", "-Wformat=2", \
         "-Wstrict-aliasing", "-fno-builtin-malloc", "-fno-builtin-calloc",     \
@@ -95,7 +95,7 @@ static T extract_value(const toml::value &value, const char *name,
         "-fno-omit-frame-pointer",                                            \
   }
 
-#define DEFAULT_PROFILING_CPPFLAGS_EXTRA                                    \
+#define DEFAULT_PROFILING_CXXFLAGS_EXTRA                                    \
   {                                                                         \
     "-DNDEBUG", "-DUSE_TCMALLOC=1", "-DHEAP_PROFILING", "-DNDEBUG", "-O3",  \
         "-ggdb3", "-Wformat=2", "-Wstrict-aliasing", "-fno-builtin-malloc", \
@@ -129,20 +129,22 @@ static T extract_value(const toml::value &value, const char *name,
 Configuration::Configuration(const toml::value &value)
     : EXTRACT_VALUE(cpplint_path, "cpplint"),
       EXTRACT_VALUE(cxx_standard, "11"),
+      EXTRACT_VALUE(cc, {"gcc"}),
+      EXTRACT_VALUE(cxx, {"g++"}),
       EXTRACT_VALUE(compile_flags, DEFAULT_COMPILE_FLAGS),
       EXTRACT_VALUE(cflags, DEFAULT_C_FLAGS),
-      EXTRACT_VALUE(cppflags, DEFAULT_CPP_FLAGS),
+      EXTRACT_VALUE(cxxflags, DEFAULT_CXX_FLAGS),
       EXTRACT_VALUE(debug_cflags_extra, DEFAULT_DEBUG_CFLAGS_EXTRA),
-      EXTRACT_VALUE(debug_cppflags_extra, DEFAULT_DEBUG_CPPFLAGS_EXTRA),
+      EXTRACT_VALUE(debug_cxxflags_extra, DEFAULT_DEBUG_CXXFLAGS_EXTRA),
       EXTRACT_VALUE(release_cflags_extra, DEFAULT_RELEASE_CFLAGS_EXTRA),
-      EXTRACT_VALUE(release_cppflags_extra, DEFAULT_RELEASE_CPPFLAGS_EXTRA),
+      EXTRACT_VALUE(release_cxxflags_extra, DEFAULT_RELEASE_CXXFLAGS_EXTRA),
       EXTRACT_VALUE(profiling_cflags_extra, DEFAULT_PROFILING_CFLAGS_EXTRA),
-      EXTRACT_VALUE(profiling_cppflags_extra, DEFAULT_PROFILING_CPPFLAGS_EXTRA),
+      EXTRACT_VALUE(profiling_cxxflags_extra, DEFAULT_PROFILING_CXXFLAGS_EXTRA),
       EXTRACT_VALUE(ld_flags, DEFAULT_LDFLAGS),
       EXTRACT_VALUE(release_ld_flags_extra, DEFAULT_RELEASE_LDFLAGS_EXTRA),
       EXTRACT_VALUE(profiling_ld_flags_extra, DEFAULT_PROFILING_LDFLAGS_EXTRA),
       EXTRACT_VALUE(debug_ld_flags_extra, DEFAULT_DEBUG_LDFLAGS_EXTRA) {
-  cppflags.push_back(fmt::format("-std=c++{}", cxx_standard));
+  cxxflags.push_back(fmt::format("-std=c++{}", cxx_standard));
 }
 
 }  // namespace jk::core::filesystem

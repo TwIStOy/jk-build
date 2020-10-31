@@ -202,8 +202,8 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
 
   if (source_file->IsCppSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
-         "$(CPP_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
+        {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
+         "$(CPPFLAGS)", "$({}_CPPFLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", source_file->FullQualifiedPath(working_folder).Stringify()});
@@ -216,8 +216,8 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
                                                     build_stmt));
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
-         "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
+        {"@$(CC)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
+         "$(CFLAGS)", "$({}_CFLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", source_file->FullQualifiedPath(working_folder).Stringify()});
@@ -229,10 +229,8 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
         core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
                                                     build_stmt));
   } else {
-    JK_THROW(core::JKBuildError("unknown file extension: {}",
-                                source_file->FullQualifiedPath(working_folder)
-                                    .Path.extension()
-                                    .string()));
+    logger->info("unknown file extension: {}",
+                 source_file->FullQualifiedPath().Path.extension().string());
   }
 }
 

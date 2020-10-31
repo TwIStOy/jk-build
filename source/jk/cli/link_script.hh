@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Hatian Wang
+// Copyright (c) 2020 Hawtian Wang
 //
 
 #pragma once  // NOLINT(build/header_guard)
@@ -7,6 +7,6 @@
 
 namespace jk::cli {
 
-void EchoColor(args::Subparser &parser);
+void LinkScript(args::Subparser& parser);
 
 }  // namespace jk::cli

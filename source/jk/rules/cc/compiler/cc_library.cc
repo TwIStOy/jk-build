@@ -38,6 +38,8 @@ core::filesystem::ProjectFileSystem *IncludesResolvingContextImpl::Project()
   return project_;
 }
 
+static auto logger = utils::Logger("compiler.cc_library");
+
 // makefile {{{
 std::string MakefileCCLibraryCompiler::Name() const {
   return "Makefile.cc_library";
@@ -52,11 +54,18 @@ void MakefileCCLibraryCompiler ::Compile(
   // Compile a `cc_library` into three `Unix Makefile`s.
   //   1. flags.make: include all flags to compile all source files, some
   //   variables will be defined:
-  //     - C_FLAGS
-  //     - CXX_FLAGS
-  //     - CPP_FLAGS
-  //     - CPP_DEFINE
-  //     - CPP_INCLUDE
+  //     - WORKING_FOLDER
+  //     - CFLAGS
+  //     - CXXFLAGS
+  //     - CPPFLAGS
+  //     - CPP_DEFINES
+  //     - CPP_INCLUDES
+  //     - DEBUG_CFLAGS
+  //     - DEBUG_CXXFLAGS
+  //     - RELEASE_CFLAGS
+  //     - RELEASE_CXXFLAGS
+  //     - PROFILING_CFLAGS
+  //     - PROFILING_CXXFLAGS
   //     flags.make -> 3 versions(debug, release, profile)
   //   2. toolchain.make: include compiler settings, some variables will be
   //   defined:
@@ -91,6 +100,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   build->Include(working_folder.Sub("toolchain.make").Path, "", true);
 
   build->AddTarget("all", {"DEBUG"}, {}, "", true);
+  build->DefaultTarget("all");
 
   build->AddTarget("jk_force", {}, {}, "This target is always outdated.", true);
 
@@ -136,7 +146,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
     auto library_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
-    build->AddTarget(library_file.Stringify(), {"jk_force"});
+    // build->AddTarget(library_file.Stringify(), {"jk_force"});
+    build->AddTarget(library_file.Stringify(), {});
     auto ar_stmt = core::builder::CustomCommandLine::Make({
         "@$(AR)",
         library_file.Stringify(),
@@ -251,8 +262,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 
   if (source_file->IsCppSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(CXX)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
-         "$(CXX_FLAGS)", "$({}_CPP_FLAGS)"_format(build_type), "-o",
+        {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
+         "$(CXXFLAGS)", "$({}_CPPFLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", project->Resolve(source_file->FullQualifiedPath()).Stringify()});
@@ -265,8 +276,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
                                                     build_stmt));
   } else if (source_file->IsCSourceFile()) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
-        {"@$(GCC)", "$(CPP_DEFINE)", "$(CPP_INCLUDE)", "$(CPP_FLAGS)",
-         "$(C_FLAGS)", "$({}_C_FLAGS)"_format(build_type), "-o",
+        {"@$(CC)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
+         "$(CFLAGS)", "$({}_CFLAGS)"_format(build_type), "-o",
          source_file->FullQualifiedObjectPath(working_folder, build_type)
              .Stringify(),
          "-c", project->Resolve(source_file->FullQualifiedPath()).Stringify()});
@@ -278,9 +289,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
         core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
                                                     build_stmt));
   } else {
-    JK_THROW(core::JKBuildError(
-        "unknown file extension: {}",
-        source_file->FullQualifiedPath().Path.extension().string()));
+    logger->info("unknown file extension: {}",
+                 source_file->FullQualifiedPath().Path.extension().string());
   }
 }
 
@@ -290,17 +300,17 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   auto makefile =
       std::make_unique<core::output::UnixMakefile>("toolchain.make");
 
-  if (common::FLAGS_platform == common::Platform::k64) {
-    makefile->DefineEnvironment("CXX", "g++ -m64");
-  } else {
-    makefile->DefineEnvironment("CXX", "g++ -m32");
-  }
+  makefile->DefineEnvironment(
+      "CXX",
+      fmt::format(
+          "{} {}", utils::JoinString(" ", project->Config().cxx),
+          common::FLAGS_platform == common::Platform::k64 ? "-m64" : "-m32"));
 
-  if (common::FLAGS_platform == common::Platform::k64) {
-    makefile->DefineEnvironment("CC", "gcc -m64");
-  } else {
-    makefile->DefineEnvironment("CC", "gcc -m32");
-  }
+  makefile->DefineEnvironment(
+      "CC",
+      fmt::format(
+          "{} {}", utils::JoinString(" ", project->Config().cc),
+          common::FLAGS_platform == common::Platform::k64 ? "-m64" : "-m32"));
 
   makefile->DefineEnvironment("LINKER", "g++");
 
@@ -328,34 +338,31 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   return makefile;
 }
 
-static std::vector<std::string> cincludes() {
+static std::vector<std::string> cppincludes() {
   return {"-I.", "-isystem",
           ".build/.lib/m{}/include"_format(
               common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
           "-I.build/include"};
 }
 
-static std::vector<std::string> cppincludes() {
-  return {"-I.", "-isystem",
-          ".build/.lib/m{}/include"_format(
-              common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
-          "-I.build/include", "-I.build/pb/c++"};
+static std::vector<std::string> cxxincludes() {
+  return {"-I.build/pb/c++"};
 }
 
 #define DEFINE_FLAGS(tag)                                                     \
   makefile->DefineEnvironment(                                                \
-      #tag "_C_FLAGS",                                                        \
+      #tag "_CFLAGS",                                                         \
       utils::JoinString(                                                      \
           " ", utils::ConcatArrays(compile_flags, project->Config().cflags,   \
-                                   cincludes(),                               \
+                                   cppincludes(),                             \
                                    project->Config().tag##_cflags_extra)));   \
                                                                               \
   makefile->DefineEnvironment(                                                \
-      #tag "_CPP_FLAGS",                                                      \
+      #tag "_CXXFLAGS",                                                       \
       utils::JoinString(                                                      \
-          " ", utils::ConcatArrays(compile_flags, project->Config().cppflags, \
-                                   cppincludes(),                             \
-                                   project->Config().tag##_cppflags_extra)));
+          " ", utils::ConcatArrays(compile_flags, project->Config().cxxflags, \
+                                   cppincludes(), cxxincludes(),              \
+                                   project->Config().tag##_cxxflags_extra)));
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
     core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
@@ -371,17 +378,17 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
       "WORKING_FOLDER", rule->WorkingFolder(project->BuildRoot).Stringify());
 
   makefile->DefineEnvironment(
-      "C_FLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CFlags)));
+      "CFLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CFlags)));
 
   makefile->DefineEnvironment(
-      "CPP_FLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CppFlags)));
+      "CPPFLAGS", utils::JoinString(" ", utils::ConcatArrays(rule->CppFlags)));
 
   DEFINE_FLAGS(debug);
   DEFINE_FLAGS(release);
   DEFINE_FLAGS(profiling);
 
   makefile->DefineEnvironment(
-      "CXX_FLAGS",
+      "CXXFLAGS",
       utils::JoinString(" ", rule->CxxFlags.begin(), rule->CxxFlags.end()));
 
   IncludesResolvingContextImpl includes_resolving_context(project);
@@ -389,15 +396,15 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   const auto &define = rule->ResolveDefinitions();
   const auto &include = rule->ResolveIncludes(&includes_resolving_context);
   makefile->DefineEnvironment(
-      "CPP_DEFINE", utils::JoinString(" ", define.begin(), define.end(),
-                                      [](const std::string &inc) {
-                                        return fmt::format("-D{}", inc);
-                                      }));
-  makefile->DefineEnvironment(
-      "CPP_INCLUDE", utils::JoinString(" ", include.begin(), include.end(),
+      "CPP_DEFINES", utils::JoinString(" ", define.begin(), define.end(),
                                        [](const std::string &inc) {
-                                         return fmt::format("-I{}", inc);
+                                         return fmt::format("-D{}", inc);
                                        }));
+  makefile->DefineEnvironment(
+      "CPP_INCLUDES", utils::JoinString(" ", include.begin(), include.end(),
+                                        [](const std::string &inc) {
+                                          return fmt::format("-I{}", inc);
+                                        }));
 
   makefile->Write(w);
   return makefile;
@@ -447,9 +454,10 @@ void CompileDatabaseCCLibraryCompiler::Compile(
                    });
   }
 
-  cxx_flags =
-      utils::ConcatArrays(cxx_flags, project->Config().cppflags, cppincludes());
-  c_flags = utils::ConcatArrays(c_flags, project->Config().cflags, cincludes());
+  cxx_flags = utils::ConcatArrays(cxx_flags, project->Config().cxxflags,
+                                  cppincludes(), cxxincludes());
+  c_flags =
+      utils::ConcatArrays(c_flags, project->Config().cflags, cppincludes());
 
   std::copy(std::begin(rule->CppFlags), std::end(rule->CppFlags),
             std::back_inserter(cxx_flags));
@@ -463,8 +471,8 @@ void CompileDatabaseCCLibraryCompiler::Compile(
   std::copy(std::begin(rule->CFlags), std::end(rule->CFlags),
             std::back_inserter(c_flags));
 
-  std::copy(std::begin(project->Config().debug_cppflags_extra),
-            std::end(project->Config().debug_cppflags_extra),
+  std::copy(std::begin(project->Config().debug_cxxflags_extra),
+            std::end(project->Config().debug_cxxflags_extra),
             std::back_inserter(cxx_flags));
 
   std::copy(std::begin(project->Config().debug_cflags_extra),

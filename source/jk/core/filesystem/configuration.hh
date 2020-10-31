@@ -17,15 +17,18 @@ class Configuration {
   std::string cpplint_path;
   std::string cxx_standard;
 
+  std::vector<std::string> cc;
+  std::vector<std::string> cxx;
+
   std::vector<std::string> compile_flags;
   std::vector<std::string> cflags;
-  std::vector<std::string> cppflags;
+  std::vector<std::string> cxxflags;
   std::vector<std::string> debug_cflags_extra;
-  std::vector<std::string> debug_cppflags_extra;
+  std::vector<std::string> debug_cxxflags_extra;
   std::vector<std::string> release_cflags_extra;
-  std::vector<std::string> release_cppflags_extra;
+  std::vector<std::string> release_cxxflags_extra;
   std::vector<std::string> profiling_cflags_extra;
-  std::vector<std::string> profiling_cppflags_extra;
+  std::vector<std::string> profiling_cxxflags_extra;
 
   std::vector<std::string> ld_flags;
   std::vector<std::string> release_ld_flags_extra;
