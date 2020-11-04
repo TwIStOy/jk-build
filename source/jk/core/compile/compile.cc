@@ -161,7 +161,8 @@ void MakefileGlobalCompiler::Compile(
                      "--progress-num={}"_format(
                          utils::JoinString(",", numbers)),
                      "--progress-dir={}"_format(project->BuildRoot),
-                     "Built target {}"_format(rule->FullQualifiedName())})));
+                     "Built target {}:{}"_format(rule->Package->Name,
+                                                 rule->Name)})));
       }
     } else {
       std::list<std::string> deps;
