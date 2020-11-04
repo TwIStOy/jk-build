@@ -52,23 +52,7 @@ struct AbsolutePath final : public utils::Stringifiable {
   std::string Stringify() const final;
 };
 
-inline void AssumeFolder(const fs::path &rp) {
-  if (rp == "/") {
-    return;
-  }
-
-  if (fs::exists(rp)) {
-    if (fs::is_directory(rp)) {
-      return;
-    }
-
-    JK_THROW(
-        core::JKBuildError("{} is exist, but not a directory", rp.string()));
-  }
-
-  AssumeFolder(rp.parent_path());
-  fs::create_directory(rp);
-}
+void AssumeFolder(const fs::path &rp);
 
 inline void AssumeFolder(const ProjectRelativePath &rp) {
   AssumeFolder(rp.Path);

@@ -7,9 +7,11 @@
 #include <openssl/sha.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -25,7 +27,16 @@
 
 namespace jk::cli {
 
-std::string sha256_hash_string(unsigned char hash[SHA256_DIGEST_LENGTH]) {
+static std::optional<std::string> read_proxy_settings() {
+  auto http_proxy = getenv("HTTP_PROXY");
+  if (http_proxy) {
+    return http_proxy;
+  }
+  return {};
+}
+
+static std::string sha256_hash_string(
+    unsigned char hash[SHA256_DIGEST_LENGTH]) {
   std::ostringstream oss;
   for (auto i = 0; i < SHA256_DIGEST_LENGTH; i++) {
     oss << "{:02x}"_format(hash[i]);
@@ -39,6 +50,7 @@ static std::string HashFile(const common::AbsolutePath &file,
     FILE *fp = fopen(file.Stringify().c_str(), "rb");
     if (!fp) {
       JK_THROW(core::JKBuildError("Open file {} error.", file));
+      return "";
     }
 
     unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -127,7 +139,9 @@ static size_t FileCommandCurlDebugCallback(::CURL *, curl_infotype type,
 }
 
 static curl_off_t previous_dl = 0;
-static std::chrono::time_point<std::chrono::high_resolution_clock> previous_ts;
+static std::chrono::time_point<std::chrono::high_resolution_clock> start_ts =
+    std::chrono::high_resolution_clock::now();
+
 static int FileDownloadProgressCallback(void *clientp, curl_off_t dltotal,
                                         curl_off_t dlnow, curl_off_t ultotal,
                                         curl_off_t ulnow) {
@@ -142,12 +156,11 @@ static int FileDownloadProgressCallback(void *clientp, curl_off_t dltotal,
     return 0;
   }
 
-  std::chrono::duration<double> diff = ts - previous_ts;
+  std::chrono::duration<double> diff = ts - start_ts;
 
-  previous_ts = ts;
   previous_dl = dlnow;
 
-  auto speed = delta / diff.count();
+  auto speed = dlnow / diff.count();
 
   auto msg =
       "{}/{} {}/s"_format(utils::BytesCount(dlnow), utils::BytesCount(dltotal),
@@ -222,6 +235,11 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
     ::curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, inactivity_timeout);
   }
 
+  if (auto proxy = read_proxy_settings(); proxy) {
+    ::curl_easy_setopt(curl, CURLOPT_PROXY, proxy.value().c_str());
+    CheckCurlResult(res, "DOWNLOAD catnot set proxy value");
+  }
+
   utils::ProgressBar bar;
 
   res = ::curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
@@ -235,7 +253,7 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
                            reinterpret_cast<void *>(&bar));
   CheckCurlResult(res, "DOWNLOAD cannot set progress data");
 
-  previous_ts = std::chrono::high_resolution_clock::now();
+  start_ts = std::chrono::high_resolution_clock::now();
   res = ::curl_easy_perform(curl);
   guard.release();
   ::curl_easy_cleanup(curl);
@@ -259,6 +277,7 @@ void DownloadFile(args::Subparser &parser) {
   std::vector<std::string> args{std::begin(positional), std::end(positional)};
   if (args.size() < 4) {
     JK_THROW(core::JKBuildError("Not enough arguments"));
+    return;
   }
 
   common::FLAGS_terminal_columns = std::atoi(args[3].c_str());

@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "jk/utils/logging.hh"
+
 namespace jk::common {
 
 std::string ProjectRelativePath::Stringify() const {
@@ -28,6 +30,31 @@ uint32_t GetNumberOfFilesInDirectory(const AbsolutePath &p) {
 
 void RemoveDirectory(const AbsolutePath &p) {
   fs::remove_all(p.Path);
+}
+
+auto logger = utils::Logger("path");
+
+void AssumeFolder(const fs::path &rp) {
+  if (!rp.is_absolute()) {
+    AssumeFolder(fs::current_path() / rp);
+    return;
+  }
+
+  if (rp == "/") {
+    return;
+  }
+
+  if (fs::exists(rp)) {
+    if (fs::is_directory(rp)) {
+      return;
+    }
+
+    JK_THROW(
+        core::JKBuildError("{} is exist, but not a directory", rp.string()));
+  }
+
+  AssumeFolder(rp.parent_path());
+  fs::create_directory(rp);
 }
 
 }  // namespace jk::common
