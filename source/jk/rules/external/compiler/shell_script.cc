@@ -44,7 +44,7 @@ void MakefileShellScriptCompiler::Compile(
       "--switch=$(COLOR)",
       "--green",
       "--bold",
-      "--progress-num={}"_format(common::Counter()->Next()),
+      "--progress-num={}"_format(rule->KeyNumber("execute")),
       "--progress-dir={}"_format(project->BuildRoot),
       "Installing External Project {}"_format(rule->FullQualifiedName()),
   });

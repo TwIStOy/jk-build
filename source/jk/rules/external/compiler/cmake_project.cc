@@ -37,7 +37,7 @@ void MakefileCMakeLibrary::Compile(
 
   auto [output_folder, indexs, download_target, decompress_target] =
       DownloadAndDecompress(project, makefile.get(), rule, working_folder);
-  auto cmake_print_idx = common::Counter()->Next();
+  auto cmake_print_idx = rule->KeyNumber(".cmake");
   indexs.push_back(cmake_print_idx);
 
   auto build_target = working_folder.Sub("CMAKE_BUILD");

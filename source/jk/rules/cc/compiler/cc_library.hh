@@ -57,12 +57,13 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
 
   //! return `ProgressNum`
   uint32_t LintSourceFile(core::filesystem::ProjectFileSystem *project,
-                          SourceFile *source_file,
+                          CCLibrary *rule, SourceFile *source_file,
                           core::output::UnixMakefile *build,
                           const common::AbsolutePath &working_folder) const;
 
   void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
-                      const std::string &build_type, SourceFile *source_file,
+                      CCLibrary *rule, const std::string &build_type,
+                      SourceFile *source_file,
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;

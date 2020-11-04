@@ -17,6 +17,7 @@
 
 #include "fmt/core.h"
 #include "fmt/format.h"
+#include "jk/common/counter.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/dependent.hh"
@@ -249,18 +250,18 @@ common::AbsolutePath BuildRule::WorkingFolder(  // {{{
 void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
                                  std::unordered_set<std::string> *recorder) {
   if (recorder) {
-    auto it = recorder->find(this->FullQualifiedName());
-    if (it != recorder->end()) {
+    if (auto it = recorder->find(this->FullQualifiedName());
+        it != recorder->end()) {
       return;
     }
     recorder->insert(this->FullQualifiedName());
   }
 
-  func(this);
-
   for (auto it : Dependencies) {
     it->RecursiveExecute(func, recorder);
   }
+
+  func(this);
 }  // }}}
 
 json BuildRule::CacheState() const {  // {{{
@@ -279,10 +280,28 @@ json BuildRule::CacheState() const {  // {{{
   return res;
 }  // }}}
 
-std::unordered_map<std::string, std::string> BuildRule::ExportedEnvironmentVar()
-    const {
+std::unordered_map<std::string, std::string>  // {{{
+BuildRule::ExportedEnvironmentVar() const {
   return {};
-}
+}  // }}}
+
+uint32_t BuildRule::KeyNumber(const std::string &key) {  // {{{
+  if (auto it = key_numbers_.find(key); it != key_numbers_.end()) {
+    return it->second;
+  }
+  auto id = common::Counter()->Next();
+  key_numbers_[key] = id;
+  return id;
+}  // }}}
+
+std::vector<uint32_t> BuildRule::KeyNumbers() const {  //{{{
+  std::vector<uint32_t> res;
+  std::transform(std::begin(key_numbers_), std::end(key_numbers_),
+                 std::back_inserter(res), [](const auto &p) -> uint32_t {
+                   return p.second;
+                 });
+  return res;
+}  // }}}
 
 }  // namespace rules
 }  // namespace core

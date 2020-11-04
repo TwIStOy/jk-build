@@ -6,6 +6,12 @@
 #include <cstdint>
 #include <vector>
 
+namespace jk::core::rules {
+
+struct BuildRule;
+
+}  // namespace jk::core::rules
+
 namespace jk::common {
 
 //! Global Counter
@@ -14,12 +20,15 @@ struct _Counter {
     return Count;
   }
 
+  uint32_t Count{0};
+
+ private:
+  friend struct jk::core::rules::BuildRule;
+
   inline uint32_t Next() {
     uint32_t ret = Count++;
     return ret;
   }
-
-  uint32_t Count{0};
 };
 
 inline _Counter *Counter() {

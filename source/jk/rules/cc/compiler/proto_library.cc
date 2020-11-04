@@ -62,20 +62,15 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
-  auto counter = common::Counter();
-  std::list<uint32_t> progress_num;
-
   auto clean_target = working_folder.Sub("clean").Stringify();
   core::builder::CustomCommandLines clean_statements;
 
-  auto library_progress_num = counter->Next();
-  progress_num.push_back(library_progress_num);
+  auto library_progress_num = rule->KeyNumber(".library");
 
   // genereate ".cc" and ".h" files
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
-    auto num = source_file->ProgressNum;
-    progress_num.push_back(source_file->ProgressNum);
+    auto num = rule->KeyNumber(filename);
     auto print_stmt = core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)", "--green",
          "--progress-num={}"_format(num),
@@ -103,14 +98,6 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
          "{}.h"_format(source_file->FullQualifiedPbPath(working_folder))}));
   }
 
-  for (const auto &filename : source_files) {
-    auto cc_filename =
-        filename.substr(0, filename.find_last_of('.')) + ".pb.cc";
-    auto source_file = SourceFile::Create(rule, rule->Package, cc_filename);
-
-    progress_num.push_back(source_file->ProgressNum);
-  }
-
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
 
@@ -119,7 +106,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
           filename.substr(0, filename.find_last_of('.')) + ".pb.cc";
       auto source_file = SourceFile::Create(rule, rule->Package, cc_filename);
 
-      MakeSourceFile(project, build_type, source_file, {}, build.get(),
+      MakeSourceFile(project, rule, build_type, source_file, {}, build.get(),
                      working_folder);
 
       all_objects.push_back(
@@ -128,7 +115,8 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
 
     auto library_file =
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
-    build->AddTarget(library_file.Stringify(), {"jk_force"});
+    // build->AddTarget(library_file.Stringify(), {"jk_force"});
+    build->AddTarget(library_file.Stringify(), {});
     auto ar_stmt = core::builder::CustomCommandLine::Make({
         "@$(AR)",
         library_file.Stringify(),
@@ -142,7 +130,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
             core::builder::CustomCommandLine::Make(
                 {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
                  "--progress-num={}"_format(
-                     utils::JoinString(",", progress_num)),
+                     utils::JoinString(",", rule->KeyNumbers())),
                  "--progress-dir={}"_format(project->BuildRoot),
                  "Linking CXX static library {}"_format(
                      library_file.Stringify())}),
@@ -172,9 +160,9 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
 }
 
 void MakefileProtoLibraryCompiler::MakeSourceFile(
-    core::filesystem::ProjectFileSystem *project, const std::string &build_type,
-    SourceFile *source_file, const std::list<std::string> &headers,
-    core::output::UnixMakefile *build,
+    core::filesystem::ProjectFileSystem *project, CCLibrary *rule,
+    const std::string &build_type, SourceFile *source_file,
+    const std::list<std::string> &headers, core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
   std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
                               working_folder.Sub("toolchain.make").Stringify()};
@@ -187,7 +175,7 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
-       "--progress-num={}"_format(source_file->ProgressNum),
+       "--progress-num={}"_format(rule->KeyNumber(source_file->FileName)),
        "--progress-dir={}"_format(project->BuildRoot),
        "Building proto CXX object {}"_format(
            source_file->FullQualifiedObjectPath(working_folder, build_type))});

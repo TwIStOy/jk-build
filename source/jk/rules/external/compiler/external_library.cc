@@ -40,8 +40,8 @@ MakefileExternalLibraryCompiler::DownloadAndDecompress(
                                 rule->ArchiveType));
   }
 
-  auto download_print_idx = common::Counter()->Next();
-  auto decompress_print_idx = common::Counter()->Next();
+  auto download_print_idx = rule->KeyNumber("download");
+  auto decompress_print_idx = rule->KeyNumber("decompress");
   // download file
   auto download_target = working_folder.Sub("DOWNLOAD").Stringify();
   {

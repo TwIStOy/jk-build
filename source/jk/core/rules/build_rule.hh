@@ -139,6 +139,11 @@ struct BuildRule : public utils::Stringifiable {
   //! headers.
   virtual std::vector<std::string> ExportedHeaders() const = 0;
 
+  //! Return exported environment variables, that its dependencies can be used.
+  //!
+  //! All variables start with the rule's full qualifed name. eg:
+  //! <Rule, 'third_party/protobuf'>, variable: "protoc" =>
+  //!   THIRD_PARTY_PROTOBUF_PROTOC
   virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar()
       const;
 
@@ -151,11 +156,19 @@ struct BuildRule : public utils::Stringifiable {
   //! Extract all deps after topological sorting
   std::list<BuildRule const *> DependenciesInOrder() const;
 
+  //! Return working folder based on `build_root`
   common::AbsolutePath WorkingFolder(
       const common::AbsolutePath &build_root) const;
 
+  //! Execute function recursively.
   void RecursiveExecute(std::function<void(BuildRule *)> func,
                         std::unordered_set<std::string> *recorder = nullptr);
+
+  //! Allocate a new number if key not exists.
+  uint32_t KeyNumber(const std::string &key);
+
+  //! Return all allocated key numbers.
+  std::vector<uint32_t> KeyNumbers() const;
 
   //! Which package where this build-rule is inside
   BuildPackage *Package;
@@ -169,6 +182,8 @@ struct BuildRule : public utils::Stringifiable {
 
  private:
   bool dependencies_has_built_{false};
+
+  std::unordered_map<std::string, uint32_t> key_numbers_;
 
 #ifdef JK_TEST
  public:

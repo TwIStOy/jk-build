@@ -106,38 +106,32 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
-  auto counter = common::Counter();
-
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
-  std::list<uint32_t> progress_num;
 
   // lint sources first
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
-    progress_num.push_back(source_file->ProgressNum);
 
     if (rule->IsNolint(
             project->Resolve(source_file->FullQualifiedPath()).Stringify())) {
       continue;
     }
 
-    progress_num.push_back(
-        LintSourceFile(project, source_file, build.get(), working_folder));
+    LintSourceFile(project, rule, source_file, build.get(), working_folder);
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
   core::builder::CustomCommandLines clean_statements;
 
-  auto library_progress_num = counter->Next();
-  progress_num.push_back(library_progress_num);
+  auto library_progress_num = rule->KeyNumber(".library");
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
 
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
 
-      MakeSourceFile(project, build_type, source_file, all_dep_headers,
+      MakeSourceFile(project, rule, build_type, source_file, all_dep_headers,
                      build.get(), working_folder);
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
@@ -161,7 +155,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
             core::builder::CustomCommandLine::Make(
                 {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
                  "--progress-num={}"_format(
-                     utils::JoinString(",", progress_num)),
+                     utils::JoinString(",", rule->KeyNumbers())),
                  "--progress-dir={}"_format(project->BuildRoot),
                  "Linking CXX static library {}"_format(
                      library_file.Stringify())}),
@@ -191,10 +185,11 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 }
 
 uint32_t MakefileCCLibraryCompiler::LintSourceFile(
-    core::filesystem::ProjectFileSystem *project, SourceFile *source_file,
-    core::output::UnixMakefile *build,
+    core::filesystem::ProjectFileSystem *project, CCLibrary *rule,
+    SourceFile *source_file, core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
-  auto progress_num = common::Counter()->Next();
+  auto progress_num =
+      rule->KeyNumber(source_file->FullQualifiedPath().Stringify() + "/lint");
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
@@ -226,9 +221,9 @@ uint32_t MakefileCCLibraryCompiler::LintSourceFile(
 }
 
 void MakefileCCLibraryCompiler::MakeSourceFile(
-    core::filesystem::ProjectFileSystem *project, const std::string &build_type,
-    SourceFile *source_file, const std::list<std::string> &headers,
-    core::output::UnixMakefile *build,
+    core::filesystem::ProjectFileSystem *project, CCLibrary *rule,
+    const std::string &build_type, SourceFile *source_file,
+    const std::list<std::string> &headers, core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
   std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
                               working_folder.Sub("toolchain.make").Stringify()};
@@ -247,7 +242,8 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
-       "--progress-num={}"_format(source_file->ProgressNum),
+       "--progress-num={}"_format(
+           rule->KeyNumber(source_file->FullQualifiedPath())),
        "--progress-dir={}"_format(project->BuildRoot),
        "Building CXX object {}"_format(
            source_file->FullQualifiedObjectPath(working_folder, build_type))});

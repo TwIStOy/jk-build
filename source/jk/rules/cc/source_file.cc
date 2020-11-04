@@ -54,10 +54,7 @@ SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
 
 SourceFile::SourceFile(core::rules::BuildRule *rule,
                        core::rules::BuildPackage *package, std::string filename)
-    : Rule(rule),
-      Package(package),
-      FileName(std::move(filename)),
-      ProgressNum(common::Counter()->Next()) {
+    : Rule(rule), Package(package), FileName(std::move(filename)) {
   if (auto it = source_files_.find(FullQualifiedPath().Stringify());
       it != source_files_.end()) {
     JK_THROW(core::JKBuildError("Source file {} in different rules: {} and {}",

@@ -139,11 +139,29 @@ void MakefileGlobalCompiler::Compile(
           deps.push_back(dep->FullQualifiedTarget(output_format.first));
         }
         deps.push_back("pre");
+        std::unordered_set<uint32_t> numbers;
+        auto merge_numbers = [&](rules::BuildRule *rule) {
+          for (auto id : rule->KeyNumbers()) {
+            numbers.insert(id);
+          }
+        };
+        std::unordered_set<std::string> recorder;
+        rule->RecursiveExecute(merge_numbers, &recorder);
+        recorder.clear();
+
         makefile->AddTarget(
             rule->FullQualifiedTarget(output_format.first), deps,
-            builder::CustomCommandLines::Single(
-                {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
-                 output_format.second}));
+            builder::CustomCommandLines::Multiple(
+                builder::CustomCommandLine::Make(
+                    {"@$(MAKE)", "-f",
+                     working_folder.Sub("build.make").Stringify(),
+                     output_format.second}),
+                builder::CustomCommandLine::Make(
+                    {"@$(PRINT)", "--switch=$(COLOR)",
+                     "--progress-num={}"_format(
+                         utils::JoinString(",", numbers)),
+                     "--progress-dir={}"_format(project->BuildRoot),
+                     "Built target {}"_format(rule->FullQualifiedName())})));
       }
     } else {
       std::list<std::string> deps;

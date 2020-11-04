@@ -32,7 +32,8 @@ struct MakefileProtoLibraryCompiler : public MakefileCCLibraryCompiler {
       core::filesystem::FileNamePatternExpander *expander) const;
 
   void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
-                      const std::string &build_type, SourceFile *source_file,
+                      CCLibrary *rule, const std::string &build_type,
+                      SourceFile *source_file,
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;

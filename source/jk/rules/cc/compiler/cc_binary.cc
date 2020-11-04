@@ -84,30 +84,24 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
-  std::list<uint32_t> progress_num;
-
-  auto counter = common::Counter();
 
   // lint files first
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
 
-    progress_num.push_back(
-        LintSourceFile(project, source_file, build.get(), working_folder));
-    progress_num.push_back(source_file->ProgressNum);
+    LintSourceFile(project, rule, source_file, build.get(), working_folder);
   }
 
   auto clean_target = working_folder.Sub("clean").Stringify();
   core::builder::CustomCommandLines clean_statements;
 
-  auto binary_progress_num = counter->Next();
-  progress_num.push_back(binary_progress_num);
+  auto binary_progress_num = rule->KeyNumber(".binary");
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
 
-      MakeSourceFile(project, build_type, source_file, all_dep_headers,
+      MakeSourceFile(project, rule, build_type, source_file, all_dep_headers,
                      build.get(), working_folder);
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
@@ -119,7 +113,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
         rule->ResolveDependenciesAndLdFlags(project, build_type);
 
     auto binary_deps = all_objects;
-    for (auto dep : rule->Dependencies) {
+    // depend on all static libraries
+    for (auto dep : rule->DependenciesInOrder()) {
       auto names = dep->ExportedFilesSimpleName(project, build_type);
       std::copy(std::begin(names), std::end(names),
                 std::back_inserter(binary_deps));
@@ -129,7 +124,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 
     auto print_stmt = core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
-         "--progress-num={}"_format(utils::JoinString(",", progress_num)),
+         "--progress-num={}"_format(utils::JoinString(",", rule->KeyNumbers())),
          "--progress-dir={}"_format(project->BuildRoot),
          "Linking binary {}"_format(binary_file.Stringify())});
 
