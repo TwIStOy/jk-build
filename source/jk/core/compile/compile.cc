@@ -200,9 +200,11 @@ void MakefileGlobalCompiler::Compile(
 
       makefile->AddTarget(
           rule->FullQualifiedTarget(), deps,
-          builder::CustomCommandLines::Single(
-              {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
-               "build"}),
+          builder::CustomCommandLines::Multiple(
+              builder::CustomCommandLine::Make(
+                  {"@$(MAKE)", "-f",
+                   working_folder.Sub("build.make").Stringify(), "build"}),
+              print_stmt),
           "", true);
       makefile->AddTarget("external", {rule->FullQualifiedTarget()});
     }

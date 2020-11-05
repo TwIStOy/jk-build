@@ -77,6 +77,8 @@ void MakefileShellScriptCompiler::Compile(
     for (auto &it : rule->ExportedFilesSimpleName(project, "")) {
       lines.push_back(core::builder::CustomCommandLine::Make({"@$(RM)", it}));
     }
+    lines.push_back(
+        core::builder::CustomCommandLine::Make({"@$(RM)", script_target}));
     makefile->AddTarget("clean", {}, std::move(lines));
   }
 

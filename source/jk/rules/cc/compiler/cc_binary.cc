@@ -114,9 +114,11 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     auto binary_deps = all_objects;
     // depend on all static libraries
     for (auto dep : rule->DependenciesInOrder()) {
-      auto names = dep->ExportedFilesSimpleName(project, build_type);
-      std::copy(std::begin(names), std::end(names),
-                std::back_inserter(binary_deps));
+      if (!dep->Type.IsExternal()) {
+        auto names = dep->ExportedFilesSimpleName(project, build_type);
+        std::copy(std::begin(names), std::end(names),
+                  std::back_inserter(binary_deps));
+      }
     }
     auto mkdir_stmt = core::builder::CustomCommandLine::Make(
         {"@$(MKDIR)", binary_file.Path.parent_path().string()});
