@@ -196,10 +196,11 @@ uint32_t MakefileCCLibraryCompiler::LintSourceFile(
        "--progress-dir={}"_format(project->BuildRoot),
        "Linting CXX file {}"_format(
            project->Resolve(source_file->FullQualifiedPath()))});
+  using core::builder::operator""_c_raw;
   auto lint_stmt = core::builder::CustomCommandLine::Make(
       {"@$(CPPLINT)",
        project->Resolve(source_file->FullQualifiedPath()).Stringify(),
-       ">/dev/null"});
+       ">/dev/null"_c_raw});
   auto mkdir_stmt = core::builder::CustomCommandLine::Make(
       {"@$(MKDIR)", source_file->FullQualifiedLintPath(working_folder)
                         .Path.parent_path()

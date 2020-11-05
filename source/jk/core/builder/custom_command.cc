@@ -11,7 +11,7 @@
 namespace jk::core::builder {
 
 CustomCommandLine CustomCommandLine::Make(
-    std::initializer_list<std::string> ilist) {
+    std::initializer_list<CustomArgument> ilist) {
   CustomCommandLine res;
   for (auto &i : ilist) {
     res.push_back(std::move(i));
@@ -28,13 +28,17 @@ CustomCommandLine CustomCommandLine::FromVec(std::vector<std::string> ilist) {
 }
 
 std::string CustomCommandLine::Stringify() const {
-  return utils::JoinString(" ", begin(), end(), [](const std::string &s) {
-    return utils::EscapeForShellStyle(s);
+  return utils::JoinString(" ", begin(), end(), [](const CustomArgument &s) {
+    if (s.Raw) {
+      return s.Argument;
+    } else {
+      return utils::EscapeForShellStyle(s.Argument);
+    }
   });
 }
 
 CustomCommandLines CustomCommandLines::Single(
-    std::initializer_list<std::string> ilist) {
+    std::initializer_list<CustomArgument> ilist) {
   CustomCommandLines res;
   res.push_back(CustomCommandLine::Make(ilist));
   return res;
