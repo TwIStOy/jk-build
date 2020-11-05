@@ -62,7 +62,6 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
-  auto clean_target = working_folder.Sub("clean").Stringify();
   core::builder::CustomCommandLines clean_statements;
 
   auto library_progress_num = rule->KeyNumber(".library");
@@ -152,7 +151,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
     build->AddTarget(build_type, {build_target}, {}, "", true);
   }
 
-  build->AddTarget(clean_target, {}, std::move(clean_statements), "", true);
+  build->AddTarget("clean", {}, std::move(clean_statements), "", true);
 
   build->Write(w);
 

@@ -3,14 +3,18 @@
 
 #include "jk/rules/external/compiler/shell_script.hh"
 
+#include <list>
 #include <string>
+#include <utility>
 
 #include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
 #include "jk/core/builder/custom_command.hh"
 #include "jk/core/output/makefile.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/rules/common.hh"
 #include "jk/rules/external/rules/shell_script.hh"
+#include "jk/utils/str.hh"
 
 namespace jk::rules::external {
 
@@ -29,7 +33,12 @@ void MakefileShellScriptCompiler::Compile(
       new core::output::UnixMakefile{"build.make"}};
   makefile->DefineCommon(project);
 
+  makefile->DefineEnvironment("JK_COMMAND", "jk");
+
   makefile->DefineEnvironment("MKDIR", "mkdir -p");
+
+  makefile->DefineEnvironment("RM", "$(JK_COMMAND) delete_file",
+                              "The command to remove a file.");
 
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
 
@@ -38,30 +47,47 @@ void MakefileShellScriptCompiler::Compile(
   makefile->AddTarget("jk_force", {}, {}, "This target is always outdated.",
                       true);
 
-  auto script_target = working_folder.Sub("build").Stringify();
-  auto print_stmt = core::builder::CustomCommandLine::Make({
-      "@$(PRINT)",
-      "--switch=$(COLOR)",
-      "--green",
-      "--bold",
-      "--progress-num={}"_format(rule->KeyNumber("execute")),
-      "--progress-dir={}"_format(project->BuildRoot),
-      "Installing External Project {}"_format(rule->FullQualifiedName()),
-  });
+  auto script_target = working_folder.Sub("CHECK_POINT").Stringify();
+  {
+    // script target
+    auto print_stmt =
+        PrintGreen(project, rule->KeyNumber("execute"),
+                   "Installing External Project {}", rule->FullQualifiedName());
+    auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(MKDIR)",
+         project->ProjectRoot.Sub(ExternalInstalledPrefix).Stringify()});
 
-  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
-      {"@$(MKDIR)",
-       project->ProjectRoot.Sub(ExternalInstalledPrefix).Stringify()});
+    auto run_stmt = core::builder::CustomCommandLine::Make(
+        {"@{}/{}"_format(project->Resolve(rule->Package->Path), rule->Script),
+         "{}"_format(common::FLAGS_platform == common::Platform::k32 ? 32
+                                                                     : 64)});
+    auto touch_stmt = core::builder::CustomCommandLine::Make(
+        {"@touch", "{}"_format(script_target)});
 
-  auto run_stmt = core::builder::CustomCommandLine::Make(
-      {"@{}/{}"_format(project->Resolve(rule->Package->Path), rule->Script),
-       "{}"_format(common::FLAGS_platform == common::Platform::k32 ? 32 : 64)});
+    makefile->AddTarget(
+        script_target,
+        {project->Resolve(rule->Package->Path).Sub(rule->Script)},
+        core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
+                                                    run_stmt, touch_stmt));
+  }
 
-  makefile->AddTarget(script_target, {"jk_force"},
-                      core::builder::CustomCommandLines::Multiple(
-                          print_stmt, mkdir_stmt, run_stmt));
+  {
+    // clean target
+    core::builder::CustomCommandLines lines;
+    for (auto &it : rule->ExportedFilesSimpleName(project, "")) {
+      lines.push_back(core::builder::CustomCommandLine::Make({"@$(RM)", it}));
+    }
+    makefile->AddTarget("clean", {}, std::move(lines));
+  }
 
-  makefile->AddTarget("build", {script_target}, {}, "", true);
+  std::list<std::string> deps;
+  for (auto &it : rule->ExportedFilesSimpleName(project, "")) {
+    makefile->AddTarget(it, {script_target});
+
+    deps.push_back(std::move(it));
+  }
+
+  makefile->AddTarget("build", deps, {}, "", true);
 
   auto w = wf->Build(working_folder.Sub("build.make").Stringify());
   makefile->Write(w.get());

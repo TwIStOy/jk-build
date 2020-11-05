@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iterator>
 #include <list>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -122,8 +123,11 @@ void MakefileGlobalCompiler::Compile(
       "", true);
   makefile->AddTarget("external", {}, {}, "", true);
 
+  std::list<std::string> clean_targets;
+
   std::unordered_set<std::string> recorder;
-  auto gen_target = [&makefile, project, &recorder](rules::BuildRule *rule) {
+  auto gen_target = [&makefile, project, &recorder,
+                     &clean_targets](rules::BuildRule *rule) {
     if (recorder.find(rule->FullQualifiedName()) != recorder.end()) {
       return;
     }
@@ -132,22 +136,34 @@ void MakefileGlobalCompiler::Compile(
     logger->info("Generate global target for {}, type: {}", *rule, rule->Type);
 
     auto working_folder = rule->WorkingFolder(project->BuildRoot);
+
+    std::unordered_set<uint32_t> numbers;
+    auto merge_numbers = [&](rules::BuildRule *rule) {
+      for (auto id : rule->KeyNumbers()) {
+        numbers.insert(id);
+      }
+    };
+    std::unordered_set<std::string> _recorder;
+    rule->RecursiveExecute(merge_numbers, &_recorder);
+    _recorder.clear();
+
+    auto clean_target = working_folder.Sub("clean");
+    makefile->AddTarget(
+        clean_target, {},
+        builder::CustomCommandLines::Single(
+            {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
+             "clean"}),
+        "", true);
+    clean_targets.push_back(clean_target);
+
     if (rule->Type.IsCC()) {
+      // cc target has build type
       for (const auto &output_format : formats) {
         std::list<std::string> deps;
         for (auto dep : rule->Dependencies) {
           deps.push_back(dep->FullQualifiedTarget(output_format.first));
         }
         deps.push_back("pre");
-        std::unordered_set<uint32_t> numbers;
-        auto merge_numbers = [&](rules::BuildRule *rule) {
-          for (auto id : rule->KeyNumbers()) {
-            numbers.insert(id);
-          }
-        };
-        std::unordered_set<std::string> recorder;
-        rule->RecursiveExecute(merge_numbers, &recorder);
-        recorder.clear();
 
         makefile->AddTarget(
             rule->FullQualifiedTarget(output_format.first), deps,
@@ -161,10 +177,11 @@ void MakefileGlobalCompiler::Compile(
                      "--progress-num={}"_format(
                          utils::JoinString(",", numbers)),
                      "--progress-dir={}"_format(project->BuildRoot),
-                     "Built target {}:{}"_format(rule->Package->Name,
-                                                 rule->Name)})));
+                     "Built rule {}:{}"_format(rule->Package->Name,
+                                               rule->Name)})));
       }
     } else {
+      // simple target
       std::list<std::string> deps;
       for (auto dep : rule->Dependencies) {
         if (!dep->Type.IsExternal()) {
@@ -174,6 +191,13 @@ void MakefileGlobalCompiler::Compile(
         deps.push_back(dep->FullQualifiedTarget());
       }
       deps.push_back("pre");
+
+      auto print_stmt = builder::CustomCommandLine::Make(
+          {"@$(PRINT)", "--switch=$(COLOR)",
+           "--progress-num={}"_format(utils::JoinString(",", numbers)),
+           "--progress-dir={}"_format(project->BuildRoot),
+           "Built rule {}:{}"_format(rule->Package->Name, rule->Name)});
+
       makefile->AddTarget(
           rule->FullQualifiedTarget(), deps,
           builder::CustomCommandLines::Single(
@@ -215,6 +239,8 @@ void MakefileGlobalCompiler::Compile(
       makefile->AddTarget(output_format.first, {tgt_name, "pre"}, {}, "", true);
     }
   }
+
+  makefile->AddTarget("clean", clean_targets, {}, "", true);
 
   auto w = wf->Build(makefile->filename_);
   makefile->Write(w.get());

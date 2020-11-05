@@ -92,7 +92,6 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     LintSourceFile(project, rule, source_file, build.get(), working_folder);
   }
 
-  auto clean_target = working_folder.Sub("clean").Stringify();
   core::builder::CustomCommandLines clean_statements;
 
   auto binary_progress_num = rule->KeyNumber(".binary");
@@ -155,7 +154,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     build->AddTarget(build_type, {build_target}, {}, "", true);
   }
 
-  build->AddTarget(clean_target, {}, clean_statements, "", true);
+  build->AddTarget("clean", {}, clean_statements, "", true);
 
   build->Write(w);
 

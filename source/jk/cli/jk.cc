@@ -12,6 +12,7 @@
 #include "jk/cli/echo_color.hh"
 #include "jk/cli/gen.hh"
 #include "jk/cli/progress.hh"
+#include "jk/cli/rm.hh"
 #include "jk/common/flags.hh"
 #include "jk/version.h"
 
@@ -30,6 +31,7 @@ Cli::Cli() {
   NewSubCommand("gen", "Generate...", &Generate);
   NewSubCommand("start_progress", "Start progres...", &StartProgress);
   NewSubCommand("download", "Download file...", &DownloadFile);
+  NewSubCommand("delete_file", "Delete files...", &RmFiles);
   // Add commands
 }
 

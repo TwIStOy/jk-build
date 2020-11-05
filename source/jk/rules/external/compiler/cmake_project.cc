@@ -33,7 +33,12 @@ void MakefileCMakeLibrary::Compile(
 
   makefile->DefineEnvironment("CMAKE", "cmake");
 
-  makefile->DefineEnvironment("RM", "rm");
+  makefile->DefineEnvironment("JK_COMMAND", "jk");
+
+  makefile->DefineEnvironment("MKDIR", "mkdir -p");
+
+  makefile->DefineEnvironment("RM", "$(JK_COMMAND) delete_file",
+                              "The command to remove a file.");
 
   auto [output_folder, indexs, download_target, decompress_target] =
       DownloadAndDecompress(project, makefile.get(), rule, working_folder);

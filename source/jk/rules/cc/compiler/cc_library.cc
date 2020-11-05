@@ -121,7 +121,6 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     LintSourceFile(project, rule, source_file, build.get(), working_folder);
   }
 
-  auto clean_target = working_folder.Sub("clean").Stringify();
   core::builder::CustomCommandLines clean_statements;
 
   auto library_progress_num = rule->KeyNumber(".library");
@@ -177,7 +176,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     build->AddTarget(build_type, {build_target}, {}, "", true);
   }
 
-  build->AddTarget(clean_target, {}, std::move(clean_statements), "", true);
+  build->AddTarget("clean", {}, std::move(clean_statements), "", true);
 
   build->Write(w);
 
@@ -312,7 +311,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
 
   makefile->DefineEnvironment("AR", "ar rcs");
 
-  makefile->DefineEnvironment("RM", "rm", "The command to remove a file.");
+  makefile->DefineEnvironment("RM", "$(JK_COMMAND) delete_file",
+                              "The command to remove a file.");
 
   makefile->DefineEnvironment("CPPLINT", project->Config().cpplint_path);
 
