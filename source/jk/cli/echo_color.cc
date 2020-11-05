@@ -40,6 +40,7 @@ static std::string ProgressReport(const fs::path &progress_dir_root,
       ifs >> total;
     } else {
       JK_THROW(core::JKBuildError("Could not read from progress file."));
+      return "";
     }
   }
 
@@ -58,6 +59,24 @@ static std::string ProgressReport(const fs::path &progress_dir_root,
   }
   return "";
 }
+
+#define REPLACE_COLOR_TAG(color)                                \
+  do {                                                          \
+    std::string current_color = code_##color;                   \
+    std::string current_rst = code_rst;                         \
+    if (code_st.size()) {                                       \
+      current_color = code_ed + current_color;                  \
+      current_rst = code_rst + code_st;                         \
+    }                                                           \
+    if (args::get(sw) == "off") {                               \
+      current_color = "";                                       \
+      current_rst = "";                                         \
+    }                                                           \
+    for (auto &m : msg) {                                       \
+      utils::ReplaceAllSlow(&m, "<" #color ">", current_color); \
+      utils::ReplaceAllSlow(&m, "</" #color ">", current_rst);  \
+    }                                                           \
+  } while (0);
 
 void EchoColor(args::Subparser &parser) {
   args::ValueFlag<std::string> sw(parser, "SWITCH", "Color is open or not.",
@@ -83,6 +102,9 @@ void EchoColor(args::Subparser &parser) {
 
   std::string code_st;
   std::string code_ed;
+
+  auto msg = args::get(message);
+
   if (args::get(sw) != "off") {
     bool has = false;
     if (green) {
@@ -108,7 +130,13 @@ void EchoColor(args::Subparser &parser) {
     }
   }
 
-  auto msg = args::get(message);
+  REPLACE_COLOR_TAG(red);
+  REPLACE_COLOR_TAG(green);
+  REPLACE_COLOR_TAG(yellow);
+  REPLACE_COLOR_TAG(blue);
+  REPLACE_COLOR_TAG(magenta);
+  REPLACE_COLOR_TAG(cyan);
+
   std::vector<uint32_t> num;
   std::istringstream iss(args::get(progress_num));
   std::string item;

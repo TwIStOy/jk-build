@@ -110,6 +110,18 @@ inline std::string Replace(const std::string &old, char from, const T &to) {
   return oss.str();
 }
 
+inline void ReplaceAllSlow(std::string *text, const std::string &from,
+                           const std::string &to) {
+  if (from.empty())
+    return;
+
+  size_t start_pos = 0;
+  while ((start_pos = text->find(from, start_pos)) != std::string::npos) {
+    text->replace(start_pos, from.length(), to);
+    start_pos += to.length();
+  }
+}
+
 inline std::string ToLower(const std::string &s) {
   std::string res;
   std::transform(std::begin(s), std::end(s), std::back_inserter(res),

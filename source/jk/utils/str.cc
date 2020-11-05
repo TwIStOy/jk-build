@@ -10,7 +10,7 @@ namespace jk::utils {
 std::string EscapeForShellStyle(const std::string &raw) {
   std::string result;
   for (const char *ch = raw.c_str(); *ch != '\0'; ++ch) {
-    if (*ch == ' ') {
+    if (*ch == ' ' || *ch == '<' || *ch == '>') {
       result += '\\';
     }
     result += *ch;

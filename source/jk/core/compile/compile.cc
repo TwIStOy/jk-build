@@ -24,6 +24,7 @@
 #include "jk/rules/cc/compiler/cc_test.hh"
 #include "jk/rules/cc/compiler/proto_library.hh"
 #include "jk/rules/cc/source_file.hh"
+#include "jk/rules/common.hh"
 #include "jk/rules/external/compiler/cmake_project.hh"
 #include "jk/rules/external/compiler/shell_script.hh"
 #include "jk/utils/logging.hh"
@@ -172,13 +173,18 @@ void MakefileGlobalCompiler::Compile(
                     {"@$(MAKE)", "-f",
                      working_folder.Sub("build.make").Stringify(),
                      output_format.second}),
-                builder::CustomCommandLine::Make(
-                    {"@$(PRINT)", "--switch=$(COLOR)",
-                     "--progress-num={}"_format(
-                         utils::JoinString(",", numbers)),
-                     "--progress-dir={}"_format(project->BuildRoot),
-                     "Built rule {}:{}"_format(rule->Package->Name,
-                                               rule->Name)})));
+                ::jk::rules::PrintPlain(
+                    project, numbers,
+                    "Built rule <cyan>{}:{}</cyan>, artifact: "
+                    "[{}]",
+                    rule->Package->Name, rule->Name,
+                    utils::JoinString(", ",
+                                      rule->ExportedFilesSimpleName(
+                                          project, output_format.second),
+                                      [](const auto &s) {
+                                        return fmt::format("<green>{}</green>",
+                                                           s);
+                                      }))));
       }
     } else {
       // simple target
@@ -192,11 +198,9 @@ void MakefileGlobalCompiler::Compile(
       }
       deps.push_back("pre");
 
-      auto print_stmt = builder::CustomCommandLine::Make(
-          {"@$(PRINT)", "--switch=$(COLOR)",
-           "--progress-num={}"_format(utils::JoinString(",", numbers)),
-           "--progress-dir={}"_format(project->BuildRoot),
-           "Built rule {}:{}"_format(rule->Package->Name, rule->Name)});
+      auto print_stmt = ::jk::rules::PrintPlain(
+          project, numbers, "Built rule <cyan>{}:{}</cyan>",
+          rule->Package->Name, rule->Name);
 
       makefile->AddTarget(
           rule->FullQualifiedTarget(), deps,
