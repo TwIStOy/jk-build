@@ -281,7 +281,9 @@ json BuildRule::CacheState() const {  // {{{
 }  // }}}
 
 std::unordered_map<std::string, std::string>  // {{{
-BuildRule::ExportedEnvironmentVar() const {
+BuildRule::ExportedEnvironmentVar(
+    filesystem::ProjectFileSystem *project) const {
+  (void)project;
   return {};
 }  // }}}
 

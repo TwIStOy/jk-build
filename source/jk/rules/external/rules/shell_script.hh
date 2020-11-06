@@ -38,8 +38,8 @@ class ShellScript : public core::rules::BuildRule {
 
   std::vector<std::string> ExportedHeaders() const override;
 
-  std::unordered_map<std::string, std::string> ExportedEnvironmentVar()
-      const override;
+  std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
+      core::filesystem::ProjectFileSystem *) const override;
 
   // --- Fields Start ---
   std::string Script;

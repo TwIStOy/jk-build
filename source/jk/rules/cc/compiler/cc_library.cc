@@ -319,18 +319,6 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
 
   makefile->DefineEnvironment("MKDIR", "mkdir -p");
 
-  auto deps = rule->DependenciesInOrder();
-  for (auto dep : deps) {
-    for (const auto &[k, v] : dep->ExportedEnvironmentVar()) {
-      makefile->DefineEnvironment(
-          fmt::format("{}_{}", dep->FullQuotedQualifiedName(), k), v);
-    }
-  }
-  for (const auto &[k, v] : rule->ExportedEnvironmentVar()) {
-    makefile->DefineEnvironment(
-        fmt::format("{}_{}", rule->FullQuotedQualifiedName(), k), v);
-  }
-
   makefile->Write(w);
   return makefile;
 }
@@ -402,6 +390,18 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
                                         [](const std::string &inc) {
                                           return fmt::format("-I{}", inc);
                                         }));
+
+  auto deps = rule->DependenciesInOrder();
+  for (auto dep : deps) {
+    for (const auto &[k, v] : dep->ExportedEnvironmentVar(project)) {
+      makefile->DefineEnvironment(
+          fmt::format("{}_{}", dep->FullQuotedQualifiedName(), k), v);
+    }
+  }
+  for (const auto &[k, v] : rule->ExportedEnvironmentVar(project)) {
+    makefile->DefineEnvironment(
+        fmt::format("{}_{}", rule->FullQuotedQualifiedName(), k), v);
+  }
 
   makefile->Write(w);
   return makefile;

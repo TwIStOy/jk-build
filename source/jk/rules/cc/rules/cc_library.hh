@@ -67,6 +67,9 @@ class CCLibrary : public BuildRule {
 
   std::vector<std::string> ExportedHeaders() const override;
 
+  std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
+      core::filesystem::ProjectFileSystem *project) const override;
+
   // --- Fields Start ---
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;

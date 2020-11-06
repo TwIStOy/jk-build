@@ -144,8 +144,8 @@ struct BuildRule : public utils::Stringifiable {
   //! All variables start with the rule's full qualifed name. eg:
   //! <Rule, 'third_party/protobuf'>, variable: "protoc" =>
   //!   THIRD_PARTY_PROTOBUF_PROTOC
-  virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar()
-      const;
+  virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
+      filesystem::ProjectFileSystem *project) const;
 
   //! Return json object in cache
   virtual json CacheState() const;

@@ -101,7 +101,8 @@ std::vector<std::string> ShellScript::ExportedHeaders() const {
 }
 
 std::unordered_map<std::string, std::string>
-ShellScript::ExportedEnvironmentVar() const {
+ShellScript::ExportedEnvironmentVar(
+    core::filesystem::ProjectFileSystem *) const {
   return ExportBin;
 }
 

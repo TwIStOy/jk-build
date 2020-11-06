@@ -16,6 +16,7 @@
 
 #include "boost/optional/optional.hpp"
 #include "fmt/core.h"
+#include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
@@ -243,6 +244,18 @@ std::vector<std::string> CCLibrary::ExportedHeaders() const {
                    return Package->Path.Sub(hdr).Stringify();
                  });
   return Headers;
+}
+
+std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(
+    core::filesystem::ProjectFileSystem *project) const {
+  std::unordered_map<std::string, std::string> res;
+
+  for (auto tp : common::FLAGS_BuildTypes) {
+    res["artifact_" + tp] =
+        utils::JoinString(" ", ExportedFilesSimpleName(project, tp));
+  }
+
+  return res;
 }
 
 }  // namespace jk::rules::cc
