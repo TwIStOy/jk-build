@@ -122,6 +122,18 @@ inline void ReplaceAllSlow(std::string *text, const std::string &from,
   }
 }
 
+template<typename OutputIterator>
+void SplitString(const std::string &text, OutputIterator iterator,
+                 char delim = '\n') {
+  std::stringstream ss(text);
+  std::string item;
+
+  while (std::getline(ss, item, delim)) {
+    *iterator = item;
+    ++iterator;
+  }
+}
+
 inline std::string ToLower(const std::string &s) {
   std::string res;
   std::transform(std::begin(s), std::end(s), std::back_inserter(res),
