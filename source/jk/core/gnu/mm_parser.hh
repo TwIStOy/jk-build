@@ -5,17 +5,26 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
+#include <vector>
+
+#include "jk/utils/str.hh"
 
 namespace jk::core::gnu {
 
-struct MM {
+struct MM : public utils::Stringifiable {
   std::string Target;
-  std::string Dependencies;
+  std::vector<std::string> Dependencies;
 
-  static std::optional<MM> Parse(const std::string &text);
+  MM(std::string target, std::vector<std::string> deps)
+      : Target(std::move(target)), Dependencies(std::move(deps)) {
+  }
+
+  std::string Stringify() const final;
+
+  static std::optional<MM> Parse(std::string_view text);
 };
 
 }  // namespace jk::core::gnu
 
 // vim: fdm=marker
-

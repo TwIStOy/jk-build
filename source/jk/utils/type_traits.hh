@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <tuple>
 #include <type_traits>
 #include <variant>
 namespace jk::utils {
@@ -28,6 +29,22 @@ template<template<typename> class Func, typename... Args>
 struct apply<Func, type_list<Args...>> {
   using type = type_list<typename apply<Func, Args>::type...>;
 };
+
+template<typename T>
+struct is_tuple : std::false_type {};
+
+template<typename... args>
+struct is_tuple<std::tuple<args...>> : std::true_type {};
+
+template<typename T>
+static constexpr bool is_tuple_v = is_tuple<T>::value;
+
+namespace test {
+static_assert(is_tuple_v<bool> == false, "");
+
+using test_tp = std::tuple<int>;
+static_assert(is_tuple_v<test_tp>, "");
+}  // namespace test
 
 namespace __detail {
 
