@@ -108,13 +108,13 @@ struct BuildRule : public utils::Stringifiable {
   //! Downcast
   template<typename T>
   T *Downcast() {
-    return dynamic_cast<T *>(this);
+    return static_cast<T *>(this);
   }
 
   //! Downcast
   template<typename T>
   T *const Downcast() const {
-    return dynamic_cast<T *const>(this);
+    return static_cast<T *const>(this);
   }
 
   //! Check if this rule is *stable*. *Stable* means that the generated result

@@ -52,6 +52,10 @@ SourceFile *SourceFile::Create(core::rules::BuildRule *rule,
   return it->second.get();
 }
 
+void SourceFile::ClearCache() {
+  source_files_.clear();
+}
+
 SourceFile::SourceFile(core::rules::BuildRule *rule,
                        core::rules::BuildPackage *package, std::string filename)
     : Rule(rule), Package(package), FileName(std::move(filename)) {

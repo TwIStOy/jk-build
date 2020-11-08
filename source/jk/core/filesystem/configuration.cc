@@ -21,7 +21,7 @@ static auto logger = utils::Logger("Configuration");
 template<typename T>
 static T extract_value(const toml::value &value, const char *name,
                        const T &default_value) {
-  if (value.count(name) > 0) {
+  if (value.is_table() && value.count(name) > 0) {
     if (const auto exp = toml::expect<T>(value.at(name)); exp.is_ok()) {
       logger->info("{} use value from project-level configuration", name);
       return exp.unwrap();

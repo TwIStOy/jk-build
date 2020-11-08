@@ -26,6 +26,8 @@ struct SourceFile : public utils::Stringifiable {
                             core::rules::BuildPackage *package,
                             std::string filename);
 
+  static void ClearCache();
+
   core::rules::BuildRule *Rule;
   core::rules::BuildPackage *Package;
 

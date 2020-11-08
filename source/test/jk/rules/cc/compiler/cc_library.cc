@@ -3,7 +3,6 @@
 
 #include "jk/rules/cc/rules/cc_library.hh"
 
-#include <boost/optional.hpp>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -21,6 +20,7 @@
 #include "jk/core/writer/writer.hh"
 #include "jk/rules/cc/compiler/cc_library.hh"
 #include "jk/rules/cc/rules/cc_library_helper.hh"
+#include "jk/rules/cc/source_file.hh"
 #include "jk/utils/array.hh"
 #include "jk/utils/str.hh"
 #include "test/jk/core/compile/fake_buffer_writer.hh"
@@ -30,6 +30,7 @@
 namespace jk::rules::cc::test {
 
 static core::rules::BuildPackageFactory SimpleProject() {
+  SourceFile::ClearCache();
   core::rules::BuildPackageFactory factory;
 
   {
@@ -78,19 +79,19 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
 
     auto makefile = compiler->GenerateFlags(&project, w.get(), rule);
 
-    REQUIRE(utils::SameArray(makefile->Environments["C_FLAGS"].Value,
+    REQUIRE(utils::SameArray(makefile->Environments["CFLAGS"].Value,
                              std::vector<std::string>{}));
-    REQUIRE(utils::SameArray(makefile->Environments["CXX_FLAGS"].Value,
+    REQUIRE(utils::SameArray(makefile->Environments["CXXFLAGS"].Value,
                              std::vector<std::string>{}));
     REQUIRE(
-        utils::SameArray(makefile->Environments["CPP_FLAGS"].Value,
+        utils::SameArray(makefile->Environments["CPPFLAGS"].Value,
                          std::vector<std::string>{"-Dbase_only_defie_flag"}));
     REQUIRE(utils::SameArray(
-        makefile->Environments["CXX_DEFINE"].Value,
+        makefile->Environments["CPP_DEFINES"].Value,
         std::vector<std::string>{"-Dbase_inherit_define_flag"}));
 
     REQUIRE(utils::SameArray(
-        makefile->Environments["CXX_INCLUDE"].Value,
+        makefile->Environments["CPP_INCLUDES"].Value,
         std::vector<std::string>{"-Ibase_inherit_include_directory"}));
   }
 
@@ -103,7 +104,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
-    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["RM"].Value == "$(JK_COMMAND) delete_file");
     REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
@@ -116,7 +117,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
-    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["RM"].Value == "$(JK_COMMAND) delete_file");
     REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
@@ -175,7 +176,6 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
                                           working_folder.Sub("DEBUG")
                                               .Sub("library/base/base3.cpp.o")
                                               .Stringify(),
-                                          "jk_force",
                                       }));
   }
 
@@ -206,19 +206,19 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
 
     auto makefile = compiler->GenerateFlags(&project, w.get(), rule);
 
-    REQUIRE(utils::SameArray(makefile->Environments["C_FLAGS"].Value,
+    REQUIRE(utils::SameArray(makefile->Environments["CFLAGS"].Value,
                              std::vector<std::string>{}));
-    REQUIRE(utils::SameArray(makefile->Environments["CXX_FLAGS"].Value,
+    REQUIRE(utils::SameArray(makefile->Environments["CXXFLAGS"].Value,
                              std::vector<std::string>{}));
     REQUIRE(
-        utils::SameArray(makefile->Environments["CPP_FLAGS"].Value,
+        utils::SameArray(makefile->Environments["CPPFLAGS"].Value,
                          std::vector<std::string>{"-Dmemory_only_defie_flag"}));
     REQUIRE(utils::SameArray(
-        makefile->Environments["CXX_DEFINE"].Value,
+        makefile->Environments["CPP_DEFINES"].Value,
         std::vector<std::string>{"-Dbase_inherit_define_flag",
                                  "-Dmemory_inherit_define_flag"}));
     REQUIRE(utils::SameArray(
-        makefile->Environments["CXX_INCLUDE"].Value,
+        makefile->Environments["CPP_INCLUDES"].Value,
         std::vector<std::string>{"-Ibase_inherit_include_directory",
                                  "-Imemory_inherit_include_directory"}));
   }
@@ -232,7 +232,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m32");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
-    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["RM"].Value == "$(JK_COMMAND) delete_file");
     REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
@@ -245,7 +245,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
 
     REQUIRE(makefile->Environments["CXX"].Value == "g++ -m64");
     REQUIRE(makefile->Environments["AR"].Value == "ar rcs");
-    REQUIRE(makefile->Environments["RM"].Value == "rm");
+    REQUIRE(makefile->Environments["RM"].Value == "$(JK_COMMAND) delete_file");
     REQUIRE(makefile->Environments["LINKER"].Value == "g++");
   }
 
@@ -301,7 +301,6 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
     REQUIRE(utils::SameArray(
         library_dep,
         std::vector<std::string>{
-            "jk_force",
             working_folder.Sub("DEBUG/library/memory/memory1.cpp.o")
                 .Stringify(),
             working_folder.Sub("DEBUG/library/memory/memory2.cpp.o")
