@@ -106,6 +106,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
+  // TODO(hawtian): record source files
+
   // headers
   std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
 

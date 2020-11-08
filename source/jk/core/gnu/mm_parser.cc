@@ -37,13 +37,25 @@ static auto not_empty = parser::MakeCharPredict([](char ch) {
   return !std::isspace(ch);
 });
 
-static auto empty_ch = parser::MakeCharPredict([](char ch) {
-  return std::isspace(ch);
-});
-
 static auto espaced_char = (parser::MakeCharEq('\\') + parser::MakeCharAny()) >>
                            [](std::tuple<char, char> r) -> char {
   return std::get<1>(r);
+};
+
+static auto espaced_space = (parser::MakeCharEq('\\') +
+                             parser::MakeCharPredict([](char ch) {
+                               return std::isspace(ch);
+                             })) >>
+                            [](const auto &r) {
+                              return std::get<1>(r);
+                            };
+
+static auto empty_ch = (parser::MakeCharPredict([](char ch) {
+                          return std::isspace(ch);
+                        }) |
+                        espaced_space) >>
+                       [](const auto &ch) -> char {
+  return ' ';
 };
 
 static auto target_char = parser::MakeCharPredict([](char ch) {

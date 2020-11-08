@@ -25,9 +25,6 @@ auto Many(P1 &&p, uint32_t min_occr = 0) -> Parser<R> {
     while (true) {
       auto res = parser(current_input);
 
-      std::cout << "Input: " << current_input.GetInput()
-                << ", Succ: " << res.Success() << std::endl;
-
       if (!res.Success()) {
         break;
       }
