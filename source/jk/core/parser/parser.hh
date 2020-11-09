@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <functional>
+#include <iostream>
 #include <optional>
 #include <string_view>
 #include <type_traits>

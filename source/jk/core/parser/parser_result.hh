@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <cassert>
 #include <optional>
 #include <utility>
 

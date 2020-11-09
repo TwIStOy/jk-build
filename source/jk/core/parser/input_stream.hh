@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string_view>
 #include <utility>
+#include <cassert>
 
 namespace jk::core::parser {
 

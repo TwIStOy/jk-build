@@ -9,36 +9,13 @@
 #include <type_traits>
 #include <utility>
 
+#include "fmt/core.h"
 #include "jk/core/parser/input_stream.hh"
 #include "jk/core/parser/parser.hh"
 #include "jk/core/parser/parser_result.hh"
 #include "jk/utils/type_traits.hh"
 
 namespace jk::core::parser {
-
-inline Parser<char> MakeCharAny() {
-  return Parser<char>::Make([](InputStream input) {
-    auto ret = ParseResult<char>(input);
-    if (!input.IsEOF()) {
-      auto first_char = input.RawBuffer()[0];
-      ret = ParseResult<char>(input.Consume(1), first_char);
-    }
-    return ret;
-  });
-}
-
-inline Parser<char> MakeCharEq(char ch) {
-  return Parser<char>::Make([ch](InputStream input) {
-    auto ret = ParseResult<char>(input);
-    if (!input.IsEOF()) {
-      auto first_char = input.RawBuffer()[0];
-      if (ch == first_char) {
-        ret = ParseResult<char>(input.Consume(1), first_char);
-      }
-    }
-    return ret;
-  });
-}
 
 template<typename F>
 inline Parser<char> MakeCharPredict(F &&f) {
@@ -54,32 +31,34 @@ inline Parser<char> MakeCharPredict(F &&f) {
   });
 }
 
+inline Parser<char> MakeCharAny() {
+  return MakeCharPredict([](char ch) {
+    return true;
+  });
+}
+
+inline Parser<char> MakeCharEq(char ch) {
+  return MakeCharPredict([ch](char c) {
+    return c == ch;
+  });
+}
+
+inline Parser<char> operator""_term(char ch) {
+  return MakeCharEq(ch);
+}
+
 template<typename... T, typename = std::enable_if_t<
                             (std::is_same_v<std::decay_t<T>, char> && ...)>>
 inline Parser<char> MakeCharNot(T... ch) {
-  return Parser<char>::Make([ch...](InputStream input) {
-    auto ret = ParseResult<char>(input);
-    if (!input.IsEOF()) {
-      auto first_char = input.RawBuffer()[0];
-      if (((ch != first_char) && ...)) {
-        ret = ParseResult<char>(input.Consume(1), first_char);
-      }
-    }
-    return ret;
+  return MakeCharPredict([ch...](char c) {
+    return ((c != ch) && ...);
   });
 }
 
 // [a, b]
 inline Parser<char> MakeCharRange(char begin, char end) {
-  return Parser<char>::Make([begin, end](InputStream input) {
-    auto ret = ParseResult<char>(input);
-    if (!input.IsEOF()) {
-      auto first_char = input.RawBuffer()[0];
-      if (first_char >= begin && first_char <= end) {
-        ret = ParseResult<char>(input.Consume(1), first_char);
-      }
-    }
-    return ret;
+  return MakeCharPredict([begin, end](char c) {
+    return begin <= c && c <= end;
   });
 }
 
