@@ -18,7 +18,8 @@
 namespace jk {
 namespace utils {
 
-class Kwargs final : public Stringifiable {
+class __attribute__((visibility("hidden"))) Kwargs final
+    : public Stringifiable {
  public:
   using ListType = std::vector<std::string>;
   using StringType = std::string;
@@ -63,4 +64,3 @@ inline Kwargs::MapType::const_iterator Kwargs::End() const {
 
 }  // namespace utils
 }  // namespace jk
-

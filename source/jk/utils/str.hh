@@ -14,6 +14,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "boost/optional.hpp"
 
@@ -148,6 +149,12 @@ inline bool EqualIgnoreCase(const std::string &lhs, const std::string &rhs) {
 }
 
 std::string EscapeForShellStyle(const std::string &raw);
+
+std::string RandomAlphaNumString(uint32_t length = 32);
+
+std::string Base64Encode(uint8_t *str, uint32_t len);
+
+std::vector<uint8_t> Base64Decode(std::string_view str);
 
 }  // namespace utils
 }  // namespace jk

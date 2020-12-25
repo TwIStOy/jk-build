@@ -6,13 +6,17 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(DEFAULT_CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
-set(PYBIND11_CPP_STANDARD -std=c++1z)
+SET(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
-# include(CodeCoverage)
-# append_coverage_compiler_flags()
+if (CMAKE_BUILD_TYPE EQUAL "Debug")
+  include(CodeCoverage)
+  append_coverage_compiler_flags()
+endif()
 
 add_executable(jk "")
 add_library(libjk STATIC "")
@@ -34,27 +38,37 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   target_link_libraries(libjk PUBLIC stdc++fs)
 endif()
 
-find_package(PkgConfig REQUIRED)
-PKG_CHECK_MODULES(PYTHON3 REQUIRED python3)
+
+# find_package(PkgConfig REQUIRED)
+
+set(Python3_USE_STATIC_LIBS ON)
+find_package(Python3 3.9 COMPONENTS Interpreter Development)
+if (Python3_FOUND)
+  message(STATUS "Found Python3 executable: ${Python3_EXECUTABLE}")
+  target_link_libraries(libjk PUBLIC Python3::Python)
+  target_link_libraries(libjk PUBLIC Python3::Module)
+  target_link_libraries(libjk PUBLIC "-lz")
+else()
+  message(FATAL_ERROR "Python3 is required.")
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 find_package(Threads REQUIRED)
 
+set(CURL_USE_STATIC_LIBS ON)
 find_package(CURL REQUIRED)
 if (CURL_FOUND)
   include_directories(${CURL_INCLUDE_DIRS})
   target_link_libraries(libjk PUBLIC ${CURL_LIBRARIES})
 endif()
 
+set(OpenSSL_USE_STATIC_LIBS ON)
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(libjk PUBLIC OpenSSL::SSL)
 target_link_libraries(libjk PUBLIC OpenSSL::Crypto)
-
-# set -gx LDFLAGS "-L/usr/local/opt/openssl@1.1/lib"
-# set -gx CPPFLAGS "-I/usr/local/opt/openssl@1.1/include"
 
 # --- boost section ---
 set(Boost_USE_STATIC_LIBS ON)
@@ -105,10 +119,12 @@ enable_testing()
 add_test(AllTest jk_test)
 
 # -- code coverage section ---
-# setup_target_for_coverage_gcovr_html(
-#   NAME jk_coverage
-#   EXECUTABLE jk_test
-#   BASE_DIRECTORY "${PROJECT_SOURCE_DIR}/src"
-#   EXCLUDE "third-party/*"
-# )
+if (CMAKE_BUILD_TYPE EQUAL "Debug")
+setup_target_for_coverage_gcovr_html(
+  NAME jk_coverage
+  EXECUTABLE jk_test
+  BASE_DIRECTORY "${PROJECT_SOURCE_DIR}/src"
+  EXCLUDE "third-party/*"
+)
+endif()
 

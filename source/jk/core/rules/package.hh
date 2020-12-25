@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <chrono>
 #include <list>
 #include <memory>
 #include <string>
@@ -41,6 +42,8 @@ struct BuildPackage : public utils::Stringifiable {
 
   std::string Stringify() const final;
 
+  std::chrono::system_clock LastModified() const;
+
  private:
   bool initialized_ = false;
 };
@@ -58,4 +61,3 @@ class BuildPackageFactory {
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
-

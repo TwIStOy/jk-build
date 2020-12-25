@@ -20,7 +20,7 @@ namespace jk {
 namespace core {
 namespace script {
 
-class ScriptInterpreter {
+class __attribute__((visibility("hidden"))) ScriptInterpreter {
  public:
   using Kwargs = std::unordered_map<std::string, pybind11::object>;
   using HookFunctionType =
@@ -45,7 +45,7 @@ class ScriptInterpreter {
  private:
   pybind11::scoped_interpreter interpreter_;
 
-  struct HookFunction {
+  struct __attribute__((visibility("hidden"))) HookFunction {
     std::string FuncName;
     HookFunctionType Function;
   };
@@ -55,4 +55,3 @@ class ScriptInterpreter {
 }  // namespace script
 }  // namespace core
 }  // namespace jk
-
