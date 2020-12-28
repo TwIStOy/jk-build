@@ -8,8 +8,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 SET(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3 -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
@@ -38,41 +38,81 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   target_link_libraries(libjk PUBLIC stdc++fs)
 endif()
 
+# third-party prepare
+add_subdirectory(third-party)
+set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
+set(DEPS_PREFIX "${DEPS_INSTALL_DIR}" CACHE PATH "Path prefix for finding dependencies")
+list(INSERT CMAKE_PREFIX_PATH 0 ${DEPS_PREFIX})
+set(ENV{PKG_CONFIG_PATH} "${DEPS_PREFIX}/lib/pkgconfig")
+message(STATUS "Deps prefix: ${DEPS_PREFIX}")
+message(STATUS "PkgConfig Path: $ENV{PKG_CONFIG_PATH}")
 
-# find_package(PkgConfig REQUIRED)
+find_package(PkgConfig REQUIRED)
 
-set(Python3_USE_STATIC_LIBS ON)
-find_package(Python3 3.9 COMPONENTS Interpreter Development)
-if (Python3_FOUND)
-  message(STATUS "Found Python3 executable: ${Python3_EXECUTABLE}")
-  target_link_libraries(libjk PUBLIC Python3::Python)
-  target_link_libraries(libjk PUBLIC Python3::Module)
-  target_link_libraries(libjk PUBLIC "-lz")
-else()
-  message(FATAL_ERROR "Python3 is required.")
-endif()
+# bundled python3
+pkg_search_module(PKG_python3 REQUIRED IMPORTED_TARGET python3)
+set(PKG_python3_STATIC_LIBRARIES "${DEPS_PREFIX}/lib/libpython3.9.a")
+add_library(BundledPython3 INTERFACE)
+set_property(TARGET BundledPython3
+  APPEND
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${PKG_python3_INCLUDE_DIRS}>)
+set_property(TARGET BundledPython3
+  APPEND
+  PROPERTY INTERFACE_COMPILE_OPTIONS $<BUILD_INTERFACE:${PKG_python3_STATIC_CFLAGS}>)
+set_property(TARGET BundledPython3
+  APPEND
+  PROPERTY INTERFACE_LINK_LIBRARIES $<BUILD_INTERFACE:${PKG_python3_STATIC_LIBRARIES}> ${PKG_python3_STATIC_LDFLAGS})
+target_link_libraries(libjk PUBLIC BundledPython3)
+
+# bundled openssl
+pkg_search_module(PKG_openssl REQUIRED IMPORTED_TARGET openssl)
+add_library(BundledOpenssl INTERFACE)
+add_library(BundledOpenssl::ssl IMPORTED STATIC)
+add_library(BundledOpenssl::crypto IMPORTED STATIC)
+set_target_properties(BundledOpenssl::ssl
+  PROPERTIES
+  IMPORTED_LOCATION ${DEPS_PREFIX}/lib/libssl.a
+)
+set_target_properties(BundledOpenssl::crypto
+  PROPERTIES
+  IMPORTED_LOCATION ${DEPS_PREFIX}/lib/libcrypto.a
+)
+set_property(TARGET BundledOpenssl APPEND
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${PKG_openssl_INCLUDE_DIRS}>)
+set_property(TARGET BundledOpenssl APPEND
+  PROPERTY INTERFACE_COMPILE_OPTIONS $<BUILD_INTERFACE:${PKG_openssl_STATIC_CFLAGS}>)
+target_link_libraries(BundledOpenssl::ssl INTERFACE BundledOpenssl::crypto)
+target_link_libraries(BundledOpenssl INTERFACE BundledOpenssl::ssl)
+target_link_libraries(libjk PUBLIC BundledOpenssl)
+
+# bundled libcurl
+pkg_search_module(PKG_curl REQUIRED IMPORTED_TARGET libcurl)
+add_library(BundledCurl INTERFACE)
+add_library(BundledCurl::curl IMPORTED STATIC)
+set_target_properties(BundledCurl::curl PROPERTIES
+  IMPORTED_LOCATION ${DEPS_PREFIX}/lib/libcurl.a)
+set_property(TARGET BundledCurl APPEND
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${PKG_curl_INCLUDE_DIRS}>)
+set_property(TARGET BundledCurl APPEND
+  PROPERTY INTERFACE_COMPILE_OPTIONS $<BUILD_INTERFACE:${PKG_curl_STATIC_CFLAGS}>)
+set_property(TARGET BundledCurl::curl APPEND
+  PROPERTY INTERFACE_LINK_LIBRARIES -lz)
+target_link_libraries(BundledCurl::curl INTERFACE BundledOpenssl::ssl)
+target_link_libraries(BundledCurl INTERFACE BundledCurl::curl)
+target_link_libraries(BundledCurl INTERFACE BundledOpenssl)
+target_link_libraries(libjk PUBLIC BundledCurl)
+
+# bundled boost
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 find_package(Threads REQUIRED)
 
-set(CURL_USE_STATIC_LIBS ON)
-find_package(CURL REQUIRED)
-if (CURL_FOUND)
-  include_directories(${CURL_INCLUDE_DIRS})
-  target_link_libraries(libjk PUBLIC ${CURL_LIBRARIES})
-endif()
-
-set(OpenSSL_USE_STATIC_LIBS ON)
-find_package(OpenSSL REQUIRED)
-
-target_link_libraries(libjk PUBLIC OpenSSL::SSL)
-target_link_libraries(libjk PUBLIC OpenSSL::Crypto)
-
 # --- boost section ---
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 if (Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
@@ -88,6 +128,7 @@ include_directories(third-party/toml11)
 add_subdirectory(third-party/fmt)
 target_link_libraries(libjk PUBLIC fmt::fmt)
 
+set(PYBIND11_NOPYTHON ON)
 add_subdirectory(third-party/pybind11)
 target_link_libraries(libjk PUBLIC pybind11::embed)
 target_link_libraries(libjk PUBLIC pybind11::pybind11)
