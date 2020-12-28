@@ -38,6 +38,8 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   target_link_libraries(libjk PUBLIC stdc++fs)
 endif()
 
+target_link_options(libjk PUBLIC -static-libgcc -static-libstdc++)
+
 # third-party prepare
 add_subdirectory(third-party)
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
@@ -101,8 +103,6 @@ target_link_libraries(BundledCurl::curl INTERFACE BundledOpenssl::ssl)
 target_link_libraries(BundledCurl INTERFACE BundledCurl::curl)
 target_link_libraries(BundledCurl INTERFACE BundledOpenssl)
 target_link_libraries(libjk PUBLIC BundledCurl)
-
-# bundled boost
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
