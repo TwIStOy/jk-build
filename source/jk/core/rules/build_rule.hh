@@ -101,7 +101,8 @@ struct BuildRule : public utils::Stringifiable {
   //! After dependencies has been built, this filed will be available
   //! pstk: package name stack
   //! rstk: rule name stack
-  void BuildDependencies(BuildPackageFactory *factory,
+  void BuildDependencies(filesystem::ProjectFileSystem *project,
+                         BuildPackageFactory *factory,
                          utils::CollisionNameStack *pstk,
                          utils::CollisionNameStack *rstk);
 
@@ -219,4 +220,3 @@ void NewRuleFromScript(
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
-

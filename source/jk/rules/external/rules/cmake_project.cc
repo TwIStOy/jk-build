@@ -50,11 +50,11 @@ void CMakeLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
       JK_THROW(core::JKBuildError("expect field '{}' but not found", "export"));
     }
     if (it->second.get_type().is(pybind11::str().get_type())) {
-      Exports = std::vector<std::string>{it->second.cast<std::string>()};
+      Libraries = std::vector<std::string>{it->second.cast<std::string>()};
       break;
     }
     if (it->second.get_type().is(pybind11::list().get_type())) {
-      Exports =
+      Libraries =
           std::vector<std::string>{it->second.cast<utils::Kwargs::ListType>()};
       break;
     }
@@ -62,30 +62,6 @@ void CMakeLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
     JK_THROW(
         core::JKBuildError("field '{}' expect type list or str", "export"));
   } while (0);
-
-  LdFlags = kwargs.ListOptional("ldflags", empty_list);
-}
-
-std::vector<std::string> CMakeLibrary::ExportedFilesSimpleName(
-    core::filesystem::ProjectFileSystem *project,
-    const std::string &build_type) const {
-  (void)build_type;
-  std::vector<std::string> res;
-
-  std::transform(
-      std::begin(Exports), std::end(Exports), std::back_inserter(res),
-      [&](const std::string &p) {
-        return project->ProjectRoot.Sub(".build")
-            .Sub(".lib")
-            .Sub(fmt::format(
-                "m{}",
-                common::FLAGS_platform == common::Platform::k32 ? 32 : 64))
-            .Sub("lib")
-            .Sub(p)
-            .Stringify();
-      });
-
-  return res;
 }
 
 std::vector<std::string> CMakeLibrary::ExportedLinkFlags() const {
@@ -95,4 +71,3 @@ std::vector<std::string> CMakeLibrary::ExportedLinkFlags() const {
 }  // namespace jk::rules::external
 
 // vim: fdm=marker
-

@@ -51,7 +51,7 @@ TEST_CASE("Script", "[core][script]") {
 
     rules::BuildPackage pkg("test", common::ProjectRelativePath{""});
 
-    interp->EvalScriptContent(&pkg, content);
+    interp->EvalScriptContent(nullptr, &pkg, content);
 
     REQUIRE(pkg.Rules.size() == 1);
     auto it = pkg.Rules.find("base");
@@ -80,7 +80,7 @@ TEST_CASE("Script", "[core][script]") {
 
     rules::BuildPackage pkg("test", common::ProjectRelativePath{""});
 
-    REQUIRE_THROWS(interp->EvalScriptContent(&pkg, content));
+    REQUIRE_THROWS(interp->EvalScriptContent(nullptr, &pkg, content));
   }
 }
 

@@ -16,12 +16,15 @@ namespace jk::rules::external {
 /**
  * external_library(
  *   name = "name",
- *   anchor = [],
  *   url = "",
  *   sha256 = "",
  *   type = "tar.gz" | "zip" | "tar",
- *   header_only = true,
- *   output_file = "",
+ *   download_command = [],
+ *   configure_command = [],
+ *   build_command = [],
+ *   install_command = [],
+ *   libraries = [], // from ${JK_BUNDLE_LIBRARY_PREFIX}
+ *   ldflags = [],
  * )
  */
 class ExternalLibrary : public core::rules::BuildRule {
@@ -44,10 +47,13 @@ class ExternalLibrary : public core::rules::BuildRule {
   // --- Fields Start ---
   std::string Url;
   std::string Sha256;
-  std::string OutputFile;
   std::string ArchiveType;
-  std::vector<std::string> Anchors;
-  bool HeaderOnly;
+  std::vector<std::string> DownloadCommand;
+  std::vector<std::string> ConfigureCommand;
+  std::vector<std::string> BuildCommand;
+  std::vector<std::string> InstallCommand;
+  std::vector<std::string> LdFlags;
+  std::vector<std::string> Libraries;
   // ---- Fields End ----
 };
 

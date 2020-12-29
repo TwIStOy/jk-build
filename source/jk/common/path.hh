@@ -62,5 +62,6 @@ uint32_t GetNumberOfFilesInDirectory(const AbsolutePath &path);
 
 void RemoveDirectory(const AbsolutePath &p);
 
-}  // namespace jk::common
+void FastWriteFile(const fs::path &rp, const std::string &content);
 
+}  // namespace jk::common

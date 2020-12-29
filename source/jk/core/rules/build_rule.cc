@@ -180,9 +180,9 @@ void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {  // {{{
       kwargs.ListOptional("deps", boost::optional<utils::Kwargs::ListType>{{}});
 }  // }}}
 
-void BuildRule::BuildDependencies(BuildPackageFactory *factory,  // {{{
-                                  utils::CollisionNameStack *pstk,
-                                  utils::CollisionNameStack *rstk) {
+void BuildRule::BuildDependencies(  // {{{
+    filesystem::ProjectFileSystem *project, BuildPackageFactory *factory,
+    utils::CollisionNameStack *pstk, utils::CollisionNameStack *rstk) {
   if (dependencies_has_built_) {
     return;
   }
@@ -214,7 +214,7 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,  // {{{
       case RuleRelativePosition::kAbsolute: {
         assert(dep_id.PackageName);
         auto dep_pkg = factory->Package(dep_id.PackageName.get());
-        dep_pkg->Initialize(pstk);
+        dep_pkg->Initialize(project, pstk);
         dep = ResolveDepends(dep_pkg, dep_id.RuleName);
       } break;
       case RuleRelativePosition::kRelative: {
@@ -222,7 +222,7 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,  // {{{
 
         auto dep_pkg = factory->Package(
             fmt::format("{}/{}", Package->Name, dep_id.PackageName.get()));
-        dep_pkg->Initialize(pstk);
+        dep_pkg->Initialize(project, pstk);
         dep = ResolveDepends(dep_pkg, dep_id.RuleName);
       } break;
       case RuleRelativePosition::kBuiltin: {
@@ -234,7 +234,7 @@ void BuildRule::BuildDependencies(BuildPackageFactory *factory,  // {{{
       } break;
     }
 
-    dep->BuildDependencies(factory, pstk, rstk);
+    dep->BuildDependencies(project, factory, pstk, rstk);
   }
 
   rstk->Pop();
@@ -310,4 +310,3 @@ std::vector<uint32_t> BuildRule::KeyNumbers() const {  //{{{
 }  // namespace jk
 
 // vim: fdm=marker
-

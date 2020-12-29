@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -15,29 +16,22 @@
 namespace jk::rules::external {
 
 struct MakefileExternalLibraryCompiler : public core::compile::Compiler {
-  virtual std::string Name() const = 0;
+  std::string Name() const override;
 
-  virtual void Compile(
-      core::filesystem::ProjectFileSystem *project,
-      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
-      core::filesystem::FileNamePatternExpander *expander =
-          &core::filesystem::kDefaultPatternExpander) const = 0;
+  void Compile(core::filesystem::ProjectFileSystem *project,
+               core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+               core::filesystem::FileNamePatternExpander *expander =
+                   &core::filesystem::kDefaultPatternExpander) const override;
 
-  struct Result {
-    common::AbsolutePath OutputFolder;
-    std::vector<uint32_t> Index;
-    std::string DownloadTarget;
-    std::string DecomressTarget;
-  };
-
-  //! return: decompressed folder
-  Result DownloadAndDecompress(
-      core::filesystem::ProjectFileSystem *project,
-      core::output::UnixMakefile *makefile, ExternalLibrary *rule,
-      const common::AbsolutePath &working_folder) const;
+  void CompileImpl(core::filesystem::ProjectFileSystem *project,
+                   core::writer::WriterFactory *wf, ExternalLibrary *rule,
+                   std::function<void(core::output::UnixMakefile *)> prepare,
+                   const std::vector<std::string> &download_command,
+                   const std::vector<std::string> &configure_command,
+                   const std::vector<std::string> &build_command,
+                   const std::vector<std::string> &install_command) const;
 };
 
 }  // namespace jk::rules::external
 
 // vim: fdm=marker
-

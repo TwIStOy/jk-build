@@ -17,16 +17,10 @@ class CMakeLibrary : public ExternalLibrary {
 
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
-  std::vector<std::string> ExportedFilesSimpleName(
-      core::filesystem::ProjectFileSystem *project,
-      const std::string &build_type) const override;
-
   std::vector<std::string> ExportedLinkFlags() const override;
 
   // --- Fields Start ---
   std::unordered_map<std::string, std::string> CMakeVariable;
-  std::vector<std::string> Exports;
-  std::vector<std::string> LdFlags;
   uint32_t JobNumber = 1;
   // ---- Fields End ----
 };
@@ -34,4 +28,3 @@ class CMakeLibrary : public ExternalLibrary {
 }  // namespace jk::rules::external
 
 // vim: fdm=marker
-

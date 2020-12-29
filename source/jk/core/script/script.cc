@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "jk/common/flags.hh"
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/rules/cc/rules/cc_binary.hh"
 #include "jk/rules/cc/rules/cc_library.hh"
@@ -71,26 +72,37 @@ pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {
   return locals;
 }
 
-void ScriptInterpreter::AddConnomLocals(pybind11::dict *locals) {
+void ScriptInterpreter::AddConnomLocals(filesystem::ProjectFileSystem *project,
+                                        pybind11::dict *locals) {
   if (common::FLAGS_platform == common::Platform::k32) {
-    locals->operator[]("platform") = 32;
-    locals->operator[]("PLATFORM") = 32;
+    (*locals)["platform"] = 32;
+    (*locals)["PLATFORM"] = 32;
   } else {
-    locals->operator[]("platform") = 64;
-    locals->operator[]("PLATFORM") = 64;
+    (*locals)["platform"] = 64;
+    (*locals)["PLATFORM"] = 64;
+  }
+
+  if (project) {
+    (*locals)["JK_SOURCE_DIR"] = project->ProjectRoot.Stringify();
+    (*locals)["JK_BINARY_DIR"] = project->BuildRoot.Stringify();
+    (*locals)["JK_BUNDLE_LIBRARY_PREFIX"] =
+        project->ExternalInstalledPrefix().Stringify();
+    (*locals)["JK_CXX_STANDARD"] = project->Config().cxx_standard;
   }
   // TODO(hawtian): fill common
 }
 
-void ScriptInterpreter::EvalScriptContent(rules::BuildPackage *pkg,
-                                          const std::string &content) {
+void ScriptInterpreter::EvalScriptContent(
+    filesystem::ProjectFileSystem *project, rules::BuildPackage *pkg,
+    const std::string &content) {
   auto locals = Initialize(pkg);
-  AddConnomLocals(&locals);
+  AddConnomLocals(project, &locals);
 
   pybind11::exec(content, pybind11::globals(), locals);
 }
 
-void ScriptInterpreter::EvalScript(rules::BuildPackage *pkg,
+void ScriptInterpreter::EvalScript(filesystem::ProjectFileSystem *project,
+                                   rules::BuildPackage *pkg,
                                    std::string_view filename) {
   logger->debug("Eval script {}", filename);
 
@@ -98,7 +110,7 @@ void ScriptInterpreter::EvalScript(rules::BuildPackage *pkg,
   std::string content(std::istreambuf_iterator<char>{ifs},
                       std::istreambuf_iterator<char>{});
 
-  EvalScriptContent(pkg, content);
+  EvalScriptContent(project, pkg, content);
 
   logger->debug("Eval script {} done.", filename);
 }

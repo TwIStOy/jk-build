@@ -3,7 +3,10 @@
 
 #include "jk/common/path.hh"
 
+#include <algorithm>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 
 #include "jk/utils/logging.hh"
 
@@ -57,7 +60,21 @@ void AssumeFolder(const fs::path &rp) {
   fs::create_directory(rp);
 }
 
+void FastWriteFile(const fs::path &rp, const std::string &content) {
+  if (fs::exists(rp)) {
+    std::ifstream ifs(rp.string());
+    std::string old_content;
+    std::copy(std::istreambuf_iterator<char>{ifs},
+              std::istreambuf_iterator<char>{},
+              std::back_inserter(old_content));
+    if (old_content == content) {
+      return;
+    }
+  }
+  std::ofstream ofs;
+  ofs << content;
+}
+
 }  // namespace jk::common
 
 // vim: fdm=marker
-

@@ -12,6 +12,7 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
 #include "pybind11/pytypes.h"
@@ -28,9 +29,11 @@ class __attribute__((visibility("hidden"))) ScriptInterpreter {
 
   static ScriptInterpreter *Instance();
 
-  void EvalScript(rules::BuildPackage *pkg, std::string_view filename);
+  void EvalScript(filesystem::ProjectFileSystem *project,
+                  rules::BuildPackage *pkg, std::string_view filename);
 
-  void EvalScriptContent(rules::BuildPackage *pkg, const std::string &content);
+  void EvalScriptContent(filesystem::ProjectFileSystem *project,
+                         rules::BuildPackage *pkg, const std::string &content);
 
   void RegHook(const std::string &name, HookFunctionType func);
 
@@ -40,7 +43,8 @@ class __attribute__((visibility("hidden"))) ScriptInterpreter {
   void HookFunctions();
 
   pybind11::dict Initialize(rules::BuildPackage *pkg);
-  void AddConnomLocals(pybind11::dict *);
+  void AddConnomLocals(filesystem::ProjectFileSystem *project,
+                       pybind11::dict *);
 
  private:
   pybind11::scoped_interpreter interpreter_;

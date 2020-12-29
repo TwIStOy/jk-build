@@ -61,6 +61,10 @@ void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
   DefineEnvironment("JK_BINARY_DIR", project->BuildRoot.Stringify(),
                     "The top-level build directory on which Jk was run.");
 
+  DefineEnvironment("JK_BUNDLE_LIBRARY_PREFIX",
+                    project->ExternalInstalledPrefix().Stringify(),
+                    "The bundled libraries prefix on which Jk was run.");
+
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
 
   DefineEnvironment("PRINT", "jk echo_color");

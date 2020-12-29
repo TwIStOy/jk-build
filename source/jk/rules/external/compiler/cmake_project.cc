@@ -29,74 +29,29 @@ void MakefileCMakeLibrary::Compile(
   auto rule = _rule->Downcast<CMakeLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
 
-  auto makefile = core::output::NewUnixMakefile("build.make");
-
-  makefile->DefineEnvironment("CMAKE", "cmake");
-
-  makefile->DefineEnvironment("JK_COMMAND", "jk");
-
-  makefile->DefineEnvironment("MKDIR", "mkdir -p");
-
-  makefile->DefineEnvironment("RM", "$(JK_COMMAND) delete_file",
-                              "The command to remove a file.");
-
-  auto [output_folder, indexs, download_target, decompress_target] =
-      DownloadAndDecompress(project, makefile.get(), rule, working_folder);
-  auto cmake_print_idx = rule->KeyNumber(".cmake");
-  indexs.push_back(cmake_print_idx);
-
-  auto build_target = working_folder.Sub("CMAKE_BUILD");
   auto cmake_build_folder = working_folder.Sub("cmake_build_folder");
+  std::vector<std::string> cmake_stmt{"@$(CMAKE)", "-S$(THIS_SOURCE_DIR)",
+                                      "-B{}"_format(cmake_build_folder)};
 
-  {
-    auto print_stmt = core::builder::CustomCommandLine::Make({
-        "@$(PRINT)",
-        "--switch=$(COLOR)",
-        "--green",
-        "--bold",
-        "--progress-num={}"_format(utils::JoinString(",", indexs)),
-        "--progress-dir={}"_format(project->BuildRoot),
-    });
-    auto remove_cmake_cache_stmt = core::builder::CustomCommandLine::Make(
-        {"-@$(RM)", cmake_build_folder.Sub("CMakeCache.txt")});
-
-    std::vector<std::string> cmake_stmt{"@$(CMAKE)",
-                                        "-S{}"_format(output_folder),
-                                        "-B{}"_format(cmake_build_folder)};
-    auto variables = rule->CMakeVariable;
-    variables.emplace("CMAKE_INSTALL_PREFIX",
-                      project->ExternalInstalledPrefix());
-    variables.emplace("CMAKE_BUILD_TYPE", "Release");
-    variables.emplace("CMAKE_C_FLAGS",
-                      "-m{}"_format(ToString(common::FLAGS_platform)));
-    variables.emplace("CMAKE_CXX_FLAGS",
-                      "-m{}"_format(ToString(common::FLAGS_platform)));
-    std::transform(std::begin(variables), std::end(variables),
-                   std::back_inserter(cmake_stmt),
-                   [](const std::pair<std::string, std::string> &pr) {
-                     return "-D{}={}"_format(pr.first, pr.second);
-                   });
-    auto touch_stmt =
-        core::builder::CustomCommandLine::Make({"@touch", build_target});
-    auto make_stmt = core::builder::CustomCommandLine::Make(
-        {"make", "-f", cmake_build_folder.Sub("Makefile"), "install",
-         "-j{}"_format(rule->JobNumber)});
-
-    makefile->AddTarget(
-        build_target, {download_target, decompress_target},
-        core::builder::CustomCommandLines::Multiple(
-            print_stmt, remove_cmake_cache_stmt,
-            core::builder::CustomCommandLine::FromVec(cmake_stmt), touch_stmt,
-            make_stmt));
-  }
-
-  makefile->AddTarget("build", {build_target}, {}, "", true);
-
-  auto w = wf->Build(working_folder.Sub("build.make"));
-  makefile->Write(w.get());
+  auto variables = rule->CMakeVariable;
+  variables.emplace("CMAKE_INSTALL_PREFIX", project->ExternalInstalledPrefix());
+  variables.emplace("CMAKE_BUILD_TYPE", "Release");
+  variables.emplace("CMAKE_C_FLAGS",
+                    "-m{}"_format(ToString(common::FLAGS_platform)));
+  variables.emplace("CMAKE_CXX_FLAGS",
+                    "-m{}"_format(ToString(common::FLAGS_platform)));
+  std::transform(std::begin(variables), std::end(variables),
+                 std::back_inserter(cmake_stmt),
+                 [](const std::pair<std::string, std::string> &pr) {
+                   return "-D{}={}"_format(pr.first, pr.second);
+                 });
+  CompileImpl(project, wf, rule,
+              [](auto makefile) {
+                makefile->DefineEnvironment("CMAKE", "cmake");
+              },
+              {}, cmake_stmt, {}, {});
 }
 
 }  // namespace jk::rules::external
 
 // vim: fdm=marker
-

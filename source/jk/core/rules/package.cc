@@ -28,7 +28,8 @@ BuildPackage::BuildPackage(std::string name,  // {{{
   logger->debug(R"(New BuildPackage at "{}")", Path);
 }  // }}}
 
-void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
+void BuildPackage::Initialize(filesystem::ProjectFileSystem *project,
+                              utils::CollisionNameStack *stk) {
   if (initialized_) {
     return;
   }
@@ -44,7 +45,7 @@ void BuildPackage::Initialize(utils::CollisionNameStack *stk) {
 
   auto filename = Path.Path / "BUILD";
   auto interp = script::ScriptInterpreter::Instance();
-  interp->EvalScript(this, filename.c_str());
+  interp->EvalScript(project, this, filename.c_str());
 
   // Initialize done.
   initialized_ = true;

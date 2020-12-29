@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include "jk/common/path.hh"
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/utils/stack.hh"
 #include "jk/utils/str.hh"
@@ -38,7 +39,8 @@ struct BuildPackage : public utils::Stringifiable {
 
   //! Initialize package. Note that a package can not be initialized twice, the
   //! second call will not take effect.
-  void Initialize(utils::CollisionNameStack *stk);
+  void Initialize(filesystem::ProjectFileSystem *project,
+                  utils::CollisionNameStack *stk);
 
   std::string Stringify() const final;
 
