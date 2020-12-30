@@ -58,5 +58,5 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         path: ${{runner.workspace}}/build/jk-build.tar.gz
-        name: jk-build-$GITHUB_SHA.tar.gz
+        name: jk-build.tar.gz
 
