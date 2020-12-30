@@ -21,12 +21,21 @@ jobs:
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build && cmake -E make_directory ${{runner.workspace}}/.third-party-build
 
+    - name: Cache Third-Party
+      id: third-party-cache
+      uses: actions/cache@v2
+      with:
+        path: ${{runner.workspace}}/third-party/.deps
+        key: ${{ runner.os }}-${{ hashFiles('**/third-party/CMakeLists.txt') }}
+
     - name: Configure Third-Party
+      if: steps.third-party-cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ${{runner.workspace}}/.third-party-build
       run: cmake $GITHUB_WORKSPACE/third-party -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build Third party
+      if: steps.third-party-cache.outputs.cache-hit != 'true'
       working-directory: ${{runner.workspace}}/.third-party-build
       shell: bash
       run: make
