@@ -25,7 +25,7 @@ jobs:
       id: third-party-cache
       uses: actions/cache@v2
       with:
-        path: third-party/.deps
+        path: **/third-party/.deps
         key: ${{ runner.os }}-${{ hashFiles('**/third-party/CMakeLists.txt') }}
 
     - name: Configure Third-Party
