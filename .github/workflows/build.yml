@@ -1,0 +1,50 @@
+name: CMake
+
+on: [push]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Prepare Environment
+      run: apt update && apt install -y pkg-config libffi-dev make zlib1g-dev
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build && cmake -E make_directory ${{runner.workspace}}/.third-party-build
+
+    - name: Configure Third-Party
+      shell: bash
+      working-directory: ${{runner.workspace}}/.third-party-build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build Third party
+      working-directory: ${{runner.workspace}}/.third-party-build
+      shell: bash
+      run: make
+
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: make
+
+    - name: Pack binary
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: tar -czvf jk-build.tar.gz jk
+
+    - uses: actions/upload-artifact@v2
+      with:
+        path: ${{runner.workspace}}/build/jk-build.tar.gz
+        name: jk-build-$GITHUB_SHA.tar.gz
+

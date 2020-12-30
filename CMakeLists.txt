@@ -41,9 +41,8 @@ endif()
 target_link_options(libjk PUBLIC -static-libgcc -static-libstdc++)
 
 # third-party prepare
-add_subdirectory(third-party)
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
-set(DEPS_PREFIX "${DEPS_INSTALL_DIR}" CACHE PATH "Path prefix for finding dependencies")
+set(DEPS_PREFIX "${PROJECT_SOURCE_DIR}/third-party/.deps" CACHE PATH "Path prefix for finding dependencies")
 list(INSERT CMAKE_PREFIX_PATH 0 ${DEPS_PREFIX})
 set(ENV{PKG_CONFIG_PATH} "${DEPS_PREFIX}/lib/pkgconfig")
 message(STATUS "Deps prefix: ${DEPS_PREFIX}")
