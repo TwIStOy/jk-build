@@ -23,4 +23,5 @@ ExternalProject_Add(boost
   INSTALL_COMMAND "${UNIX_INSTALL_CMD}"
 )
 
+add_dependencies(boost openssl)
 list(APPEND ALL_DEPS boost)
