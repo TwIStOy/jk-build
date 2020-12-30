@@ -27,8 +27,9 @@ Cli::Cli() {
                   p.Parse();
                   std::cout << "JK version " << JK_VERSION << std::endl;
                 });
-  NewSubCommand("echo_color", "Echo color", &EchoColor);
-  NewSubCommand("gen", "Generate...", &Generate);
+  NewSubCommand("echo_color", "Print message with color.", &EchoColor);
+  NewSubCommand("gen", "Generate Unix Makefile/Ninja files for given rules.",
+                &Generate);
   NewSubCommand("start_progress", "Start progres...", &StartProgress);
   NewSubCommand("download", "Download file...", &DownloadFile);
   NewSubCommand("delete_file", "Delete files...", &RmFiles);
@@ -45,6 +46,7 @@ int Cli::Run(int argc, const char *argv[]) {
                     args::Matcher{"verbose", 'V'}, 0);
   platform_.Register(&vg, "platform", "Only 64 or 32",
                      args::Matcher{'m', "platform"}, 64);
+
   args::HelpFlag help(global_group, "help", "Print this message and exit.",
                       {'h', "help"});
   args::CompletionFlag complete(parser, {"complete"});
@@ -90,4 +92,3 @@ void Cli::NewSubCommand(std::string Name, std::string Desp,
 }  // namespace jk::cli
 
 // vim: fdm=marker
-

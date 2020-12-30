@@ -181,7 +181,7 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
   }
   common::AssumeFolder(output.Path.parent_path());
 
-  std::cout << "Start download..." << std::endl;
+  // std::cout << "Start download..." << std::endl;
 
   ::CURL *curl;
   ::curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -289,4 +289,3 @@ void DownloadFile(args::Subparser &parser) {
 }  // namespace jk::cli
 
 // vim: fdm=marker
-

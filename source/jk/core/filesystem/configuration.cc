@@ -35,14 +35,14 @@ static T extract_value(const toml::value &value, const char *name,
 }
 
 // {{{
-#define DEFAULT_COMPILE_FLAGS                                           \
-  {                                                                     \
-    "-MMD", "-msse3", "-fPIC", "-fstrict-aliasing", "-Wall", "-Wextra", \
-        "-Wtrigraphs", "-Wuninitialized", "-Wwrite-strings",            \
-        "-Wpointer-arith", "-Wredundant-decls", "-Wunused",             \
-        "-Wmissing-include-dirs", "-Wno-missing-field-initializers",    \
-        "-Wno-error=deprecated", "-Wno-error=deprecated-declarations",  \
-        "-Werror",                                                      \
+#define DEFAULT_COMPILE_FLAGS                                                  \
+  {                                                                            \
+    "-MP", "-MMD", "-msse3", "-fPIC", "-fstrict-aliasing", "-Wall", "-Wextra", \
+        "-Wtrigraphs", "-Wuninitialized", "-Wwrite-strings",                   \
+        "-Wpointer-arith", "-Wredundant-decls", "-Wunused",                    \
+        "-Wmissing-include-dirs", "-Wno-missing-field-initializers",           \
+        "-Wno-error=deprecated", "-Wno-error=deprecated-declarations",         \
+        "-Werror",                                                             \
   }
 
 #define DEFAULT_C_FLAGS \
@@ -150,4 +150,3 @@ Configuration::Configuration(const toml::value &value)
 }  // namespace jk::core::filesystem
 
 // vim: fdm=marker
-
