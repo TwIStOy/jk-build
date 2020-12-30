@@ -12,6 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Checkout Submodule
+      run: git submodule update --init --recursive
+
     - name: Prepare Environment
       run: apt update && apt install -y pkg-config libffi-dev make zlib1g-dev
 
