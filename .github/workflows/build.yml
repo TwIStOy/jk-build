@@ -16,7 +16,7 @@ jobs:
       run: git submodule update --init --recursive
 
     - name: Prepare Environment
-      run: apt update && apt install -y pkg-config libffi-dev make zlib1g-dev
+      run: sudo apt update && apt install -y pkg-config libffi-dev make zlib1g-dev
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build && cmake -E make_directory ${{runner.workspace}}/.third-party-build
