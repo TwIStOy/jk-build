@@ -127,19 +127,6 @@ void MakefileGlobalCompiler::Compile(
       "", true);
   makefile->AddTarget("external", {}, {}, "", true);
 
-  // ${DEP_FILE}:
-  // 	@mkdir -p .build/include/release
-  // 	@echo "// Copyright (c) 2014-2018 Agora.io, Inc." >${DEP_FILE}
-  // 	@echo "// Basic git-version support" >>${DEP_FILE}
-  // 	@echo "//" >>${DEP_FILE}
-  // 	@echo "#pragma once  // NOLINT(build/header_guard)" >>${DEP_FILE}
-  // 	@echo "" >>${DEP_FILE}
-  // 	@echo "#if !defined(BUILD_TIME)" >>${DEP_FILE}
-  // 	@echo "#define BUILD_TIME __DATE__ \" \"  __TIME__" >>${DEP_FILE}
-  // 	@echo "#endif" >>${DEP_FILE}
-  // 	@echo "" >>${DEP_FILE}
-  // 	@touch ${DEP_FILE}
-
   std::list<std::string> clean_targets;
 
   std::unordered_set<std::string> recorder;
