@@ -5,3 +5,5 @@ compile_commands.json
 cmake-build-debug/
 .cache/
 build/
+.third-party-build/
+third-party/.deps/
