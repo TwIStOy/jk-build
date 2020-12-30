@@ -94,4 +94,3 @@ CollisionNameStack::ScopedElement CollisionNameStack::ScopedPush(
 
 }  // namespace utils
 }  // namespace jk
-

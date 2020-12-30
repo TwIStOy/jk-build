@@ -42,4 +42,3 @@ BuildRule *SourceFileRecorder::Rule(const std::string &p) const {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

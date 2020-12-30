@@ -49,7 +49,7 @@ void UnixMakefile::DefaultTarget(std::string target) {
   default_target_ = target;
 }
 
-void UnixMakefile::DefineCommon(filesystem::ProjectFileSystem *project) {
+void UnixMakefile::DefineCommon(filesystem::JKProject *project) {
   DefineEnvironment("SHELL", "/bin/bash",
                     "The shell in which to execute make rules.");
 

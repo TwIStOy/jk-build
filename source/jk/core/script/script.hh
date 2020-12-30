@@ -29,10 +29,10 @@ class __attribute__((visibility("hidden"))) ScriptInterpreter {
 
   static ScriptInterpreter *Instance();
 
-  void EvalScript(filesystem::ProjectFileSystem *project,
-                  rules::BuildPackage *pkg, std::string_view filename);
+  void EvalScript(filesystem::JKProject *project, rules::BuildPackage *pkg,
+                  std::string_view filename);
 
-  void EvalScriptContent(filesystem::ProjectFileSystem *project,
+  void EvalScriptContent(filesystem::JKProject *project,
                          rules::BuildPackage *pkg, const std::string &content);
 
   void RegHook(const std::string &name, HookFunctionType func);
@@ -43,8 +43,7 @@ class __attribute__((visibility("hidden"))) ScriptInterpreter {
   void HookFunctions();
 
   pybind11::dict Initialize(rules::BuildPackage *pkg);
-  void AddConnomLocals(filesystem::ProjectFileSystem *project,
-                       pybind11::dict *);
+  void AddConnomLocals(filesystem::JKProject *project, pybind11::dict *);
 
  private:
   pybind11::scoped_interpreter interpreter_;

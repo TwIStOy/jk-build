@@ -71,8 +71,7 @@ void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
 }
 
 std::vector<std::string> ShellScript::ExportedFilesSimpleName(
-    core::filesystem::ProjectFileSystem *project,
-    const std::string &build_type) const {
+    core::filesystem::JKProject *project, const std::string &build_type) const {
   (void)build_type;
   std::vector<std::string> res;
 
@@ -101,8 +100,7 @@ std::vector<std::string> ShellScript::ExportedHeaders() const {
 }
 
 std::unordered_map<std::string, std::string>
-ShellScript::ExportedEnvironmentVar(
-    core::filesystem::ProjectFileSystem *) const {
+ShellScript::ExportedEnvironmentVar(core::filesystem::JKProject *) const {
   return ExportBin;
 }
 

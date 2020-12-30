@@ -46,8 +46,8 @@ std::string NopCompiler::Name() const {
   return name_;
 }
 
-void NopCompiler::Compile(filesystem::ProjectFileSystem *,
-                          writer::WriterFactory *, rules::BuildRule *,
+void NopCompiler::Compile(filesystem::JKProject *, writer::WriterFactory *,
+                          rules::BuildRule *,
                           filesystem::FileNamePatternExpander *) const {
 }
 
@@ -107,7 +107,7 @@ static std::vector<std::pair<std::string, std::string>> formats = {
     {"debug", "DEBUG"}, {"release", "RELEASE"}, {"profiling", "PROFILING"}};
 
 void MakefileGlobalCompiler::Compile(
-    filesystem::ProjectFileSystem *project, writer::WriterFactory *wf,
+    filesystem::JKProject *project, writer::WriterFactory *wf,
     const std::vector<rules::BuildRule *> &rules) {
   output::UnixMakefilePtr makefile{new output::UnixMakefile(
       project->ProjectRoot.Sub("Makefile").Stringify())};

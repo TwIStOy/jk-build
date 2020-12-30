@@ -12,4 +12,3 @@ void DownloadFile(args::Subparser &parser);
 }  // namespace jk::cli
 
 // vim: fdm=marker
-

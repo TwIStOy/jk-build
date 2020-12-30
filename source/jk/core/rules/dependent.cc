@@ -89,4 +89,3 @@ BuildRuleId ParseIdString(std::string_view str) {
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
-

@@ -18,4 +18,3 @@ Overloaded(Ts...) -> Overloaded<Ts...>;
 }  // namespace jk::utils
 
 // vim: fdm=marker
-

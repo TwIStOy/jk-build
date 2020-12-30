@@ -39,4 +39,3 @@ class Configuration {
 }  // namespace jk::core::filesystem
 
 // vim: fdm=marker
-

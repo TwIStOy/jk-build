@@ -91,7 +91,7 @@ template<typename T, typename First, typename... Args,
              std::is_same_v<typename First::value_type, T> &&
              (std::is_same_v<typename Args::value_type, T> && ...)>>
 void ConcatArraysImpl(std::vector<T> *res, const First &first,
-                      const Args &... rest) {
+                      const Args &...rest) {
   res->insert(res->end(), std::begin(first), std::end(first));
   ConcatArraysImpl(res, rest...);
 }
@@ -104,7 +104,7 @@ template<
         std::is_same_v<typename First::value_type, typename Args::value_type> &&
         ...)>,
     typename ValueType = typename First::value_type>
-std::vector<ValueType> ConcatArrays(const First &first, const Args &... args) {
+std::vector<ValueType> ConcatArrays(const First &first, const Args &...args) {
   std::vector<ValueType> res;
   __detail::ConcatArraysImpl(&res, first, args...);
   return res;
@@ -113,4 +113,3 @@ std::vector<ValueType> ConcatArrays(const First &first, const Args &... args) {
 }  // namespace jk::utils
 
 // vim: fdm=marker
-

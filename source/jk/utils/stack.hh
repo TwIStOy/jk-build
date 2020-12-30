@@ -52,4 +52,3 @@ class CollisionNameStack final : public Stringifiable {
 
 }  // namespace utils
 }  // namespace jk
-

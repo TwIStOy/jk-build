@@ -33,8 +33,7 @@ void ProtoLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
 }
 
 std::vector<std::string> ProtoLibrary::ExportedFilesSimpleName(
-    core::filesystem::ProjectFileSystem *project,
-    const std::string &build_type) const {
+    core::filesystem::JKProject *project, const std::string &build_type) const {
   return {WorkingFolder(project->BuildRoot)
               .Sub(build_type)
               .Sub(ExportedFileName)
@@ -52,4 +51,3 @@ std::vector<std::string> ProtoLibrary::ExportedHeaders() const {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

@@ -41,4 +41,3 @@ struct FileWriterFactory : public WriterFactory {
 }  // namespace jk::core::writer
 
 // vim: fdm=marker
-

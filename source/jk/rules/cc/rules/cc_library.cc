@@ -146,7 +146,7 @@ const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
 }
 
 void CCLibrary::LoadNolintFiles(
-    core::filesystem::ProjectFileSystem *project,
+    core::filesystem::JKProject *project,
     core::filesystem::FileNamePatternExpander *expander) const {
   if (nolint_files_) {
     return;
@@ -181,7 +181,7 @@ bool CCLibrary::IsNolint(const std::string &name) const {
 }
 
 const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
-    core::filesystem::ProjectFileSystem *project,
+    core::filesystem::JKProject *project,
     core::filesystem::FileNamePatternExpander *expander) const {
   if (expanded_source_files_) {
     return expanded_source_files_.value();
@@ -225,8 +225,7 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
 }
 
 std::vector<std::string> CCLibrary::ExportedFilesSimpleName(
-    core::filesystem::ProjectFileSystem *project,
-    const std::string &build_type) const {
+    core::filesystem::JKProject *project, const std::string &build_type) const {
   return {WorkingFolder(project->BuildRoot)
               .Sub(build_type)
               .Sub(ExportedFileName)
@@ -247,7 +246,7 @@ std::vector<std::string> CCLibrary::ExportedHeaders() const {
 }
 
 std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(
-    core::filesystem::ProjectFileSystem *project) const {
+    core::filesystem::JKProject *project) const {
   std::unordered_map<std::string, std::string> res;
 
   for (auto tp : common::FLAGS_BuildTypes) {

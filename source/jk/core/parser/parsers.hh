@@ -96,4 +96,3 @@ inline Parser<std::string_view> MakeStringEq(std::string_view s) {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

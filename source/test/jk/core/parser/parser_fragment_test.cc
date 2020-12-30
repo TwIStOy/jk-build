@@ -38,4 +38,3 @@ TEST_CASE("parser_fragment", "[utils][parser]") {
 }  // namespace jk::core::parser::test
 
 // vim: fdm=marker
-

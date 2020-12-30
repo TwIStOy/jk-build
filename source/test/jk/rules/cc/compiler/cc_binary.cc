@@ -73,7 +73,7 @@ static core::rules::BuildPackageFactory SimpleProject() {
 
 TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
           "[compiler][makefile][cc_binary]") {
-  core::filesystem::ProjectFileSystem project{
+  core::filesystem::JKProject project{
       common::AbsolutePath{"~/Projects/test_project"},
       common::AbsolutePath{"~/Projects/test_project/.build"},
   };

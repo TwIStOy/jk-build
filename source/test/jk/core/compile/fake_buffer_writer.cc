@@ -32,4 +32,3 @@ void FakeBufferWriterFactory::DebugPrint(std::ostream &oss) const {
 }  // namespace jk::test
 
 // vim: fdm=marker
-

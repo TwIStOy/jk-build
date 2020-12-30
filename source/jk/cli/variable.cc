@@ -14,4 +14,3 @@ void VariableGroup::Notify() {
 }  // namespace jk::cli
 
 // vim: fdm=marker
-

@@ -182,4 +182,3 @@ struct type_list {
 }  // namespace jk::utils
 
 // vim: fdm=marker
-

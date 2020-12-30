@@ -21,19 +21,18 @@ struct MakefileProtoLibraryCompiler : public MakefileCCLibraryCompiler {
   std::string Name() const override;
 
   void Compile(
-      core::filesystem::ProjectFileSystem *project,
-      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+      core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 
   core::output::UnixMakefilePtr GenerateBuild(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const common::AbsolutePath &working_folder, core::writer::Writer *w,
       ProtoLibrary *rule,
       core::filesystem::FileNamePatternExpander *expander) const;
 
-  void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
-                      CCLibrary *rule, const std::string &build_type,
-                      SourceFile *source_file,
+  void MakeSourceFile(core::filesystem::JKProject *project, CCLibrary *rule,
+                      const std::string &build_type, SourceFile *source_file,
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;
@@ -42,4 +41,3 @@ struct MakefileProtoLibraryCompiler : public MakefileCCLibraryCompiler {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

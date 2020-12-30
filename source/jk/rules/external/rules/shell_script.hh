@@ -31,7 +31,7 @@ class ShellScript : public core::rules::BuildRule {
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedFilesSimpleName(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const std::string &build_type) const override;
 
   std::vector<std::string> ExportedLinkFlags() const override;
@@ -39,7 +39,7 @@ class ShellScript : public core::rules::BuildRule {
   std::vector<std::string> ExportedHeaders() const override;
 
   std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
-      core::filesystem::ProjectFileSystem *) const override;
+      core::filesystem::JKProject *) const override;
 
   // --- Fields Start ---
   std::string Script;

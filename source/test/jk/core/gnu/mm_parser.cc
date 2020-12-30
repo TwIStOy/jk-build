@@ -69,4 +69,3 @@ TEST_CASE("mm parser", "[utils][parser][mm]") {
 }  // namespace jk::core::gnu::test
 
 // vim: fdm=marker
-

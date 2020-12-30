@@ -13,17 +13,16 @@
 
 namespace jk::core::filesystem {
 
-ProjectFileSystem::ProjectFileSystem(common::AbsolutePath ProjectRoot,
-                                     common::AbsolutePath BuildRoot)
+JKProject::JKProject(common::AbsolutePath ProjectRoot,
+                     common::AbsolutePath BuildRoot)
     : ProjectRoot(ProjectRoot), BuildRoot(BuildRoot) {
 }
 
-common::AbsolutePath ProjectFileSystem::Resolve(
-    const common::ProjectRelativePath &rp) {
+common::AbsolutePath JKProject::Resolve(const common::ProjectRelativePath &rp) {
   return ProjectRoot.Sub(rp.Path);
 }
 
-common::AbsolutePath ProjectFileSystem::ResolveBuild(
+common::AbsolutePath JKProject::ResolveBuild(
     const common::ProjectRelativePath &rp) {
   return BuildRoot.Sub(rp.Path);
 }
@@ -36,7 +35,7 @@ static bool HasRootMarker(const fs::path &root) {
   return false;
 }
 
-const Configuration &ProjectFileSystem::Config() const {
+const Configuration &JKProject::Config() const {
   if (config_) {
     return config_.value();
   }
@@ -79,7 +78,7 @@ fs::path BuildRoot() {
   return ProjectRoot() / ".build" / "x86_64";
 }
 
-common::AbsolutePath ProjectFileSystem::ExternalInstalledPrefix() {
+common::AbsolutePath JKProject::ExternalInstalledPrefix() {
   return ProjectRoot.Sub(".build").Sub(".lib").Sub(fmt::format(
       "m{}", common::FLAGS_platform == common::Platform::k32 ? 32 : 64));
 }
@@ -87,4 +86,3 @@ common::AbsolutePath ProjectFileSystem::ExternalInstalledPrefix() {
 }  // namespace jk::core::filesystem
 
 // vim: fdm=marker
-

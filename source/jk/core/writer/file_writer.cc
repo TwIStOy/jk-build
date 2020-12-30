@@ -79,4 +79,3 @@ std::unique_ptr<Writer> FileWriterFactory::Build(const std::string &key) {
 }  // namespace jk::core::writer
 
 // vim: fdm=marker
-

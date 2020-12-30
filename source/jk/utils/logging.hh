@@ -26,4 +26,3 @@ std::shared_ptr<spdlog::logger> Logger(std::string_view);
 }  // namespace jk::utils
 
 // vim: fdm=marker
-

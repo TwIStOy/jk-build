@@ -15,4 +15,3 @@ int main(int argc, char const *argv[]) {
   jk::cli::Cli cli;
   return cli.Run(argc, argv);
 }
-

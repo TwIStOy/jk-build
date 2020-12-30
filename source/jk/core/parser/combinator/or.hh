@@ -46,4 +46,3 @@ auto Or(Parsers &&...parsers) -> Parser<R> {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

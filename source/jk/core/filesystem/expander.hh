@@ -27,4 +27,3 @@ extern DefaultPatternExpander kDefaultPatternExpander;
 }  // namespace jk::core::filesystem
 
 // vim: fdm=marker
-

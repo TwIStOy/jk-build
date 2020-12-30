@@ -32,7 +32,7 @@ void Generate(args::Subparser &parser) {
   args::PositionalList<std::string> rules_name(parser, "RULE", "Rules...");
   parser.Parse();
 
-  core::filesystem::ProjectFileSystem project{
+  core::filesystem::JKProject project{
       common::AbsolutePath{core::filesystem::ProjectRoot()},
       common::AbsolutePath{core::filesystem::BuildRoot()}};
   core::writer::FileWriterFactory writer_factory;

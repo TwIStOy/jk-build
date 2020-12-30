@@ -50,4 +50,3 @@ std::shared_ptr<spdlog::logger> Logger(std::string_view name) {
 }  // namespace jk::utils
 
 // vim: fdm=marker
-

@@ -37,7 +37,7 @@ class ExternalLibrary : public core::rules::BuildRule {
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedFilesSimpleName(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const std::string &build_type) const override;
 
   std::vector<std::string> ExportedLinkFlags() const override;

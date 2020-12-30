@@ -28,8 +28,8 @@ std::string MakefileExternalLibraryCompiler::Name() const {
 }
 
 void MakefileExternalLibraryCompiler::CompileImpl(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, ExternalLibrary *rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    ExternalLibrary *rule,
     std::function<void(core::output::UnixMakefile *)> prepare,
     const std::vector<std::string> &_download_command,
     const std::vector<std::string> &_configure_command,
@@ -199,8 +199,8 @@ void MakefileExternalLibraryCompiler::CompileImpl(
 }
 
 void MakefileExternalLibraryCompiler::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<ExternalLibrary>();
   CompileImpl(

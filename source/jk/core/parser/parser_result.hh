@@ -75,4 +75,3 @@ void ParseResult<T>::Result(O &&o) {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

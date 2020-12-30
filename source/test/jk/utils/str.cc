@@ -25,4 +25,3 @@ TEST_CASE("Join String", "[utils]") {
 }
 
 }  // namespace jk::utils::test
-

@@ -41,7 +41,7 @@ class Variable {
   }
 
   template<typename... Ts>
-  void Register(VariableGroup *group, Ts &&... v) {
+  void Register(VariableGroup *group, Ts &&...v) {
     flag_.reset(new FlagType(*group->group, std::forward<Ts>(v)...));
 
     group->callbacks_.push_back([this]() {
@@ -60,4 +60,3 @@ class Variable {
 }  // namespace jk::cli
 
 // vim: fdm=marker
-

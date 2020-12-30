@@ -26,9 +26,8 @@ class CCBinary : public CCLibrary {
   }
 
   std::vector<std::string> ResolveDependenciesAndLdFlags(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const std::string &build_type) const;
 };
 
 }  // namespace jk::rules::cc
-

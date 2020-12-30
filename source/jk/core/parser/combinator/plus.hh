@@ -55,4 +55,3 @@ auto Plus(Parsers &&...parsers) -> Parser<result_t> {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

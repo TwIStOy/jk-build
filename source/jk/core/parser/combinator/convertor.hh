@@ -36,4 +36,3 @@ auto operator>>(P &&p, F &&f) {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

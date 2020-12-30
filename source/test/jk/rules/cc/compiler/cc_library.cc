@@ -59,7 +59,7 @@ static core::rules::BuildPackageFactory SimpleProject() {
 
 TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
           "[compiler][makefile][cc_library]") {
-  core::filesystem::ProjectFileSystem project{
+  core::filesystem::JKProject project{
       common::AbsolutePath{"~/Projects/test_project"},
       common::AbsolutePath{"~/Projects/test_project/.build"},
   };
@@ -187,7 +187,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
 
 TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
           "[compiler][makefile][cc_library]") {
-  core::filesystem::ProjectFileSystem project{
+  core::filesystem::JKProject project{
       common::AbsolutePath{"~/Projects/test_project"},
       common::AbsolutePath{"~/Projects/test_project/.build"},
   };

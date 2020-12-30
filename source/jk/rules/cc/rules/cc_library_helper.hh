@@ -11,10 +11,9 @@
 
 namespace jk::rules::cc {
 
-std::list<std::string> MergeDepHeaders(
-    CCLibrary *rule, core::filesystem::ProjectFileSystem *project);
+std::list<std::string> MergeDepHeaders(CCLibrary *rule,
+                                       core::filesystem::JKProject *project);
 
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

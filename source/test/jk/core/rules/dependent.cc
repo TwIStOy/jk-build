@@ -3,8 +3,8 @@
 
 #include "jk/core/rules/dependent.hh"
 
-#include <catch.hpp>
 #include <boost/optional/optional_io.hpp>
+#include <catch.hpp>
 
 namespace jk {
 namespace core {
@@ -46,4 +46,3 @@ TEST_CASE("Parse Builtin Id", "[core][rules][dependent]") {
 }  // namespace rules
 }  // namespace core
 }  // namespace jk
-

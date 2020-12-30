@@ -18,12 +18,12 @@ namespace jk::rules::external {
 struct MakefileExternalLibraryCompiler : public core::compile::Compiler {
   std::string Name() const override;
 
-  void Compile(core::filesystem::ProjectFileSystem *project,
+  void Compile(core::filesystem::JKProject *project,
                core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
                core::filesystem::FileNamePatternExpander *expander =
                    &core::filesystem::kDefaultPatternExpander) const override;
 
-  void CompileImpl(core::filesystem::ProjectFileSystem *project,
+  void CompileImpl(core::filesystem::JKProject *project,
                    core::writer::WriterFactory *wf, ExternalLibrary *rule,
                    std::function<void(core::output::UnixMakefile *)> prepare,
                    const std::vector<std::string> &download_command,

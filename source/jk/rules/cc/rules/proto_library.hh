@@ -35,7 +35,7 @@ class ProtoLibrary : public CCLibrary {
   std::vector<std::string> ExportedHeaders() const override;
 
   std::vector<std::string> ExportedFilesSimpleName(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const std::string &build_type) const override;
 
  private:
@@ -45,4 +45,3 @@ class ProtoLibrary : public CCLibrary {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

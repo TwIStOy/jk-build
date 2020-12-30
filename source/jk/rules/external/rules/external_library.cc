@@ -40,8 +40,7 @@ void ExternalLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
 }
 
 std::vector<std::string> ExternalLibrary::ExportedFilesSimpleName(
-    core::filesystem::ProjectFileSystem *project,
-    const std::string &build_type) const {
+    core::filesystem::JKProject *project, const std::string &build_type) const {
   if (Libraries.size()) {
     auto prefix = project->ExternalInstalledPrefix();
     std::vector<std::string> res;

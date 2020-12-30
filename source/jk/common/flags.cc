@@ -22,4 +22,3 @@ std::string ToString(common::Platform plt) {
 }  // namespace jk::common
 
 // vim: fdm=marker
-

@@ -47,4 +47,3 @@ CustomCommandLines CustomCommandLines::Single(
 }  // namespace jk::core::builder
 
 // vim: fdm=marker
-

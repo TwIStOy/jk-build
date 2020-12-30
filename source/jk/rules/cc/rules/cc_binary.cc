@@ -20,8 +20,7 @@ namespace jk::rules::cc {
 static auto logger = utils::Logger("cc_binary");
 
 std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
-    core::filesystem::ProjectFileSystem *project,
-    const std::string &build_type) const {
+    core::filesystem::JKProject *project, const std::string &build_type) const {
   std::vector<std::string> res;
 
   res.insert(res.end(), std::begin(LdFlags), std::end(LdFlags));
@@ -47,4 +46,3 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

@@ -73,4 +73,3 @@ ALWAYS_INLINE IncludeArgument::Placehoder IncludeArgument::PlacehoderValue()
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

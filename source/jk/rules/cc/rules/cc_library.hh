@@ -41,7 +41,7 @@ class CCLibrary : public BuildRule {
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedFilesSimpleName(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const std::string &build_type) const override;
 
   //! Get all **includes** recursively
@@ -60,7 +60,7 @@ class CCLibrary : public BuildRule {
 
   //! Expand source files.
   const std::vector<std::string> &ExpandSourceFiles(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       core::filesystem::FileNamePatternExpander *expander) const;
 
   std::vector<std::string> ExportedLinkFlags() const override;
@@ -68,7 +68,7 @@ class CCLibrary : public BuildRule {
   std::vector<std::string> ExportedHeaders() const override;
 
   std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
-      core::filesystem::ProjectFileSystem *project) const override;
+      core::filesystem::JKProject *project) const override;
 
   // --- Fields Start ---
   std::vector<std::string> CFlags;
@@ -89,7 +89,7 @@ class CCLibrary : public BuildRule {
 
  private:
   void LoadNolintFiles(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       core::filesystem::FileNamePatternExpander *expander) const;
 
  private:
@@ -103,7 +103,7 @@ class CCLibrary : public BuildRule {
 struct CCLibrary::IncludesResolvingContext {
   virtual ~IncludesResolvingContext() = default;
 
-  virtual core::filesystem::ProjectFileSystem *Project() const = 0;
+  virtual core::filesystem::JKProject *Project() const = 0;
 };
 
 }  // namespace jk::rules::cc

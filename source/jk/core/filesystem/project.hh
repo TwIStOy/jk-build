@@ -13,9 +13,8 @@ namespace jk {
 namespace core {
 namespace filesystem {
 
-struct ProjectFileSystem {
-  ProjectFileSystem(common::AbsolutePath ProjectRoot,
-                    common::AbsolutePath BuildRoot);
+struct JKProject {
+  JKProject(common::AbsolutePath ProjectRoot, common::AbsolutePath BuildRoot);
 
   //! Root path of this project. All packages path will be relative with this.
   common::AbsolutePath ProjectRoot;
@@ -44,4 +43,3 @@ fs::path BuildRoot();
 }  // namespace filesystem
 }  // namespace core
 }  // namespace jk
-

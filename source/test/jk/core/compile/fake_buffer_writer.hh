@@ -35,4 +35,3 @@ struct FakeBufferWriterFactory : public core::writer::WriterFactory {
 }  // namespace jk::test
 
 // vim: fdm=marker
-

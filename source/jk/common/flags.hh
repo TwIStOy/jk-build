@@ -27,4 +27,3 @@ extern uint32_t FLAGS_terminal_columns;
 }  // namespace jk::common
 
 // vim: fdm=marker
-

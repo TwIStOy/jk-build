@@ -23,8 +23,8 @@ std::string MakefileCMakeLibrary::Name() const {
 }
 
 void MakefileCMakeLibrary::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<CMakeLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);

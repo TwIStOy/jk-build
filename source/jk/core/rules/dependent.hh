@@ -68,4 +68,3 @@ struct formatter<jk::core::rules::RuleRelativePosition> {
 };
 
 }  // namespace fmt
-

@@ -13,12 +13,12 @@ struct MakefileCCBinaryCompiler : MakefileCCLibraryCompiler {
   std::string Name() const override;
 
   void Compile(
-      core::filesystem::ProjectFileSystem *project,
-      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+      core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 
   core::output::UnixMakefilePtr GenerateBuild(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const common::AbsolutePath &working_folder, core::writer::Writer *w,
       CCLibrary *rule,
       core::filesystem::FileNamePatternExpander *expander) const;
@@ -27,4 +27,3 @@ struct MakefileCCBinaryCompiler : MakefileCCLibraryCompiler {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

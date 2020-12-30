@@ -13,4 +13,3 @@ std::list<std::string> NopExpander::Expand(const std::string &pattern,
 }  // namespace jk::test
 
 // vim: fdm=marker
-

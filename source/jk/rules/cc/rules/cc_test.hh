@@ -26,4 +26,3 @@ class CCTest : public CCBinary {
 };
 
 }  // namespace jk::rules::cc
-

@@ -24,46 +24,45 @@ extern std::vector<std::string> BuildTypes;
 
 struct IncludesResolvingContextImpl final
     : public CCLibrary::IncludesResolvingContext {
-  explicit IncludesResolvingContextImpl(core::filesystem::ProjectFileSystem *p)
+  explicit IncludesResolvingContextImpl(core::filesystem::JKProject *p)
       : project_(p) {
   }
 
-  core::filesystem::ProjectFileSystem *Project() const override;
+  core::filesystem::JKProject *Project() const override;
 
-  core::filesystem::ProjectFileSystem *project_;
+  core::filesystem::JKProject *project_;
 };
 
 struct MakefileCCLibraryCompiler : public core::compile::Compiler {
   std::string Name() const override;
 
   void Compile(
-      core::filesystem::ProjectFileSystem *project,
-      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+      core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 
   core::output::UnixMakefilePtr GenerateFlags(
-      core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+      core::filesystem::JKProject *project, core::writer::Writer *w,
       CCLibrary *rule) const;
 
   core::output::UnixMakefilePtr GenerateToolchain(
-      core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+      core::filesystem::JKProject *project, core::writer::Writer *w,
       CCLibrary *rule) const;
 
   core::output::UnixMakefilePtr GenerateBuild(
-      core::filesystem::ProjectFileSystem *project,
+      core::filesystem::JKProject *project,
       const common::AbsolutePath &working_folder, core::writer::Writer *w,
       CCLibrary *rule,
       core::filesystem::FileNamePatternExpander *expander) const;
 
   //! return `ProgressNum`
-  uint32_t LintSourceFile(core::filesystem::ProjectFileSystem *project,
-                          CCLibrary *rule, SourceFile *source_file,
+  uint32_t LintSourceFile(core::filesystem::JKProject *project, CCLibrary *rule,
+                          SourceFile *source_file,
                           core::output::UnixMakefile *build,
                           const common::AbsolutePath &working_folder) const;
 
-  void MakeSourceFile(core::filesystem::ProjectFileSystem *project,
-                      CCLibrary *rule, const std::string &build_type,
-                      SourceFile *source_file,
+  void MakeSourceFile(core::filesystem::JKProject *project, CCLibrary *rule,
+                      const std::string &build_type, SourceFile *source_file,
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;
@@ -73,8 +72,8 @@ struct CompileDatabaseCCLibraryCompiler : public core::compile::Compiler {
   std::string Name() const override;
 
   void Compile(
-      core::filesystem::ProjectFileSystem *project,
-      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+      core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 };
 

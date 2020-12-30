@@ -85,4 +85,3 @@ TEST_CASE("Script", "[core][script]") {
 }
 
 }  // namespace jk::core::script::test
-

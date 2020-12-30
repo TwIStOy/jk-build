@@ -14,4 +14,3 @@ std::string MakefileCCTestCompiler::Name() const {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

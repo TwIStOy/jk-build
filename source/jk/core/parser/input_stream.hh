@@ -3,10 +3,10 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <cassert>
 #include <cstdint>
 #include <string_view>
 #include <utility>
-#include <cassert>
 
 namespace jk::core::parser {
 
@@ -84,4 +84,3 @@ inline uint32_t InputStream::GetColumnNumber() const {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

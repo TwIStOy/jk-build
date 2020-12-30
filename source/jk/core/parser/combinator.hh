@@ -50,7 +50,8 @@ namespace jk::core::parser {
 //
 // // foldL :: Parser a -> b -> (b -> a -> b) -> ParserInput -> ParserResult b
 // template<typename P, typename R, typename F>
-// constexpr auto foldL(P &&p, R acc, F &&f, ParserInput in) -> ParserResult<R> {
+// constexpr auto foldL(P &&p, R acc, F &&f, ParserInput in) -> ParserResult<R>
+// {
 //   while (true) {
 //     auto r = p(in);
 //     if (!r)
@@ -64,7 +65,8 @@ namespace jk::core::parser {
 // template<typename P>
 // constexpr auto many(P &&p) {
 //   return
-//       [p = std::forward<P>(p)](ParserInput s) -> ParserResult<std::monostate> {
+//       [p = std::forward<P>(p)](ParserInput s) -> ParserResult<std::monostate>
+//       {
 //         return foldL(
 //             p, std::monostate{},
 //             [](auto acc, auto) {
@@ -103,4 +105,3 @@ namespace jk::core::parser {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

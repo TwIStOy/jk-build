@@ -32,4 +32,3 @@ class BufferWriter : public Writer {
 }  // namespace jk::core::writer
 
 // vim: fdm=marker
-

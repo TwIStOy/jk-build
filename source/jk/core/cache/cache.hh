@@ -27,8 +27,7 @@ class CacheDatabase {
  public:
   explicit CacheDatabase(const common::AbsolutePath &file_path);
 
-  bool IsUpToDate(rules::BuildRule *rule,
-                  filesystem::ProjectFileSystem *project,
+  bool IsUpToDate(rules::BuildRule *rule, filesystem::JKProject *project,
                   filesystem::FileNamePatternExpander *expander);
 
   void WriteCache(common::AbsolutePath file_path);

@@ -71,4 +71,3 @@ auto operator!(P1 &&p) -> Parser<R> {
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-

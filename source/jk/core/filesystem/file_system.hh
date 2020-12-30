@@ -5,10 +5,6 @@
 
 #include "jk/common/path.hh"
 
-namespace jk::core::filesystem {
-
-
-}  // namespace jk
+namespace jk::core::filesystem {}  // namespace jk::core::filesystem
 
 // vim: fdm=marker
-

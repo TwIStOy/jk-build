@@ -13,7 +13,7 @@ namespace jk::rules::external {
 struct MakefileShellScriptCompiler final : public core::compile::Compiler {
   std::string Name() const;
 
-  void Compile(core::filesystem::ProjectFileSystem *project,
+  void Compile(core::filesystem::JKProject *project,
                core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
                core::filesystem::FileNamePatternExpander *expander =
                    &core::filesystem::kDefaultPatternExpander) const;
@@ -23,8 +23,8 @@ struct CompileDatabaseShellScriptCompiler : public core::compile::Compiler {
   std::string Name() const override;
 
   void Compile(
-      core::filesystem::ProjectFileSystem *project,
-      core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+      core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+      core::rules::BuildRule *rule,
       core::filesystem::FileNamePatternExpander *expander) const override;
 };
 

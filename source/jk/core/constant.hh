@@ -5,11 +5,6 @@
 
 #include <string>
 
-namespace jk::core {
-
-
-
-}  // namespace jk
+namespace jk::core {}  // namespace jk::core
 
 // vim: fdm=marker
-

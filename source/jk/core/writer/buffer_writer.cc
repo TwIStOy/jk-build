@@ -39,4 +39,3 @@ std::string BufferWriter::Buffer() const {
 }  // namespace jk::core::writer
 
 // vim: fdm=marker
-

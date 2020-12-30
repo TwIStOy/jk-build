@@ -82,4 +82,3 @@ class ProgressBar {
 }  // namespace jk::utils
 
 // vim: fdm=marker
-

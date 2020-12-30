@@ -44,4 +44,3 @@ std::list<std::string> DefaultPatternExpander::Expand(
 }  // namespace jk::core::filesystem
 
 // vim: fdm=marker
-

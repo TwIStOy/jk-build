@@ -24,8 +24,8 @@ std::string MakefileProtoLibraryCompiler::Name() const {
 }
 
 void MakefileProtoLibraryCompiler::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<ProtoLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
@@ -44,7 +44,7 @@ void MakefileProtoLibraryCompiler::Compile(
 }
 
 core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
-    core::filesystem::ProjectFileSystem *project,
+    core::filesystem::JKProject *project,
     const common::AbsolutePath &working_folder, core::writer::Writer *w,
     ProtoLibrary *rule,
     core::filesystem::FileNamePatternExpander *expander) const {
@@ -159,7 +159,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
 }
 
 void MakefileProtoLibraryCompiler::MakeSourceFile(
-    core::filesystem::ProjectFileSystem *project, CCLibrary *rule,
+    core::filesystem::JKProject *project, CCLibrary *rule,
     const std::string &build_type, SourceFile *source_file,
     const std::list<std::string> &headers, core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
@@ -224,4 +224,3 @@ void MakefileProtoLibraryCompiler::MakeSourceFile(
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

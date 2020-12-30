@@ -30,7 +30,7 @@ class __MemoImpl<std::function<R(Args...)>, MaxKeys> {
   }
 
   template<typename... Ts>
-  R operator()(Ts &&... args) {
+  R operator()(Ts &&...args) {
     return func_(std::forward<Ts>(args)...);
   }
 
@@ -42,7 +42,7 @@ template<std::size_t MaxKeys = 16, typename... Fs>
 class Memo : public __MemoImpl<Fs, MaxKeys>... {
  public:
   template<typename... Ts>
-  Memo(Ts &&... funcs) : __MemoImpl<Fs, MaxKeys>(std::forward<Ts>(funcs))... {
+  Memo(Ts &&...funcs) : __MemoImpl<Fs, MaxKeys>(std::forward<Ts>(funcs))... {
     static_assert(sizeof...(Fs) == sizeof...(Ts));
   }
 };

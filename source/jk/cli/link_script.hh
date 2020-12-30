@@ -7,6 +7,6 @@
 
 namespace jk::cli {
 
-void LinkScript(args::Subparser& parser);
+void LinkScript(args::Subparser &parser);
 
 }  // namespace jk::cli

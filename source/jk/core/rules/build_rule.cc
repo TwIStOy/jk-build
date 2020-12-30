@@ -181,7 +181,7 @@ void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {  // {{{
 }  // }}}
 
 void BuildRule::BuildDependencies(  // {{{
-    filesystem::ProjectFileSystem *project, BuildPackageFactory *factory,
+    filesystem::JKProject *project, BuildPackageFactory *factory,
     utils::CollisionNameStack *pstk, utils::CollisionNameStack *rstk) {
   if (dependencies_has_built_) {
     return;
@@ -281,8 +281,7 @@ json BuildRule::CacheState() const {  // {{{
 }  // }}}
 
 std::unordered_map<std::string, std::string>  // {{{
-BuildRule::ExportedEnvironmentVar(
-    filesystem::ProjectFileSystem *project) const {
+BuildRule::ExportedEnvironmentVar(filesystem::JKProject *project) const {
   (void)project;
   return {};
 }  // }}}

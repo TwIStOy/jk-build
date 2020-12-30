@@ -39,7 +39,7 @@ struct BuildPackage : public utils::Stringifiable {
 
   //! Initialize package. Note that a package can not be initialized twice, the
   //! second call will not take effect.
-  void Initialize(filesystem::ProjectFileSystem *project,
+  void Initialize(filesystem::JKProject *project,
                   utils::CollisionNameStack *stk);
 
   std::string Stringify() const final;

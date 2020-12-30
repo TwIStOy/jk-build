@@ -22,7 +22,7 @@ CacheDatabase::CacheDatabase(const common::AbsolutePath &file_path) {
 }
 
 bool CacheDatabase::IsUpToDate(rules::BuildRule *rule,
-                               filesystem::ProjectFileSystem *project,
+                               filesystem::JKProject *project,
                                filesystem::FileNamePatternExpander *expander) {
   if (rule->Type.IsCC()) {
     return true;

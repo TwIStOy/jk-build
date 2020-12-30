@@ -7,8 +7,8 @@
 
 namespace jk::rules::cc {
 
-std::list<std::string> MergeDepHeaders(
-    CCLibrary *rule, core::filesystem::ProjectFileSystem *project) {
+std::list<std::string> MergeDepHeaders(CCLibrary *rule,
+                                       core::filesystem::JKProject *project) {
   std::list<std::string> all_dep_headers;
 
   for (auto dep : rule->DependenciesInOrder()) {
@@ -26,4 +26,3 @@ std::list<std::string> MergeDepHeaders(
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

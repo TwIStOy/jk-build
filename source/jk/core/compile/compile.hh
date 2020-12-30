@@ -22,7 +22,7 @@ struct Compiler {
   virtual std::string Name() const = 0;
 
   //! Compile the `rule` in `project` and write the output into the `writer`.
-  virtual void Compile(filesystem::ProjectFileSystem *project,
+  virtual void Compile(filesystem::JKProject *project,
                        writer::WriterFactory *wf, rules::BuildRule *rule,
                        filesystem::FileNamePatternExpander *expander =
                            &filesystem::kDefaultPatternExpander) const = 0;
@@ -35,8 +35,8 @@ struct NopCompiler final : public Compiler {
 
   std::string Name() const final;
 
-  void Compile(filesystem::ProjectFileSystem *project,
-               writer::WriterFactory *wf, rules::BuildRule *rule,
+  void Compile(filesystem::JKProject *project, writer::WriterFactory *wf,
+               rules::BuildRule *rule,
                filesystem::FileNamePatternExpander *expander =
                    &filesystem::kDefaultPatternExpander) const final;
 
@@ -45,8 +45,7 @@ struct NopCompiler final : public Compiler {
 };
 
 struct MakefileGlobalCompiler {
-  void Compile(filesystem::ProjectFileSystem *project,
-               writer::WriterFactory *wf,
+  void Compile(filesystem::JKProject *project, writer::WriterFactory *wf,
                const std::vector<rules::BuildRule *> &rules);
 };
 

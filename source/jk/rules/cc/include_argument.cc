@@ -34,4 +34,3 @@ std::string IncludeArgument::Stringify() const {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

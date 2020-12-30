@@ -39,4 +39,3 @@ inline _Counter *Counter() {
 }  // namespace jk::common
 
 // vim: fdm=marker
-

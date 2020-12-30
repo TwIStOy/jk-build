@@ -16,4 +16,3 @@ struct MakefileCCTestCompiler : MakefileCCBinaryCompiler {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

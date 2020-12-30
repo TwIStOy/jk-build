@@ -13,7 +13,7 @@ namespace jk::rules::external {
 struct MakefileCMakeLibrary : public MakefileExternalLibraryCompiler {
   std::string Name() const override;
 
-  void Compile(core::filesystem::ProjectFileSystem *project,
+  void Compile(core::filesystem::JKProject *project,
                core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
                core::filesystem::FileNamePatternExpander *expander =
                    &core::filesystem::kDefaultPatternExpander) const override;
@@ -22,4 +22,3 @@ struct MakefileCMakeLibrary : public MakefileExternalLibraryCompiler {
 }  // namespace jk::rules::external
 
 // vim: fdm=marker
-

@@ -28,7 +28,7 @@ BuildPackage::BuildPackage(std::string name,  // {{{
   logger->debug(R"(New BuildPackage at "{}")", Path);
 }  // }}}
 
-void BuildPackage::Initialize(filesystem::ProjectFileSystem *project,
+void BuildPackage::Initialize(filesystem::JKProject *project,
                               utils::CollisionNameStack *stk) {
   if (initialized_) {
     return;

@@ -72,7 +72,7 @@ pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {
   return locals;
 }
 
-void ScriptInterpreter::AddConnomLocals(filesystem::ProjectFileSystem *project,
+void ScriptInterpreter::AddConnomLocals(filesystem::JKProject *project,
                                         pybind11::dict *locals) {
   if (common::FLAGS_platform == common::Platform::k32) {
     (*locals)["platform"] = 32;
@@ -92,16 +92,16 @@ void ScriptInterpreter::AddConnomLocals(filesystem::ProjectFileSystem *project,
   // TODO(hawtian): fill common
 }
 
-void ScriptInterpreter::EvalScriptContent(
-    filesystem::ProjectFileSystem *project, rules::BuildPackage *pkg,
-    const std::string &content) {
+void ScriptInterpreter::EvalScriptContent(filesystem::JKProject *project,
+                                          rules::BuildPackage *pkg,
+                                          const std::string &content) {
   auto locals = Initialize(pkg);
   AddConnomLocals(project, &locals);
 
   pybind11::exec(content, pybind11::globals(), locals);
 }
 
-void ScriptInterpreter::EvalScript(filesystem::ProjectFileSystem *project,
+void ScriptInterpreter::EvalScript(filesystem::JKProject *project,
                                    rules::BuildPackage *pkg,
                                    std::string_view filename) {
   logger->debug("Eval script {}", filename);

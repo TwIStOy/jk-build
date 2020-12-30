@@ -167,4 +167,3 @@ std::optional<Py::PyFunc> Py::ParseFunctionCall(std::string_view text) {
 }  // namespace jk::core::gnu
 
 // vim: fdm=marker
-

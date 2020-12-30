@@ -19,4 +19,3 @@ struct NopExpander final : core::filesystem::FileNamePatternExpander {
 }  // namespace jk::test
 
 // vim: fdm=marker
-

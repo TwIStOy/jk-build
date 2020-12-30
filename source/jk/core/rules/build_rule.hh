@@ -101,7 +101,7 @@ struct BuildRule : public utils::Stringifiable {
   //! After dependencies has been built, this filed will be available
   //! pstk: package name stack
   //! rstk: rule name stack
-  void BuildDependencies(filesystem::ProjectFileSystem *project,
+  void BuildDependencies(filesystem::JKProject *project,
                          BuildPackageFactory *factory,
                          utils::CollisionNameStack *pstk,
                          utils::CollisionNameStack *rstk);
@@ -125,8 +125,7 @@ struct BuildRule : public utils::Stringifiable {
   //! Returns exported names. Other rules which depend on this, will
   //! automatically depend on all exported files.
   virtual std::vector<std::string> ExportedFilesSimpleName(
-      filesystem::ProjectFileSystem *project,
-      const std::string &build_type) const = 0;
+      filesystem::JKProject *project, const std::string &build_type) const = 0;
 
   //! Return exported link flags. Other rules which depend on this, will
   //! automatically add these flags into its link flags.
@@ -146,7 +145,7 @@ struct BuildRule : public utils::Stringifiable {
   //! <Rule, 'third_party/protobuf'>, variable: "protoc" =>
   //!   THIRD_PARTY_PROTOBUF_PROTOC
   virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
-      filesystem::ProjectFileSystem *project) const;
+      filesystem::JKProject *project) const;
 
   //! Return json object in cache
   virtual json CacheState() const;

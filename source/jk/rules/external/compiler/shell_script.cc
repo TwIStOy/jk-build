@@ -25,8 +25,8 @@ std::string MakefileShellScriptCompiler::Name() const {
 }
 
 void MakefileShellScriptCompiler::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<ShellScript>();
   core::output::UnixMakefilePtr makefile{
@@ -100,8 +100,8 @@ std::string CompileDatabaseShellScriptCompiler::Name() const {
 }
 
 void CompileDatabaseShellScriptCompiler::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   (void)project;
   (void)wf;

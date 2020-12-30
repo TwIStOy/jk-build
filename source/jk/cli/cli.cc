@@ -3,8 +3,8 @@
 
 #include "jk/cli/cli.hh"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "args.hxx"
 
@@ -20,8 +20,6 @@ void SubCommand::Register(args::Group &group, std::function<void()> func) {
       }));
 }
 
-
 }  // namespace jk::cli
 
 // vim: fdm=marker
-

@@ -24,8 +24,8 @@ std::string MakefileCCBinaryCompiler::Name() const {
 }
 
 void MakefileCCBinaryCompiler::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<CCBinary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
@@ -48,7 +48,7 @@ static std::vector<std::string> DEBUG_LDFLAGS_BEFORE = {
 };
 
 core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
-    core::filesystem::ProjectFileSystem *project,
+    core::filesystem::JKProject *project,
     const common::AbsolutePath &working_folder, core::writer::Writer *w,
     CCLibrary *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
@@ -166,4 +166,3 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

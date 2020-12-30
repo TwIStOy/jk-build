@@ -14,10 +14,10 @@
 namespace jk::rules {
 
 template<typename SeqType, typename... Args>
-inline auto PrintStatement(core::filesystem::ProjectFileSystem *project,
+inline auto PrintStatement(core::filesystem::JKProject *project,
                            std::string_view color, bool bold,
                            const SeqType &numbers, std::string_view fmt_str,
-                           const Args &... args) {
+                           const Args &...args) {
   if constexpr (std::is_integral_v<std::decay_t<SeqType>>) {
     return core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)",
@@ -36,20 +36,19 @@ inline auto PrintStatement(core::filesystem::ProjectFileSystem *project,
 }
 
 template<typename SeqType, typename... Args>
-inline auto PrintGreen(core::filesystem::ProjectFileSystem *project,
+inline auto PrintGreen(core::filesystem::JKProject *project,
                        const SeqType &numbers, std::string_view fmt_str,
-                       const Args &... args) {
+                       const Args &...args) {
   return PrintStatement(project, "green", true, numbers, fmt_str, args...);
 }
 
 template<typename SeqType, typename... Args>
-inline auto PrintPlain(core::filesystem::ProjectFileSystem *project,
+inline auto PrintPlain(core::filesystem::JKProject *project,
                        const SeqType &numbers, std::string_view fmt_str,
-                       const Args &... args) {
+                       const Args &...args) {
   return PrintStatement(project, "", false, numbers, fmt_str, args...);
 }
 
 }  // namespace jk::rules
 
 // vim: fdm=marker
-

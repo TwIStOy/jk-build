@@ -51,4 +51,3 @@ class SourceFileRecorder {
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker
-

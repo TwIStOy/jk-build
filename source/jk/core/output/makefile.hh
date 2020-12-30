@@ -4,8 +4,8 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <list>
-#include <optional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -18,7 +18,7 @@ namespace jk::core::output {
 struct UnixMakefile {
   explicit UnixMakefile(const std::string &filename);
 
-  void DefineCommon(filesystem::ProjectFileSystem *project);
+  void DefineCommon(filesystem::JKProject *project);
 
   void DefineEnvironment(const std::string &key, std::string value,
                          std::string comments = "");

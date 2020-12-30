@@ -52,7 +52,7 @@ struct CustomCommandLines final : public std::vector<CustomCommandLine> {
   template<typename... Args,
            typename = std::enable_if_t<
                (std::is_same_v<std::decay_t<Args>, CustomCommandLine> && ...)>>
-  static CustomCommandLines Multiple(Args &&... args) {
+  static CustomCommandLines Multiple(Args &&...args) {
     CustomCommandLines res;
     std::vector<CustomCommandLine> tmp{std::forward<Args>(args)...};
     res.insert(res.end(), std::begin(tmp), std::end(tmp));

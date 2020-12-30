@@ -46,12 +46,8 @@ TEST_CASE("Collision Stack", "[utils]") {
   SECTION("Scoped Push") {
     REQUIRE(cstack.Push("name1"));
     REQUIRE(cstack.Push("name2"));
-    {
-      auto sc = cstack.ScopedPush("name3");
-    }
-    {
-      auto sc = cstack.ScopedPush("name4");
-    }
+    { auto sc = cstack.ScopedPush("name3"); }
+    { auto sc = cstack.ScopedPush("name4"); }
     REQUIRE(cstack.Push("name3"));
   }
 }

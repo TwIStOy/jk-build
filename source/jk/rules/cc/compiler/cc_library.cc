@@ -33,8 +33,7 @@
 
 namespace jk::rules::cc {
 
-core::filesystem::ProjectFileSystem *IncludesResolvingContextImpl::Project()
-    const {
+core::filesystem::JKProject *IncludesResolvingContextImpl::Project() const {
   return project_;
 }
 
@@ -46,8 +45,8 @@ std::string MakefileCCLibraryCompiler::Name() const {
 }
 
 void MakefileCCLibraryCompiler ::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<CCLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);
@@ -87,7 +86,7 @@ void MakefileCCLibraryCompiler ::Compile(
 }
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
-    core::filesystem::ProjectFileSystem *project,
+    core::filesystem::JKProject *project,
     const common::AbsolutePath &working_folder, core::writer::Writer *w,
     CCLibrary *rule,
     core::filesystem::FileNamePatternExpander *expander) const {
@@ -186,7 +185,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 }
 
 uint32_t MakefileCCLibraryCompiler::LintSourceFile(
-    core::filesystem::ProjectFileSystem *project, CCLibrary *rule,
+    core::filesystem::JKProject *project, CCLibrary *rule,
     SourceFile *source_file, core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
   auto progress_num =
@@ -223,7 +222,7 @@ uint32_t MakefileCCLibraryCompiler::LintSourceFile(
 }
 
 void MakefileCCLibraryCompiler::MakeSourceFile(
-    core::filesystem::ProjectFileSystem *project, CCLibrary *rule,
+    core::filesystem::JKProject *project, CCLibrary *rule,
     const std::string &build_type, SourceFile *source_file,
     const std::list<std::string> &headers, core::output::UnixMakefile *build,
     const common::AbsolutePath &working_folder) const {
@@ -293,7 +292,7 @@ void MakefileCCLibraryCompiler::MakeSourceFile(
 }
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
-    core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+    core::filesystem::JKProject *project, core::writer::Writer *w,
     CCLibrary *rule) const {
   auto makefile =
       std::make_unique<core::output::UnixMakefile>("toolchain.make");
@@ -352,7 +351,7 @@ static std::vector<std::string> cxxincludes() {
                                    project->Config().tag##_cxxflags_extra)));
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
-    core::filesystem::ProjectFileSystem *project, core::writer::Writer *w,
+    core::filesystem::JKProject *project, core::writer::Writer *w,
     CCLibrary *rule) const {
   auto makefile = std::make_unique<core::output::UnixMakefile>("flags.make");
 
@@ -417,8 +416,8 @@ std::string CompileDatabaseCCLibraryCompiler::Name() const {
 }
 
 void CompileDatabaseCCLibraryCompiler::Compile(
-    core::filesystem::ProjectFileSystem *project,
-    core::writer::WriterFactory *wf, core::rules::BuildRule *_rule,
+    core::filesystem::JKProject *project, core::writer::WriterFactory *wf,
+    core::rules::BuildRule *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
   auto rule = _rule->Downcast<CCLibrary>();
   auto working_folder = rule->WorkingFolder(project->BuildRoot);

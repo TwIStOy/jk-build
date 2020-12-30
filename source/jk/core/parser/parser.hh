@@ -57,4 +57,3 @@ constexpr static bool is_parser_v = is_parser<T>::value;
 }  // namespace jk::core::parser
 
 // vim: fdm=marker
-
