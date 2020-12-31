@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -56,24 +57,29 @@ std::string RuleType::Stringify() const {  // {{{
 }  // }}}
 
 std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
-  if (!Type.HasType(RuleTypeEnum::kBinary)) {
-    JKBuildError("Only binary rules supported.");
-  }
-
   if (deps_sorted_list_) {
     return deps_sorted_list_.value();
   }
 
   std::unordered_set<std::string> occurrences;
 
-  std::list<BuildRule const *> result;
+  using RuleList = std::list<BuildRule const *>;
+  RuleList result;
+  std::unordered_map<std::string, std::unordered_set<std::string>> deps;
+  std::unordered_map<std::string, std::unordered_set<std::string>> be_deps;
+
   // extend *result* by inserting deps
   std::function<void(BuildRule const *)> dfs;
-  dfs = [&occurrences, &result, &dfs](BuildRule const *rule) {
+  dfs = [&occurrences, &result, &dfs, &deps, &be_deps](BuildRule const *rule) {
     if (auto it = occurrences.find(rule->FullQualifiedName());
         it != occurrences.end()) {
       result.push_back(rule);
       return;
+    }
+
+    for (auto dep : rule->Dependencies) {
+      deps[rule->FullQualifiedName()].insert(dep->FullQualifiedName());
+      be_deps[dep->FullQualifiedName()].insert(rule->FullQualifiedName());
     }
 
     occurrences.insert(rule->FullQualifiedName());
@@ -86,29 +92,43 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
   dfs(this);
 
   // try to remove duplicate rule
-  for (auto left = result.begin(); left != result.end();) {
-    bool has_dep = false;
-    bool only = true;
-    auto &left_deps = (*left)->Dependencies;
 
-    for (auto right = std::next(left); right != result.end(); ++right) {
-      if (*right == *left) {
-        only = false;
-        break;
-      }
+  // auto backward_dup = [&result](RuleList::iterator now) {
+  //   if (now == result.begin()) {
+  //     return false;
+  //   }
+  //   auto it = now;
+  //   --it;
+  //
+  //   return false;
+  // };
+  //
+  // auto forward_dup = []() {
+  // };
 
-      if (std::find(std::begin(left_deps), std::end(left_deps), *right) !=
-          std::end(left_deps)) {
-        has_dep = true;
-      }
-    }
-
-    if (!has_dep && !only) {
-      left = result.erase(left);
-    } else {
-      ++left;
-    }
-  }
+  // for (auto left = result.begin(); left != result.end();) {
+  //   bool has_dep = false;
+  //   bool only = true;
+  //   auto &left_deps = (*left)->Dependencies;
+  //
+  //   for (auto right = std::next(left); right != result.end(); ++right) {
+  //     if (*right == *left) {
+  //       only = false;
+  //       break;
+  //     }
+  //
+  //     if (std::find(std::begin(left_deps), std::end(left_deps), *right) !=
+  //         std::end(left_deps)) {
+  //       has_dep = true;
+  //     }
+  //   }
+  //
+  //   if (!has_dep && !only) {
+  //     left = result.erase(left);
+  //   } else {
+  //     ++left;
+  //   }
+  // }
 
   deps_sorted_list_ = result;
   return deps_sorted_list_.value();

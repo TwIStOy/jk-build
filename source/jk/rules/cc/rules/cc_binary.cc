@@ -24,6 +24,7 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
   std::vector<std::string> res;
 
   res.insert(res.end(), std::begin(LdFlags), std::end(LdFlags));
+
   for (auto rule : DependenciesInOrder()) {
     if (rule == this) {
       continue;
@@ -48,6 +49,10 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
                std::end(exported_ldflags));
   }
 
+  logger->info("Resolve dep and flags by depends in order: [{}]",
+               utils::JoinString(", ", DependenciesInOrder(), [](auto p) {
+                 return p->Stringify();
+               }));
   logger->debug("Resolved dep and flags: [{}]",
                 utils::JoinString(", ", std::begin(res), std::end(res),
                                   [](const std::string &s) {
