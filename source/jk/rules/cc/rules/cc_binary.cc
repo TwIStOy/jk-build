@@ -25,6 +25,10 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
 
   res.insert(res.end(), std::begin(LdFlags), std::end(LdFlags));
   for (auto rule : DependenciesInOrder()) {
+    if (rule == this) {
+      continue;
+    }
+
     auto exported_files = rule->ExportedFilesSimpleName(project, build_type);
 
     if (rule->Type.HasType(RuleTypeEnum::kExternal) &&
