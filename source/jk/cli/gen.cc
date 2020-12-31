@@ -69,14 +69,14 @@ void Generate(args::Subparser &parser) {
   for (const auto &id : rules_id) {
     auto pkg = package_factory.Package(id.PackageName.value());
     utils::CollisionNameStack stk;
-    pkg->Initialize(&project, &stk);
+    pkg->Initialize(&project);
 
     if (id.RuleName == "...") {
       // "..." means all rules
       for (const auto &[_, rule] : pkg->Rules) {
         utils::CollisionNameStack pstk;
         utils::CollisionNameStack rstk;
-        rule->BuildDependencies(&project, &package_factory, &pstk, &rstk);
+        rule->BuildDependencies(&project, &package_factory);
         rules.push_back(rule.get());
       }
     } else {
@@ -87,7 +87,7 @@ void Generate(args::Subparser &parser) {
       }
       utils::CollisionNameStack pstk;
       utils::CollisionNameStack rstk;
-      rule->BuildDependencies(&project, &package_factory, &pstk, &rstk);
+      rule->BuildDependencies(&project, &package_factory);
       rules.push_back(rule);
     }
   }

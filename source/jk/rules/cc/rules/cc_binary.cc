@@ -27,8 +27,18 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
   for (auto rule : DependenciesInOrder()) {
     auto exported_files = rule->ExportedFilesSimpleName(project, build_type);
 
-    std::copy(std::begin(exported_files), std::end(exported_files),
-              std::back_inserter(res));
+    if (rule->Type.HasType(RuleTypeEnum::kExternal) &&
+        exported_files.size() > 1) {
+      // if external and multiple static libraries, order maybe wrong,
+      // help them to ignore orders
+      res.push_back("-Wl,--start-group");
+      std::copy(std::begin(exported_files), std::end(exported_files),
+                std::back_inserter(res));
+      res.push_back("-Wl,--end-group");
+    } else {
+      std::copy(std::begin(exported_files), std::end(exported_files),
+                std::back_inserter(res));
+    }
     auto exported_ldflags = rule->ExportedLinkFlags();
     res.insert(res.end(), std::begin(exported_ldflags),
                std::end(exported_ldflags));

@@ -7,17 +7,20 @@
 #include <functional>
 #include <initializer_list>
 #include <iterator>
+#include <list>
 #include <queue>
 #include <set>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "jk/common/counter.hh"
+#include "jk/core/constant.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/dependent.hh"
@@ -53,81 +56,62 @@ std::string RuleType::Stringify() const {  // {{{
 }  // }}}
 
 std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
-  if (topological_sorting_result_) {
-    return topological_sorting_result_.value();
+  if (!Type.HasType(RuleTypeEnum::kBinary)) {
+    JKBuildError("Only binary rules supported.");
   }
 
-  struct TopItem {
-    BuildRule const *Rule{nullptr};
-    uint32_t RestOutgoing{0};
-    bool Built{false};
+  if (deps_sorted_list_) {
+    return deps_sorted_list_.value();
+  }
 
-    std::list<BuildRule const *> Incoming{};
-  };
+  std::unordered_set<std::string> occurrences;
 
-  using TopItemMap =
-      std::unordered_map<std::string /* FullQualifiedName */, TopItem>;
-
-  std::function<void(BuildRule const *, TopItemMap *)> dfs;
-  dfs = [&dfs](BuildRule const *rule, TopItemMap *mp) {
-    auto &item = (*mp)[rule->FullQualifiedName()];
-    if (item.Built) {
+  std::list<BuildRule const *> result;
+  // extend *result* by inserting deps
+  std::function<void(BuildRule const *)> dfs;
+  dfs = [&occurrences, &result, &dfs](BuildRule const *rule) {
+    if (auto it = occurrences.find(rule->FullQualifiedName());
+        it != occurrences.end()) {
+      result.push_back(rule);
       return;
     }
-    item.Rule = rule;
-    item.RestOutgoing = rule->Dependencies.size();
-    item.Built = true;
 
-    for (const auto &dep : rule->Dependencies) {
-      (*mp)[dep->FullQualifiedName()].Incoming.push_back(rule);
-      dfs(dep, mp);
+    occurrences.insert(rule->FullQualifiedName());
+    result.push_back(rule);
+    for (auto dep : rule->Dependencies) {
+      dfs(dep);
     }
   };
 
-  TopItemMap items;
-  dfs(this, &items);
+  dfs(this);
 
-  std::queue<BuildRule const *> Q;
-  for (const auto &[name, item] : items) {
-    if (item.RestOutgoing <= 0) {
-      Q.push(item.Rule);
-    }
-  }
+  // try to remove duplicate rule
+  for (auto left = result.begin(); left != result.end();) {
+    bool has_dep = false;
+    bool only = true;
+    auto &left_deps = (*left)->Dependencies;
 
-  if (Q.empty()) {
-    JK_THROW(JKBuildError("unexpected circular dependency"));
-  }
+    for (auto right = std::next(left); right != result.end(); ++right) {
+      if (*right == *left) {
+        only = false;
+        break;
+      }
 
-  std::list<BuildRule const *> after_sorted;
-  while (!Q.empty()) {
-    auto rule = Q.front();
-    Q.pop();
-    if (rule != this) {
-      after_sorted.push_back(rule);
-    }
-
-    auto &item = items[rule->FullQualifiedName()];
-    for (const auto &incoming : item.Incoming) {
-      auto &incoming_item = items[incoming->FullQualifiedName()];
-      incoming_item.RestOutgoing--;
-      if (incoming_item.RestOutgoing <= 0) {
-        Q.push(incoming);
+      if (std::find(std::begin(left_deps), std::end(left_deps), *right) !=
+          std::end(left_deps)) {
+        has_dep = true;
       }
     }
+
+    if (!has_dep && !only) {
+      left = result.erase(left);
+    } else {
+      ++left;
+    }
   }
 
-  if (after_sorted.size() + 1 /* this */ != items.size()) {
-    JK_THROW(JKBuildError("unexpected circular dependency"));
-  }
-
-  std::reverse(std::begin(after_sorted), std::end(after_sorted));
-  topological_sorting_result_ = after_sorted;
-  logger->debug(
-      "{}, deps: [{}]", *this,
-      utils::JoinString(", ", after_sorted, [](const BuildRule *const rule) {
-        return "{}"_format(*rule);
-      }));
-  return after_sorted;
+  deps_sorted_list_ = result;
+  return deps_sorted_list_.value();
 }  // }}}
 
 std::string BuildRule::Stringify() const {  // {{{
@@ -181,20 +165,15 @@ void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {  // {{{
 }  // }}}
 
 void BuildRule::BuildDependencies(  // {{{
-    filesystem::JKProject *project, BuildPackageFactory *factory,
-    utils::CollisionNameStack *pstk, utils::CollisionNameStack *rstk) {
-  if (dependencies_has_built_) {
+    filesystem::JKProject *project, BuildPackageFactory *factory) {
+  if (dependencies_built_state_ == InitializeState::kProcessing ||
+      dependencies_built_state_ == InitializeState::kDone) {
     return;
   }
 
-  logger->debug("{} build dependencies", *this);
+  dependencies_built_state_ = InitializeState::kProcessing;
 
-  if (!rstk->Push(FullQualifiedName())) {
-    JK_THROW(JKBuildError(
-        "Build {}'s dependencies failed, this rule has been built before in "
-        "this stage. There's a circle: {}",
-        FullQualifiedName(), rstk->DumpStack()));
-  }
+  logger->debug("{} build dependencies", *this);
 
   auto ResolveDepends = [this](BuildPackage *pkg, const std::string &name) {
     auto dep_rule = pkg->Rules[name].get();
@@ -214,7 +193,7 @@ void BuildRule::BuildDependencies(  // {{{
       case RuleRelativePosition::kAbsolute: {
         assert(dep_id.PackageName);
         auto dep_pkg = factory->Package(dep_id.PackageName.get());
-        dep_pkg->Initialize(project, pstk);
+        dep_pkg->Initialize(project);
         dep = ResolveDepends(dep_pkg, dep_id.RuleName);
       } break;
       case RuleRelativePosition::kRelative: {
@@ -222,7 +201,7 @@ void BuildRule::BuildDependencies(  // {{{
 
         auto dep_pkg = factory->Package(
             fmt::format("{}/{}", Package->Name, dep_id.PackageName.get()));
-        dep_pkg->Initialize(project, pstk);
+        dep_pkg->Initialize(project);
         dep = ResolveDepends(dep_pkg, dep_id.RuleName);
       } break;
       case RuleRelativePosition::kBuiltin: {
@@ -234,12 +213,10 @@ void BuildRule::BuildDependencies(  // {{{
       } break;
     }
 
-    dep->BuildDependencies(project, factory, pstk, rstk);
+    dep->BuildDependencies(project, factory);
   }
 
-  rstk->Pop();
-
-  dependencies_has_built_ = true;
+  dependencies_built_state_ = InitializeState::kDone;
 }  // }}}
 
 common::AbsolutePath BuildRule::WorkingFolder(  // {{{

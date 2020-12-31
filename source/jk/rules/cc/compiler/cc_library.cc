@@ -8,6 +8,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -392,16 +393,16 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
                                           return fmt::format("-I{}", inc);
                                         }));
 
-  auto deps = rule->DependenciesInOrder();
-  for (auto dep : deps) {
-    for (const auto &[k, v] : dep->ExportedEnvironmentVar(project)) {
-      makefile->DefineEnvironment(
-          fmt::format("{}_{}", dep->FullQuotedQualifiedName(), k), v);
-    }
-  }
-  for (const auto &[k, v] : rule->ExportedEnvironmentVar(project)) {
-    makefile->DefineEnvironment(
-        fmt::format("{}_{}", rule->FullQuotedQualifiedName(), k), v);
+  {
+    std::unordered_set<std::string> record;
+    rule->RecursiveExecute(
+        [mk = makefile.get(), project](const auto *rule) {
+          for (const auto &[k, v] : rule->ExportedEnvironmentVar(project)) {
+            mk->DefineEnvironment(
+                fmt::format("{}_{}", rule->FullQuotedQualifiedName(), k), v);
+          }
+        },
+        &record);
   }
 
   makefile->Write(w);

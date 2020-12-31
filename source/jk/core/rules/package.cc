@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "jk/common/path.hh"
+#include "jk/core/constant.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/script/script.hh"
@@ -28,29 +29,20 @@ BuildPackage::BuildPackage(std::string name,  // {{{
   logger->debug(R"(New BuildPackage at "{}")", Path);
 }  // }}}
 
-void BuildPackage::Initialize(filesystem::JKProject *project,
-                              utils::CollisionNameStack *stk) {
-  if (initialized_) {
+void BuildPackage::Initialize(filesystem::JKProject *project) {
+  if (init_state_ == InitializeState::kProcessing ||
+      init_state_ == InitializeState::kDone) {
     return;
   }
 
-  if (stk != nullptr) {
-    if (!stk->Push(this->Name)) {
-      JK_THROW(JKBuildError(
-          "Initialize pacakged {} failed, this package has been initialized "
-          "before in ths stage. It may be a circle. {}",
-          Name, stk->DumpStack()));
-    }
-  }
+  init_state_ = InitializeState::kProcessing;
 
   auto filename = Path.Path / "BUILD";
   auto interp = script::ScriptInterpreter::Instance();
   interp->EvalScript(project, this, filename.c_str());
 
   // Initialize done.
-  initialized_ = true;
-
-  stk->Pop();
+  init_state_ = InitializeState::kDone;
 }
 
 std::string BuildPackage::Stringify() const {

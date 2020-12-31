@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "jk/common/path.hh"
+#include "jk/core/constant.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
 #include "jk/utils/kwargs.hh"
@@ -102,9 +103,7 @@ struct BuildRule : public utils::Stringifiable {
   //! pstk: package name stack
   //! rstk: rule name stack
   void BuildDependencies(filesystem::JKProject *project,
-                         BuildPackageFactory *factory,
-                         utils::CollisionNameStack *pstk,
-                         utils::CollisionNameStack *rstk);
+                         BuildPackageFactory *factory);
 
   //! Downcast
   template<typename T>
@@ -153,7 +152,9 @@ struct BuildRule : public utils::Stringifiable {
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
 
-  //! Extract all deps after topological sorting
+  //! Extract all deps after sorting.
+  //! The result list assumes that a rule's dependencies must be after its first
+  //! occurrences.
   std::list<BuildRule const *> DependenciesInOrder() const;
 
   //! Return working folder based on `build_root`
@@ -181,7 +182,7 @@ struct BuildRule : public utils::Stringifiable {
   std::string Stringify() const final;
 
  private:
-  bool dependencies_has_built_{false};
+  InitializeState dependencies_built_state_{InitializeState::kStart};
 
   std::unordered_map<std::string, uint32_t> key_numbers_;
 
@@ -189,8 +190,7 @@ struct BuildRule : public utils::Stringifiable {
  public:
 #endif
   std::vector<std::string> dependencies_str_;
-  mutable boost::optional<std::list<BuildRule const *>>
-      topological_sorting_result_;
+  mutable boost::optional<std::list<BuildRule const *>> deps_sorted_list_;
 };
 
 //! Create a **BuildRule** instance in *pkg* with *kwags".

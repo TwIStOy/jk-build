@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <iostream>
 #include <set>
 #include <sstream>
 #include <string>

@@ -5,6 +5,14 @@
 
 #include <string>
 
-namespace jk::core {}  // namespace jk::core
+namespace jk::core {
+
+enum class InitializeState {
+  kStart,
+  kProcessing,
+  kDone,
+};
+
+}  // namespace jk::core
 
 // vim: fdm=marker
