@@ -4,6 +4,9 @@
 #include "jk/rules/cc/rules/cc_library_helper.hh"
 
 #include <algorithm>
+#include <list>
+#include <string>
+#include <unordered_set>
 
 #include "jk/core/rules/package.hh"
 
@@ -24,6 +27,12 @@ std::list<std::string> MergeDepHeaders(CCLibrary *rule,
                      });
     }
   }
+
+  std::unordered_set<std::string> remove_dup{std::begin(all_dep_headers),
+                                             std::end(all_dep_headers)};
+
+  all_dep_headers =
+      std::list<std::string>{std::begin(remove_dup), std::end(remove_dup)};
 
   return all_dep_headers;
 }

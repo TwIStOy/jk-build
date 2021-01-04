@@ -61,76 +61,77 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
     return deps_sorted_list_.value();
   }
 
-  std::unordered_set<std::string> occurrences;
+  struct TopItem {
+    BuildRule const *Rule{nullptr};
+    uint32_t RestOutgoing{0};
+    bool Built{false};
 
-  using RuleList = std::list<BuildRule const *>;
-  RuleList result;
-  std::unordered_map<std::string, std::unordered_set<std::string>> deps;
-  std::unordered_map<std::string, std::unordered_set<std::string>> be_deps;
+    std::list<BuildRule const *> Incoming{};
+  };
 
-  // extend *result* by inserting deps
-  std::function<void(BuildRule const *)> dfs;
-  dfs = [&occurrences, &result, &dfs, &deps, &be_deps](BuildRule const *rule) {
-    if (auto it = occurrences.find(rule->FullQualifiedName());
-        it != occurrences.end()) {
-      result.push_back(rule);
+  using TopItemMap =
+      std::unordered_map<std::string /* FullQualifiedName */, TopItem>;
+
+  std::function<void(BuildRule const *, TopItemMap *)> dfs;
+  dfs = [&dfs](BuildRule const *rule, TopItemMap *mp) {
+    auto &item = (*mp)[rule->FullQualifiedName()];
+    if (item.Built) {
       return;
     }
+    item.Rule = rule;
+    item.RestOutgoing = rule->Dependencies.size();
+    item.Built = true;
 
-    for (auto dep : rule->Dependencies) {
-      deps[rule->FullQualifiedName()].insert(dep->FullQualifiedName());
-      be_deps[dep->FullQualifiedName()].insert(rule->FullQualifiedName());
-    }
-
-    occurrences.insert(rule->FullQualifiedName());
-    result.push_back(rule);
-    for (auto dep : rule->Dependencies) {
-      dfs(dep);
+    for (const auto &dep : rule->Dependencies) {
+      (*mp)[dep->FullQualifiedName()].Incoming.push_back(rule);
+      dfs(dep, mp);
     }
   };
 
-  dfs(this);
+  TopItemMap items;
+  dfs(this, &items);
 
-  // try to remove duplicate rule
+  std::queue<BuildRule const *> Q;
+  for (const auto &[name, item] : items) {
+    if (item.RestOutgoing <= 0) {
+      Q.push(item.Rule);
+    }
+  }
 
-  // auto backward_dup = [&result](RuleList::iterator now) {
-  //   if (now == result.begin()) {
-  //     return false;
-  //   }
-  //   auto it = now;
-  //   --it;
-  //
-  //   return false;
-  // };
-  //
-  // auto forward_dup = []() {
-  // };
+  if (Q.empty()) {
+    JK_THROW(JKBuildError("unexpected circular dependency"));
+  }
 
-  // for (auto left = result.begin(); left != result.end();) {
-  //   bool has_dep = false;
-  //   bool only = true;
-  //   auto &left_deps = (*left)->Dependencies;
-  //
-  //   for (auto right = std::next(left); right != result.end(); ++right) {
-  //     if (*right == *left) {
-  //       only = false;
-  //       break;
-  //     }
-  //
-  //     if (std::find(std::begin(left_deps), std::end(left_deps), *right) !=
-  //         std::end(left_deps)) {
-  //       has_dep = true;
-  //     }
-  //   }
-  //
-  //   if (!has_dep && !only) {
-  //     left = result.erase(left);
-  //   } else {
-  //     ++left;
-  //   }
-  // }
+  std::list<BuildRule const *> after_sorted;
+  while (!Q.empty()) {
+    auto rule = Q.front();
+    Q.pop();
+    if (rule != this) {
+      after_sorted.push_back(rule);
+    }
 
-  deps_sorted_list_ = result;
+    auto &item = items[rule->FullQualifiedName()];
+    for (const auto &incoming : item.Incoming) {
+      auto &incoming_item = items[incoming->FullQualifiedName()];
+      incoming_item.RestOutgoing--;
+      if (incoming_item.RestOutgoing <= 0) {
+        Q.push(incoming);
+      }
+    }
+  }
+
+  if (after_sorted.size() + 1 /* this */ != items.size()) {
+    JK_THROW(JKBuildError("unexpected circular dependency"));
+  }
+
+  std::reverse(std::begin(after_sorted), std::end(after_sorted));
+  deps_sorted_list_ = after_sorted;
+  logger->debug(
+      "{}, deps: [{}]", *this,
+      utils::JoinString(", ", after_sorted, [](const BuildRule *const rule) {
+        return "{}"_format(*rule);
+      }));
+
   return deps_sorted_list_.value();
 }  // }}}
 
