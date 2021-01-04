@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "jk/common/path.hh"
 #include "jk/core/rules/package.hh"
@@ -16,7 +17,7 @@ namespace jk::core::rules::test {
 
 struct DummyRule final : public BuildRule {
   DummyRule(BuildPackage *pkg, std::string name)
-      : BuildRule(pkg, name, {RuleTypeEnum::kBinary}, "dummy") {
+      : BuildRule(pkg, std::move(name), {RuleTypeEnum::kBinary}, "dummy") {
   }
 
   bool IsStable() const final {
@@ -36,43 +37,6 @@ struct DummyRule final : public BuildRule {
     return {};
   }
 };
-
-TEST_CASE("Calulate Deps in order with circular dependencies",
-          "[core][rules][dependent]") {
-  BuildPackage pkg("tmp", common::ProjectRelativePath("tmp"));
-
-  // s -> a
-  // a -> b, c, d
-  // b -> c
-  // d -> e
-  // e -> a
-  auto s = new DummyRule(&pkg, "s");
-  auto a = new DummyRule(&pkg, "a");
-  auto b = new DummyRule(&pkg, "b");
-  auto c = new DummyRule(&pkg, "c");
-  auto d = new DummyRule(&pkg, "d");
-  auto e = new DummyRule(&pkg, "e");
-
-  s->Dependencies.push_back(a);
-
-  a->Dependencies.push_back(b);
-  a->Dependencies.push_back(c);
-  a->Dependencies.push_back(d);
-
-  b->Dependencies.push_back(c);
-
-  d->Dependencies.push_back(e);
-
-  e->Dependencies.push_back(a);
-
-  auto deps = s->DependenciesInOrder();
-  auto res = utils::JoinString(" ", deps, [](auto p) {
-    return p->Name;
-  });
-
-  REQUIRE(res == "s a b c d e a");
-  std::cerr << "Deps: " << res << std::endl;
-}
 
 }  // namespace jk::core::rules::test
 
