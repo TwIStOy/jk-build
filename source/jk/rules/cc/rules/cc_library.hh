@@ -70,6 +70,9 @@ class CCLibrary : public BuildRule {
   std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
       core::filesystem::JKProject *project) const override;
 
+  core::rules::RuleCache CacheState(
+      core::filesystem::JKProject *project) const override;
+
   // --- Fields Start ---
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;

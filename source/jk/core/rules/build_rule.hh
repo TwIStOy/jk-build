@@ -80,6 +80,19 @@ struct RuleType final : public utils::Stringifiable {
 
 #undef TYPE_SET_GETTER
 
+struct RuleCache {
+  std::string Name;
+  std::string Package;
+  std::string FullQualifiedName;
+  std::string TypeName;
+  std::unordered_map<std::string, std::list<std::string>> Custom;
+  std::list<std::string> IncludeFiles;
+  std::list<std::string> Dependencies;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RuleCache, Name, Package, FullQualifiedName,
+                                   TypeName, Custom, IncludeFiles,
+                                   Dependencies);
+
 /// BuildRule indicates a build-rule in process stage.
 struct BuildRule : public utils::Stringifiable {
   BuildRule(BuildPackage *package, std::string name,
@@ -147,7 +160,7 @@ struct BuildRule : public utils::Stringifiable {
       filesystem::JKProject *project) const;
 
   //! Return json object in cache
-  virtual json CacheState() const;
+  virtual RuleCache CacheState(filesystem::JKProject *project) const = 0;
 
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);

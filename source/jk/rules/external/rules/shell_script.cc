@@ -104,6 +104,11 @@ ShellScript::ExportedEnvironmentVar(core::filesystem::JKProject *) const {
   return ExportBin;
 }
 
+core::rules::RuleCache ShellScript::CacheState(
+    core::filesystem::JKProject *project) const {
+  return core::rules::BuildRule::CacheState(project);
+}
+
 }  // namespace jk::rules::external
 
 // vim: fdm=marker

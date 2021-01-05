@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "jk/core/filesystem/project.hh"
@@ -22,7 +23,7 @@ class CCBinary : public CCLibrary {
            std::initializer_list<RuleTypeEnum> types = {RuleTypeEnum::kBinary,
                                                         RuleTypeEnum::kCC},
            std::string_view type_name = "cc_binary")
-      : CCLibrary(package, name, types, type_name, name) {
+      : CCLibrary(package, std::move(name), types, type_name, name) {
   }
 
   std::vector<std::string> ResolveDependenciesAndLdFlags(

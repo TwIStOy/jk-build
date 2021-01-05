@@ -262,18 +262,17 @@ void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
   func(this);
 }  // }}}
 
-json BuildRule::CacheState() const {  // {{{
-  json res;
+RuleCache BuildRule::CacheState(filesystem::JKProject *project) const {  // {{{
+  RuleCache res;
 
-  res["name"] = FullQualifiedName();
-  res["package"] = Package->Name;
-  res["type_name"] = TypeName;
-  std::vector<std::string> deps;
+  res.Name = Name;
+  res.Package = Package->Name;
+  res.TypeName = TypeName;
+  res.FullQualifiedName = FullQualifiedName();
   std::transform(std::begin(Dependencies), std::end(Dependencies),
-                 std::back_inserter(deps), [](BuildRule *r) {
+                 std::back_inserter(res.Dependencies), [](BuildRule *r) {
                    return r->FullQualifiedName();
                  });
-  res["deps"] = deps;
 
   return res;
 }  // }}}

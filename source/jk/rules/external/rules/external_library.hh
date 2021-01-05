@@ -44,6 +44,9 @@ class ExternalLibrary : public core::rules::BuildRule {
 
   std::vector<std::string> ExportedHeaders() const override;
 
+  core::rules::RuleCache CacheState(
+      core::filesystem::JKProject *project) const override;
+
   // --- Fields Start ---
   std::string Url;
   std::string Sha256;

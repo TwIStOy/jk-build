@@ -5,6 +5,8 @@
 
 #include <string_view>
 
+#include "jk/core/rules/build_rule.hh"
+
 namespace jk::rules::external {
 
 ExternalLibrary::ExternalLibrary(core::rules::BuildPackage *package,
@@ -59,6 +61,11 @@ std::vector<std::string> ExternalLibrary::ExportedLinkFlags() const {
 
 std::vector<std::string> ExternalLibrary::ExportedHeaders() const {
   return {};
+}
+
+core::rules::RuleCache ExternalLibrary::CacheState(
+    core::filesystem::JKProject *project) const {
+  return core::rules::BuildRule::CacheState(project);
 }
 
 }  // namespace jk::rules::external

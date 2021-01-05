@@ -41,6 +41,9 @@ class ShellScript : public core::rules::BuildRule {
   std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
       core::filesystem::JKProject *) const override;
 
+  core::rules::RuleCache CacheState(
+      core::filesystem::JKProject *project) const override;
+
   // --- Fields Start ---
   std::string Script;
   std::vector<std::string> Exports;

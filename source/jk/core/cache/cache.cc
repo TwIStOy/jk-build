@@ -17,63 +17,50 @@ namespace jk::core::cache {
 
 static auto logger = utils::Logger("cache");
 
-CacheDatabase::CacheDatabase(const common::AbsolutePath &file_path) {
-  LoadCacheFile(file_path);
-}
-
-bool CacheDatabase::IsUpToDate(rules::BuildRule *rule,
-                               filesystem::JKProject *project,
-                               filesystem::FileNamePatternExpander *expander) {
-  if (rule->Type.IsCC()) {
-    return true;
+void to_json(json &j, const CacheSlot &p) {
+  j = json::object();
+  if (p.__current) {
+    j["__current"] = p.__current.value();
   }
-
-  // load cache first
-  auto it = rule_cache_.find(rule->FullQualifiedName());
-  if (it == rule_cache_.end()) {
-    // if not exists, return false
-    return false;
-  }
-
-  auto cc = rule->Downcast<::jk::rules::cc::CCLibrary>();
-  auto source_files = cc->ExpandSourceFiles(project, expander);
-
-  return utils::SameArray(it->second.SourceFiles, source_files);
-}
-
-void CacheDatabase::LoadCacheFile(const common::AbsolutePath &file) {
-  std::ifstream ifs(file.Stringify());
-  json doc;
-  try {
-    if (!(ifs >> doc)) {
-      logger->warn("Failed to load cache file. Old cache will be ignored.");
-      return;
+  if (p.__next.size()) {
+    json v;
+    for (const auto &[name, subslot] : p.__next) {
+      if (subslot) {
+        json vv;
+        to_json(vv, *subslot);
+        v[name] = std::move(vv);
+      }
     }
-
-    for (const auto &c : doc["rules"]) {
-      rule_cache_[c["Name"]] = c;
-    }
-  } catch (...) {
-    logger->warn("Failed to load cache file. Old cache will be ignored.");
+    j["__next"] = std::move(v);
   }
 }
 
-// std::size_t LoadFile(common::AbsolutePath file) {
-//   std::size_t res;
-//   std::ifstream ifs(file.Stringify());
-//   std::string line;
-//   while (std::getline(ifs, line)) {
-//     boost::hash_combine(res, line);
-//   }
-//   return res;
-// }
-//
-// bool CacheDatabase::IsUpToDate(common::AbsolutePath file) {
-//   auto hash_value = LoadFile(file);
-//   auto it = file_hash_.find(file.Stringify());
-//   if (it == file_hash_.end()) {
-//   }
-// }
+void from_json(const json &j, CacheSlot &p) {
+  if (j.contains("__current")) {
+    std::string curr;
+    j.at("__current").get_to(curr);
+    p.__current = curr;
+  }
+
+  if (j.contains("__next")) {
+    const auto &__next = j.at("__next");
+    for (auto it = __next.begin(); it != __next.end(); ++it) {
+      std::unique_ptr<CacheSlot> subslot{new CacheSlot};
+      from_json(it.value(), *subslot);
+      p.__next[it.key()] = std::move(subslot);
+    }
+  }
+}
+
+std::optional<std::string> &JKCache::GetKey(std::list<std::string> keys) {
+  auto now = &slot_;
+  while (keys.size()) {
+    auto k = keys.front();
+    keys.erase(keys.begin());
+    now = slot_.Next(k);
+  }
+  return slot_.__current;
+}
 
 }  // namespace jk::core::cache
 

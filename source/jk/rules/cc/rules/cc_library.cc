@@ -257,4 +257,41 @@ std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(
   return res;
 }
 
+core::rules::RuleCache CCLibrary::CacheState(
+    core::filesystem::JKProject *project) const {
+  auto res = BuildRule::CacheState(project);
+
+  // dump source files
+  if (expanded_source_files_) {
+    auto &source_files = res.Custom["source_files"];
+    std::copy(std::begin(expanded_source_files_.value()),
+              std::end(expanded_source_files_.value()),
+              std::back_inserter(source_files));
+  }
+
+  struct ResolvingContextImpl : IncludesResolvingContext {
+    virtual core::filesystem::JKProject *Project() const {
+      return project;
+    }
+
+    explicit ResolvingContextImpl(core::filesystem::JKProject *project)
+        : project(project) {
+    }
+
+    core::filesystem::JKProject *project;
+  };
+
+  // dump include directories
+  ResolvingContextImpl impl{project};
+  auto includes = ResolveIncludes(&impl);
+  std::copy(std::begin(includes), std::end(includes),
+            std::back_inserter(res.Custom["includes"]));
+
+  auto defines = ResolveDefinitions();
+  std::copy(std::begin(defines), std::end(defines),
+            std::back_inserter(res.Custom["defines"]));
+
+  return res;
+}
+
 }  // namespace jk::rules::cc
