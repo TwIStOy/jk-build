@@ -17,6 +17,8 @@ namespace jk::core::cache {
 
 static auto logger = utils::Logger("cache");
 
+JKCache g_cache;
+
 void to_json(json &j, const CacheSlot &p) {
   j = json::object();
   if (p.__current) {

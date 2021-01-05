@@ -65,6 +65,8 @@ class JKCache {
   CacheSlot slot_;
 };
 
+extern JKCache g_cache;
+
 }  // namespace jk::core::cache
 
 // vim: fdm=marker
