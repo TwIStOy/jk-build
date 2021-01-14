@@ -119,7 +119,12 @@ void MakefileGlobalCompiler::Compile(
   makefile->DefaultTarget("all");
 
   makefile->AddTarget(
-      "pre", {regen_target},
+      "prepare_folder", {},
+      builder::CustomCommandLines::Single({"mkdir", "-p", ".build/pb/c++"}), "",
+      true);
+
+  makefile->AddTarget(
+      "pre", {regen_target, "prepare_folder"},
       builder::CustomCommandLines::Single(
           {"@$(JK_COMMAND)", "start_progress",
            "--progress-mark={}"_format(project->BuildRoot.Sub("progress.mark")),

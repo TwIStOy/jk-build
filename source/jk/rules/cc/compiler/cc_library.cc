@@ -18,6 +18,7 @@
 #include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/builder/custom_command.hh"
+#include "jk/core/cache/cache.hh"
 #include "jk/core/compile/compile.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/output/makefile.hh"
@@ -387,11 +388,24 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
                                        [](const std::string &inc) {
                                          return fmt::format("-D{}", inc);
                                        }));
+  // cache defines
+  core::cache::g_cache.GetKey("rules", rule->FullQualifiedName(), "defines") =
+      utils::JoinString(" ", std::begin(define), std::end(define),
+                        [](const std::string &inc) {
+                          return fmt::format("-D{}", inc);
+                        });
+
   makefile->DefineEnvironment(
       "CPP_INCLUDES", utils::JoinString(" ", include.begin(), include.end(),
                                         [](const std::string &inc) {
                                           return fmt::format("-I{}", inc);
                                         }));
+  // cache includes
+  core::cache::g_cache.GetKey("rules", rule->FullQualifiedName(), "includes") =
+      utils::JoinString(" ", include.begin(), include.end(),
+                        [](const std::string &inc) {
+                          return fmt::format("-I{}", inc);
+                        });
 
   {
     std::unordered_set<std::string> record;
