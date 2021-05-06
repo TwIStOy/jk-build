@@ -7,6 +7,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
+#include <exception>
 #include <fstream>
 #include <functional>
 #include <iterator>
@@ -98,7 +99,12 @@ void ScriptInterpreter::EvalScriptContent(filesystem::JKProject *project,
   auto locals = Initialize(pkg);
   AddConnomLocals(project, &locals);
 
-  pybind11::exec(content, pybind11::globals(), locals);
+  try {
+    pybind11::exec(content, pybind11::globals(), locals);
+  } catch (...) {
+    logger->error("Failed to execute script in {}", pkg->Path);
+    throw std::current_exception();
+  }
 }
 
 void ScriptInterpreter::EvalScript(filesystem::JKProject *project,
