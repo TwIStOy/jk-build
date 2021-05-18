@@ -25,6 +25,7 @@ namespace jk::rules::external {
  *   install_command = [],
  *   libraries = [], // from ${JK_BUNDLE_LIBRARY_PREFIX}
  *   ldflags = [],
+ *   version = "", // VERSION STRING
  * )
  */
 class ExternalLibrary : public core::rules::BuildRule {
@@ -48,6 +49,7 @@ class ExternalLibrary : public core::rules::BuildRule {
   std::string Url;
   std::string Sha256;
   std::string ArchiveType;
+  std::string Version;
   std::vector<std::string> DownloadCommand;
   std::vector<std::string> ConfigureCommand;
   std::vector<std::string> BuildCommand;
@@ -55,6 +57,8 @@ class ExternalLibrary : public core::rules::BuildRule {
   std::vector<std::string> LdFlags;
   std::vector<std::string> Libraries;
   // ---- Fields End ----
+
+ private:
 };
 
 }  // namespace jk::rules::external

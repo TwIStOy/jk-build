@@ -3,6 +3,7 @@
 
 #include "jk/rules/external/rules/external_library.hh"
 
+#include <string>
 #include <string_view>
 
 namespace jk::rules::external {
@@ -34,6 +35,8 @@ void ExternalLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   BuildCommand = kwargs.ListOptional("build_command", empty_list);
   // default: $(MAKE) install
   InstallCommand = kwargs.ListOptional("install_command", empty_list);
+  // default: "DEFAULT" for backwards compatibility
+  Version = kwargs.StringOptional("version", std::string("DEFAULT"));
 
   Libraries = kwargs.ListOptional("libraries", empty_list);
   LdFlags = kwargs.ListOptional("ldflags", empty_list);

@@ -42,6 +42,7 @@ void MakefileExternalLibraryCompiler::CompileImpl(
 
   makefile->DefineEnvironment("URL", rule->Url);
   makefile->DefineEnvironment("SHA256", rule->Sha256);
+  makefile->DefineEnvironment("VERSION", rule->Version);
 
   prepare(makefile.get());
 
