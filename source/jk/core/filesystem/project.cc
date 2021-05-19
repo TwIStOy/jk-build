@@ -5,7 +5,6 @@
 
 #include <string>
 
-#include "boost/optional.hpp"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
@@ -77,8 +76,6 @@ const Configuration &JKProject::Config() const {
 
   return config_.value();
 }
-
-static boost::optional<fs::path> _ProjectRoot;
 
 JKProject JKProject::FromCWD() {
   auto current = fs::current_path();

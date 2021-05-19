@@ -12,11 +12,13 @@
 #include <vector>
 
 #include "jk/common/path.hh"
+#include "jk/utils/cpp_features.hh"
 #include "jk/utils/str.hh"
 
 namespace jk::core::builder {
 
-struct CustomArgument {
+//! shell command argument with escaped
+struct CustomArgument : public utils::Stringifiable {
   template<typename T,
            typename = std::enable_if_t<std::is_convertible_v<T, std::string>>>
   // NOLINTNEXTLINE(runtime/explicit)
@@ -27,15 +29,13 @@ struct CustomArgument {
       : Argument(rhs.Argument), Raw(rhs.Raw) {
   }
 
+  std::string Stringify() const final;
+
   std::string Argument;
   bool Raw;
 };
 
-inline CustomArgument operator""_c_raw(const char *s, size_t) {
-  CustomArgument res(s);
-  res.Raw = true;
-  return res;
-}
+CustomArgument operator""_c_raw(const char *s, size_t);
 
 struct CustomCommandLine final : public std::vector<CustomArgument>,
                                  public utils::Stringifiable {
@@ -46,7 +46,8 @@ struct CustomCommandLine final : public std::vector<CustomArgument>,
   std::string Stringify() const final;
 };
 
-struct CustomCommandLines final : public std::vector<CustomCommandLine> {
+struct CustomCommandLines final : public std::vector<CustomCommandLine>,
+                                  public utils::Stringifiable {
   static CustomCommandLines Single(std::initializer_list<CustomArgument> ilist);
 
   template<typename... Args,
@@ -60,7 +61,15 @@ struct CustomCommandLines final : public std::vector<CustomCommandLine> {
     }
     return res;
   }
+
+  std::string Stringify() const final;
 };
+
+__JK_ALWAYS_INLINE CustomArgument operator""_c_raw(const char *s, size_t) {
+  CustomArgument res(s);
+  res.Raw = true;
+  return res;
+}
 
 }  // namespace jk::core::builder
 

@@ -6,9 +6,14 @@
 #include <string>
 #include <vector>
 
+#include "fmt/format.h"
 #include "jk/utils/str.hh"
 
 namespace jk::core::builder {
+
+std::string CustomArgument::Stringify() const {
+  return Argument;
+}
 
 CustomCommandLine CustomCommandLine::Make(
     std::initializer_list<CustomArgument> ilist) {
@@ -42,6 +47,12 @@ CustomCommandLines CustomCommandLines::Single(
   CustomCommandLines res;
   res.push_back(CustomCommandLine::Make(std::move(ilist)));
   return res;
+}
+
+std::string CustomCommandLines::Stringify() const {
+  return utils::JoinString("\n", begin(), end(), [](const auto &s) {
+    return s.Stringify();
+  });
 }
 
 }  // namespace jk::core::builder
