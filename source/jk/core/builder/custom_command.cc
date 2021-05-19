@@ -40,7 +40,7 @@ std::string CustomCommandLine::Stringify() const {
 CustomCommandLines CustomCommandLines::Single(
     std::initializer_list<CustomArgument> ilist) {
   CustomCommandLines res;
-  res.push_back(CustomCommandLine::Make(ilist));
+  res.push_back(CustomCommandLine::Make(std::move(ilist)));
   return res;
 }
 

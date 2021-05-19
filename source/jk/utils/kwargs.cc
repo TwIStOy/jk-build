@@ -37,15 +37,6 @@ std::string Kwargs::Stringify() const {
   return oss.str();
 }
 
-// static std::vector<std::string> CastList(const pybind11::object &obj) {
-//   std::vector<std::string> res;
-//   std::vector<pybind11::object> lst =
-//   obj.cast<std::vector<pybind11::object>>(); for (const auto &it : lst) {
-//     res.push_back(it.cast<std::string>());
-//   }
-//   return res;
-// }
-//
 Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {

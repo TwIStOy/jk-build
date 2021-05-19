@@ -11,6 +11,7 @@
 namespace jk::core::filesystem {
 
 struct FileNamePatternExpander {
+  //! Returns all filename match `pattern` in given `path`.
   virtual std::list<std::string> Expand(const std::string &pattern,
                                         const common::AbsolutePath &path) = 0;
 

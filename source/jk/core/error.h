@@ -13,11 +13,11 @@ namespace core {
 
 class JKBuildError : public std::runtime_error {
  public:
-  template <typename... Args>
-  JKBuildError(std::string_view fmt, const Args&... args)
-      : std::runtime_error(fmt::format(fmt, args...)) {}
+  template<typename... Args>
+  explicit JKBuildError(std::string_view fmt, const Args &...args)
+      : std::runtime_error(fmt::format(fmt, args...)) {
+  }
 };
 
 }  // namespace core
 }  // namespace jk
-

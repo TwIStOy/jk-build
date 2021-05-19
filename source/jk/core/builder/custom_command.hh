@@ -55,7 +55,9 @@ struct CustomCommandLines final : public std::vector<CustomCommandLine> {
   static CustomCommandLines Multiple(Args &&...args) {
     CustomCommandLines res;
     std::vector<CustomCommandLine> tmp{std::forward<Args>(args)...};
-    res.insert(res.end(), std::begin(tmp), std::end(tmp));
+    for (auto &x : tmp) {
+      res.push_back(std::move(x));
+    }
     return res;
   }
 };

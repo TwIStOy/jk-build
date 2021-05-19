@@ -5,7 +5,9 @@
 
 namespace jk::utils {
 
-#define ALWAYS_INLINE inline __attribute__((always_inline))
+#define __JK_ALWAYS_INLINE inline __attribute__((always_inline))
+
+#define __JK_HIDDEN __attribute__((visibility("hidden")))
 
 template<typename... Ts>
 struct Overloaded : Ts... {

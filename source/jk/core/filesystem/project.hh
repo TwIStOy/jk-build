@@ -4,23 +4,37 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <memory>
+#include <optional>
 
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/configuration.hh"
 #include "toml.hpp"
 
-namespace jk {
-namespace core {
-namespace filesystem {
+namespace jk::core::filesystem {
+
+enum class TargetPlatform {
+  k32,
+  k64,
+};
 
 struct JKProject {
-  JKProject(common::AbsolutePath ProjectRoot, common::AbsolutePath BuildRoot);
+  //! Returns the project from current working directory
+  static JKProject FromCWD();
+
+  explicit JKProject(common::AbsolutePath ProjectRoot,
+                     TargetPlatform Platform = TargetPlatform::k64,
+                     std::optional<common::AbsolutePath> BuildRoot = {});
 
   //! Root path of this project. All packages path will be relative with this.
-  common::AbsolutePath ProjectRoot;
+  const common::AbsolutePath ProjectRoot;
 
   //! Root path of build environment. Default is '.build' in **ProjectRoot**.
-  common::AbsolutePath BuildRoot;
+  const common::AbsolutePath BuildRoot;
+
+  const TargetPlatform Platform;
+
+  //! The path where to store external projects
+  common::AbsolutePath ExternalInstalledPrefix;
 
   //! Resolve relative path to absolute from **ProjectRoot**
   common::AbsolutePath Resolve(const common::ProjectRelativePath &rp);
@@ -28,18 +42,11 @@ struct JKProject {
   //! Resolve relative path to absolute from **BuildRoot**
   common::AbsolutePath ResolveBuild(const common::ProjectRelativePath &rp);
 
-  common::AbsolutePath ExternalInstalledPrefix();
-
+  //! Returns configuration loaded from project root.
   const Configuration &Config() const;
 
  private:
   mutable boost::optional<Configuration> config_;
 };
 
-fs::path ProjectRoot();
-
-fs::path BuildRoot();
-
-}  // namespace filesystem
-}  // namespace core
-}  // namespace jk
+}  // namespace jk::core::filesystem

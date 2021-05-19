@@ -28,9 +28,9 @@ struct ProjectRelativePath final : public utils::Stringifiable {
     return r / Path;
   }
 
-  template<typename T>
-  inline ProjectRelativePath Sub(const T &rhs) const {
-    return ProjectRelativePath{Path / rhs};
+  template<typename... Ts>
+  inline ProjectRelativePath Sub(const Ts &...rhs) const {
+    return ProjectRelativePath{(Path / ... / rhs)};
   }
 
   // inherited from |utils::Stringifiable|
@@ -43,9 +43,9 @@ struct AbsolutePath final : public utils::Stringifiable {
   explicit AbsolutePath(fs::path p) : Path(std::move(p)) {
   }
 
-  template<typename T>
-  inline AbsolutePath Sub(const T &rhs) const {
-    return AbsolutePath{Path / rhs};
+  template<typename... Ts>
+  inline AbsolutePath Sub(const Ts &...rhs) const {
+    return AbsolutePath{(Path / ... / rhs)};
   }
 
   // inherited from |utils::Stringifiable|

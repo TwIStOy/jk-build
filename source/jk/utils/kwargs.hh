@@ -12,14 +12,14 @@
 #include <vector>
 
 #include "jk/core/error.h"
+#include "jk/utils/cpp_features.hh"
 #include "jk/utils/str.hh"
 #include "pybind11/pytypes.h"
 
 namespace jk {
 namespace utils {
 
-class __attribute__((visibility("hidden"))) Kwargs final
-    : public Stringifiable {
+class __JK_HIDDEN Kwargs final : public Stringifiable {
  public:
   using ListType = std::vector<std::string>;
   using StringType = std::string;

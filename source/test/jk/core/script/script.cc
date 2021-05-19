@@ -2,6 +2,7 @@
 //
 
 #include "jk/common/path.hh"
+
 #define JK_TEST
 
 #include <catch.hpp>

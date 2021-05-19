@@ -18,7 +18,14 @@ struct LazyEvaluatedValue {
   explicit LazyEvaluatedValue(F &&f) : eval_func_(std::forward<F>(f)) {
   }
 
-  const T &Value() {
+  const T &Value() const {
+    if (!value_.has_value()) {
+      value_ = eval_func_();
+    }
+    return value_.value();
+  }
+
+  T &Value() {
     if (!value_.has_value()) {
       value_ = eval_func_();
     }
@@ -27,7 +34,7 @@ struct LazyEvaluatedValue {
 
  private:
   eval_func_t eval_func_;
-  std::optional<T> value_;
+  mutable std::optional<T> value_;
 };
 
 }  // namespace jk::utils

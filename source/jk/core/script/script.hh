@@ -15,13 +15,14 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/utils/cpp_features.hh"
 #include "pybind11/pytypes.h"
 
 namespace jk {
 namespace core {
 namespace script {
 
-class __attribute__((visibility("hidden"))) ScriptInterpreter {
+class __JK_HIDDEN ScriptInterpreter {
  public:
   using Kwargs = std::unordered_map<std::string, pybind11::object>;
   using HookFunctionType =
@@ -48,7 +49,7 @@ class __attribute__((visibility("hidden"))) ScriptInterpreter {
  private:
   pybind11::scoped_interpreter interpreter_;
 
-  struct __attribute__((visibility("hidden"))) HookFunction {
+  struct __JK_HIDDEN HookFunction {
     std::string FuncName;
     HookFunctionType Function;
   };
