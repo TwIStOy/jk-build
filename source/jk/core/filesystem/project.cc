@@ -77,8 +77,8 @@ const Configuration &JKProject::Config() const {
   return config_.value();
 }
 
-JKProject JKProject::FromCWD() {
-  auto current = fs::current_path();
+JKProject JKProject::ResolveFrom(const common::AbsolutePath &cwd) {
+  auto current = cwd.Path;
   while (current.parent_path() != current) {
     utils::Logger("jk")->debug(R"(Checking folder "{}"...)", current.string());
     if (HasRootMarker(current)) {

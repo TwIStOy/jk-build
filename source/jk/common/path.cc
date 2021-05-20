@@ -75,6 +75,10 @@ void FastWriteFile(const fs::path &rp, const std::string &content) {
   ofs << content;
 }
 
+AbsolutePath AbsolutePath::CurrentWorkingDirectory() {
+  return AbsolutePath{fs::current_path()};
+}
+
 }  // namespace jk::common
 
 // vim: fdm=marker

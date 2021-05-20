@@ -38,6 +38,8 @@ struct ProjectRelativePath final : public utils::Stringifiable {
 };
 
 struct AbsolutePath final : public utils::Stringifiable {
+  static AbsolutePath CurrentWorkingDirectory();
+
   fs::path Path;
 
   explicit AbsolutePath(fs::path p) : Path(std::move(p)) {

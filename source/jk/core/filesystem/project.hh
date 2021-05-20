@@ -19,7 +19,7 @@ enum class TargetPlatform {
 
 struct JKProject {
   //! Returns the project from current working directory
-  static JKProject FromCWD();
+  static JKProject ResolveFrom(const common::AbsolutePath &cwd);
 
   explicit JKProject(common::AbsolutePath ProjectRoot,
                      TargetPlatform Platform = TargetPlatform::k64,
