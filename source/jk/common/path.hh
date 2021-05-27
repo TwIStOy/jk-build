@@ -54,6 +54,12 @@ struct AbsolutePath final : public utils::Stringifiable {
   std::string Stringify() const final;
 };
 
+struct AbsolutePathHasher {
+  inline std::size_t operator()(const AbsolutePath &p) const {
+    return fs::hash_value(p.Path);
+  }
+};
+
 void AssumeFolder(const fs::path &rp);
 
 inline void AssumeFolder(const ProjectRelativePath &rp) {

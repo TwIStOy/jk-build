@@ -11,31 +11,86 @@
 
 namespace jk::utils {
 
-std::string EscapeForShellStyle(const std::string &raw) {
+bool StringEndsWith(std::string_view full_string,  // {{{
+                    std::string_view ending) {
+  if (full_string.length() >= ending.length()) {
+    return (0 == full_string.compare(full_string.length() - ending.length(),
+                                     ending.length(), ending));
+  } else {
+    return false;
+  }
+}  // }}}
+
+bool StringStartsWith(std::string_view full_string,  // {{{
+                      std::string_view prefix) {
+  if (full_string.length() >= prefix.length()) {
+    return full_string.substr(prefix.length()) == prefix;
+  } else {
+    return false;
+  }
+}  // }}}
+
+std::string ToLower(const std::string &s) {  // {{{
+  std::string res;
+  std::transform(std::begin(s), std::end(s), std::back_inserter(res),
+                 [](char ch) {
+                   return std::tolower(ch);
+                 });
+  return res;
+}  // }}}
+
+bool EqualIgnoreCase(std::string_view lhs, std::string_view rhs) {  // {{{
+  constexpr auto CNT = 'A' - 'a';
+  if (lhs.length() != rhs.length()) {
+    return false;
+  }
+  for (auto i = 0u; i < lhs.length(); ++i) {
+    if (lhs[i] == rhs[i]) {
+      continue;
+    }
+    if (std::tolower(lhs[i]) == std::tolower(rhs[i])) {
+      continue;
+    }
+    return true;
+  }
+  return false;
+}  // }}}
+
+void ReplaceAllSlow(std::string *text, std::string_view from,  // {{{
+                    std::string_view to, int count) {
+  if (from.empty())
+    return;
+
+  size_t start_pos = 0;
+  while ((start_pos = text->find(from, start_pos)) != std::string::npos &&
+         (count < 0 || count > 0)) {
+    text->replace(start_pos, from.length(), to);
+    start_pos += to.length();
+    count--;
+  }
+}  // }}}
+
+std::string EscapeForShellStyle(std::string_view raw) {  // {{{
   std::string result;
-  for (const char *ch = raw.c_str(); *ch != '\0'; ++ch) {
+  for (const char *ch = raw.data(); *ch != '\0'; ++ch) {
     if (*ch == ' ' || *ch == '<' || *ch == '>') {
       result += '\\';
     }
     result += *ch;
   }
   return result;
-}
+}  // }}}
 
-Stringifiable::operator std::string() const {
-  return Stringify();
-}
-
-static const std::string_view base64_chars =
+static const std::string_view base64_chars =  // {{{
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
-    "0123456789+/";
+    "0123456789+/";  // }}}
 
-static inline bool is_base64(unsigned char c) {
+static inline bool is_base64(unsigned char c) {  // {{{
   return (isalnum(c) || (c == '+') || (c == '/'));
-}
+}  // }}}
 
-std::string Base64Encode(uint8_t *str, uint32_t len) {
+std::string Base64Encode(uint8_t *str, uint32_t len) {  // {{{
   std::string ret;
   int i = 0;
   int j = 0;
@@ -84,9 +139,9 @@ std::string Base64Encode(uint8_t *str, uint32_t len) {
   }
 
   return ret;
-}
+}  // }}}
 
-std::vector<uint8_t> Base64Decode(std::string_view str) {
+std::vector<uint8_t> Base64Decode(std::string_view str) {  // {{{
   auto in_len = str.size();
   int i = 0;
   int j = 0;
@@ -126,9 +181,9 @@ std::vector<uint8_t> Base64Decode(std::string_view str) {
   }
 
   return ret;
-}
+}  // }}}
 
-std::string RandomAlphaNumString(uint32_t length) {
+std::string RandomAlphaNumString(uint32_t length) {  // {{{
   static std::string_view choices =
       "abcdefghijklmnopqrstuvwxyz"
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -142,7 +197,7 @@ std::string RandomAlphaNumString(uint32_t length) {
     res.push_back(choices[dis(gen)]);
   }
   return res;
-}
+}  // }}}
 
 }  // namespace jk::utils
 
