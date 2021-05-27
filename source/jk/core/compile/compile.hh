@@ -44,11 +44,6 @@ struct NopCompiler final : public Compiler {
   std::string name_;
 };
 
-struct MakefileGlobalCompiler {
-  void Compile(filesystem::JKProject *project, writer::WriterFactory *wf,
-               const std::vector<rules::BuildRule *> &rules);
-};
-
 struct CompilerFactory {
   static CompilerFactory *Instance();
 

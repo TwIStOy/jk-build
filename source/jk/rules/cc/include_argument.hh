@@ -34,11 +34,11 @@ class IncludeArgument : public utils::Stringifiable {
   // inherited from |utils::Stringifiable|
   std::string Stringify() const final;
 
-  ALWAYS_INLINE bool operator==(const IncludeArgument &rhs) {
+  __JK_ALWAYS_INLINE bool operator==(const IncludeArgument &rhs) {
     return data_ == rhs.data_;
   }
 
-  ALWAYS_INLINE bool operator<(const IncludeArgument &rhs) {
+  __JK_ALWAYS_INLINE bool operator<(const IncludeArgument &rhs) {
     if (data_.index() != rhs.data_.index()) {
       return data_.index() < rhs.data_.index();
     }
@@ -53,20 +53,20 @@ class IncludeArgument : public utils::Stringifiable {
   std::variant<std::string, Placehoder> data_;
 };
 
-ALWAYS_INLINE bool IncludeArgument::IsTrivial() const {
+__JK_ALWAYS_INLINE bool IncludeArgument::IsTrivial() const {
   return data_.index() == 0;
 }
 
-ALWAYS_INLINE bool IncludeArgument::IsPlacehoder() const {
+__JK_ALWAYS_INLINE bool IncludeArgument::IsPlacehoder() const {
   return data_.index() == 1;
 }
 
-ALWAYS_INLINE const std::string &IncludeArgument::StrValue() const {
+__JK_ALWAYS_INLINE const std::string &IncludeArgument::StrValue() const {
   return std::get<0>(data_);
 }
 
-ALWAYS_INLINE IncludeArgument::Placehoder IncludeArgument::PlacehoderValue()
-    const {
+__JK_ALWAYS_INLINE IncludeArgument::Placehoder
+IncludeArgument::PlacehoderValue() const {
   return std::get<1>(data_);
 }
 

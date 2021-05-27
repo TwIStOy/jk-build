@@ -41,12 +41,13 @@ void Generate(args::Subparser &parser) {
   args::ValueFlag<std::string> format(parser, "FORMAT",
                                       "Output format. 'Makefile' or 'Ninja'",
                                       {"format"}, "Makefile");
+  args::ValueFlag<uint32_t> platform(parser, "platform", "Only 32 or 64",
+                                     {'m', "platform"}, 64);
   args::PositionalList<std::string> rules_name(parser, "RULE", "Rules...");
   parser.Parse();
 
-  core::filesystem::JKProject project{
-      common::AbsolutePath{core::filesystem::ProjectRoot()},
-      common::AbsolutePath{core::filesystem::BuildRoot()}};
+  auto project = core::filesystem::JKProject::ResolveFrom(
+      common::AbsolutePath{fs::current_path()});
   core::writer::FileWriterFactory writer_factory;
 
   // generate global compile_commands.json
@@ -65,6 +66,8 @@ void Generate(args::Subparser &parser) {
       });
 
   core::rules::BuildPackageFactory package_factory;
+
+  // all rules will be generated
   std::vector<core::rules::BuildRule *> rules;
   for (const auto &id : rules_id) {
     auto pkg = package_factory.Package(id.PackageName.value());
@@ -74,8 +77,6 @@ void Generate(args::Subparser &parser) {
     if (id.RuleName == "...") {
       // "..." means all rules
       for (const auto &[_, rule] : pkg->Rules) {
-        utils::CollisionNameStack pstk;
-        utils::CollisionNameStack rstk;
         rule->BuildDependencies(&project, &package_factory);
         rules.push_back(rule.get());
       }
@@ -85,8 +86,6 @@ void Generate(args::Subparser &parser) {
         JK_THROW(core::JKBuildError("No rule named '{}' in package '{}'",
                                     id.RuleName, id.PackageName.value()));
       }
-      utils::CollisionNameStack pstk;
-      utils::CollisionNameStack rstk;
       rule->BuildDependencies(&project, &package_factory);
       rules.push_back(rule);
     }
@@ -135,7 +134,7 @@ void Generate(args::Subparser &parser) {
   {
     std::ofstream ofs(project.BuildRoot.Sub("/progress.mark").Stringify());
     if (ofs) {
-      ofs << common::Counter()->Count;
+      ofs << common::Counter()->Now();
     } else {
       JK_THROW(core::JKBuildError("Could not write progress count file."));
     }
@@ -151,6 +150,7 @@ void Generate(args::Subparser &parser) {
     ofs.flush();
   }
 
+  // TODO(hawtian): global compiler for different output formats
   // generate global makefile
   core::compile::MakefileGlobalCompiler global;
   global.Compile(&project, &writer_factory, rules);

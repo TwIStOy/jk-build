@@ -44,8 +44,6 @@ int Cli::Run(int argc, const char *argv[]) {
   VariableGroup vg{&global_group};
   verbose_.Register(&vg, "verbose", "Verbose level.",
                     args::Matcher{"verbose", 'V'}, 0);
-  platform_.Register(&vg, "platform", "Only 64 or 32",
-                     args::Matcher{'m', "platform"}, 64);
 
   args::HelpFlag help(global_group, "help", "Print this message and exit.",
                       {'h', "help"});
@@ -59,14 +57,6 @@ int Cli::Run(int argc, const char *argv[]) {
 
       if (verbose_.Value) {
         common::FLAGS_verbose = verbose_.Value.value();
-      }
-      if (platform_.Value) {
-        if (platform_.Value.value() != 32 && platform_.Value.value() != 64) {
-          throw args::ParseError("platform only allowed 32 or 64.");
-        }
-        if (platform_.Value.value() == 32) {
-          common::FLAGS_platform = common::Platform::k32;
-        }
       }
     });
   }
