@@ -3,6 +3,8 @@
 
 #include "jk/rules/cc/compiler/cc_binary.hh"
 
+#include <boost/dll/runtime_symbol_info.hpp>
+
 #include "catch.hpp"
 #include "jk/common/flags.hh"
 #include "jk/common/path.hh"
@@ -74,9 +76,7 @@ static core::rules::BuildPackageFactory SimpleProject() {
 TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
           "[compiler][makefile][cc_binary]") {
   core::filesystem::JKProject project{
-      common::AbsolutePath{"~/Projects/test_project"},
-      common::AbsolutePath{"~/Projects/test_project/.build"},
-  };
+      common::AbsolutePath{"~/Projects/test_project"}};
 
   ::jk::test::FakeBufferWriterFactory writer_factory;
   auto compiler = std::make_unique<MakefileCCBinaryCompiler>();
@@ -112,7 +112,9 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
   }
 
   SECTION("toolchain.make32") {
-    common::FLAGS_platform = common::Platform::k32;
+    core::filesystem::JKProject project{
+        common::AbsolutePath{"~/Projects/test_project"},
+        core::filesystem::TargetPlatform::k32};
 
     auto w = writer_factory.Build("flags.make");
 
@@ -125,7 +127,9 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
   }
 
   SECTION("toolchain.make64") {
-    common::FLAGS_platform = common::Platform::k64;
+    core::filesystem::JKProject project{
+        common::AbsolutePath{"~/Projects/test_project"},
+        core::filesystem::TargetPlatform::k64};
 
     auto w = writer_factory.Build("flags.make");
 
@@ -146,11 +150,12 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
                                             rule, &expander);
 
     REQUIRE(makefile->Environments["SHELL"].Value == "/bin/bash");
-    REQUIRE(makefile->Environments["JK_COMMAND"].Value == "jk");
+    REQUIRE(makefile->Environments["JK_COMMAND"].Value ==
+            boost::dll::program_location().string());
     REQUIRE(makefile->Environments["JK_SOURCE_DIR"].Value ==
             "~/Projects/test_project");
     REQUIRE(makefile->Environments["JK_BINARY_DIR"].Value ==
-            "~/Projects/test_project/.build");
+            "~/Projects/test_project/.build/x86_64");
     REQUIRE(makefile->Environments["EQUALS"].Value == "=");
     REQUIRE(makefile->Environments["PRINT"].Value == "jk echo_color");
 

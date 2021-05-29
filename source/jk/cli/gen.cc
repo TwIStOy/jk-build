@@ -14,6 +14,7 @@
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/compile/compile.hh"
+#include "jk/core/compile/makefile_global_compiler.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/build_rule.hh"

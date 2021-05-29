@@ -128,7 +128,7 @@ void MakefileExternalLibraryCompiler::CompileImpl(
     // ./configure
     configure_command = core::builder::CustomCommandLine::Make(
         {"cd", output_folder, "&&", "./configure", "--prefix",
-         project->ExternalInstalledPrefix()});
+         project->ExternalInstalledPrefix});
   } else {
     std::vector<std::string> base{"cd", output_folder, "&&"};
     std::copy(std::begin(_configure_command), std::end(_configure_command),

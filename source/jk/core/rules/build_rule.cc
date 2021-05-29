@@ -213,7 +213,7 @@ void BuildRule::BuildDependencies(  // {{{
     switch (dep_id.Position) {
       case RuleRelativePosition::kAbsolute: {
         assert(dep_id.PackageName);
-        auto dep_pkg = factory->Package(dep_id.PackageName.get());
+        auto dep_pkg = factory->Package(*dep_id.PackageName);
         dep_pkg->Initialize(project);
         dep = ResolveDepends(dep_pkg, dep_id.RuleName);
       } break;
@@ -221,7 +221,7 @@ void BuildRule::BuildDependencies(  // {{{
         assert(dep_id.PackageName);
 
         auto dep_pkg = factory->Package(
-            fmt::format("{}/{}", Package->Name, dep_id.PackageName.get()));
+            fmt::format("{}/{}", Package->Name, *dep_id.PackageName));
         dep_pkg->Initialize(project);
         dep = ResolveDepends(dep_pkg, dep_id.RuleName);
       } break;
@@ -285,21 +285,11 @@ BuildRule::ExportedEnvironmentVar(filesystem::JKProject *project) const {
 }  // }}}
 
 uint32_t BuildRule::KeyNumber(const std::string &key) {  // {{{
-  if (auto it = key_numbers_.find(key); it != key_numbers_.end()) {
-    return it->second;
-  }
-  auto id = common::Counter()->Next();
-  key_numbers_[key] = id;
-  return id;
+  return steps_.Step(key);
 }  // }}}
 
 std::vector<uint32_t> BuildRule::KeyNumbers() const {  //{{{
-  std::vector<uint32_t> res;
-  std::transform(std::begin(key_numbers_), std::end(key_numbers_),
-                 std::back_inserter(res), [](const auto &p) -> uint32_t {
-                   return p.second;
-                 });
-  return res;
+  return steps_.Steps();
 }  // }}}
 
 }  // namespace rules

@@ -3,47 +3,88 @@
 
 #include "jk/core/rules/dependent.hh"
 
+#include <cctype>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "jk/core/error.h"
+#include "jk/core/parser/combinator/convertor.hh"
+#include "jk/core/parser/combinator/many.hh"
+#include "jk/core/parser/combinator/or.hh"
+#include "jk/core/parser/combinator/plus.hh"
+#include "jk/core/parser/input_stream.hh"
+#include "jk/core/parser/parser.hh"
+#include "jk/core/parser/parsers.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
+#include "semver.hpp"
 
 namespace jk {
 namespace core {
 namespace rules {
 
 std::string BuildRuleId::Stringify() const {
-  return "BuildRuleId(Id = \"{}:{}\", Position: {})"_format(PackageName,
-                                                            RuleName, Position);
+  return "BuildRuleId(Id = \"{}:{}\", Position: {}, VerReq: {})"_format(
+      PackageName, RuleName, Position, VersionReq);
 }
 
-static uint32_t ReadPackageName(std::string_view str, std::string *res) {
-  auto ed = 0;
+static auto position_prefix =
+    parser::MakeStringEq("//") | parser::MakeStringEq("##");
+static auto escape_char = (parser::MakeCharEq('\\') + parser::MakeCharAny()) >>
+                          [](const auto &r) -> char {
+  return std::get<1>(r);
+};
 
-  bool escaped = false;
-  while (ed < str.length() && (escaped || str[ed] != ':')) {
-    if (escaped) {
-      escaped = false;
-      res->push_back(str[ed]);
-    } else if (str[ed] == '\\') {
-      escaped = true;
-    } else {
-      res->push_back(str[ed]);
-    }
-
-    ed++;
+static auto package_name_ch = parser::MakeCharPredict([](char ch) {
+                                return std::isalnum(ch) || ch == '_';
+                              }) |
+                              escape_char;
+static auto package_name = parser::Many(package_name_ch, 1) >>
+                           [](const auto &r) -> std::string {
+  return utils::JoinString("", r);
+};
+static auto p_package =
+    (package_name + parser::Many((parser::MakeCharEq('/') + package_name) >>
+                                 [](const auto &r) {
+                                   return std::get<1>(r);
+                                 })) >>
+    [](const std::tuple<std::string, std::vector<std::string>> &r)
+    -> std::string {
+  std::ostringstream oss;
+  oss << std::get<0>(r);
+  for (auto &&item : std::get<1>(r)) {
+    oss << "/" << item;
   }
-
-  if (utils::StringEndWith(*res, "/BUILD")) {
-    // erase suffix
-    *res = res->substr(0, res->length() - 6);
+  auto res = oss.str();
+  if (utils::StringEndsWith(res, "/BUILD")) {
+    return res.substr(0, res.length() - 6);
   }
+  return res;
+};
 
-  return ed;
-}
+static auto rule_name_ch = parser::MakeCharPredict([](char ch) {
+  return std::isalnum(ch) || ch == '_' || ch == '.';
+});
+static auto rule_name = (parser::MakeCharEq(':') +
+                         (parser::Many(rule_name_ch, 1) >>
+                              [](const auto &r) -> std::string {
+                           return utils::JoinString("", r);
+                         })) >>
+                        [](const auto &r) {
+                          return std::get<1>(r);
+                        };
+static auto version_str = (parser::MakeCharEq('@') +
+                           parser::Many(parser::MakeCharAny(), 1)) >>
+                          [](const auto &r) {
+                            return utils::JoinString("", std::get<1>(r));
+                          };
+static auto dependency_parser = parser::Optional(position_prefix) +
+                                parser::Optional(p_package) + rule_name +
+                                parser::Optional(version_str);
 
 BuildRuleId ParseIdString(std::string_view str) {
   BuildRuleId res;
@@ -52,36 +93,38 @@ BuildRuleId ParseIdString(std::string_view str) {
     JK_THROW(JKBuildError("Failed to parse dependent identifier '{}'.", str));
   }
 
-  auto st = 0;
-  if (str.find_first_of("//") == 0) {
-    // start with '//'
-    res.Position = RuleRelativePosition::kAbsolute;
-    st += 2;
-  } else if (str.find_first_of("##") == 0) {
-    res.Position = RuleRelativePosition::kBuiltin;
-    st += 2;
-  } else if (str.find_first_of(":") == 0) {
-    res.Position = RuleRelativePosition::kThis;
-  } else {
-    res.Position = RuleRelativePosition::kRelative;
-  }
-
-  std::string package_name;
-  auto mid = ReadPackageName(str.substr(st), &package_name) + st;
-  if (mid >= str.length()) {
+  auto pres = dependency_parser(parser::InputStream{str});
+  if (!pres.Success()) {
     JK_THROW(JKBuildError("Failed to parse dep id '{}', unknown error", str));
   }
-  if (str[mid] != ':') {
-    JK_THROW(
-        JKBuildError("Failed to parse dep id '{}', expect ':' at pos {} but "
-                     "found '{}'",
-                     str, mid, static_cast<char>(str[mid])));
+
+  auto [position, package, rule, ver] = pres.Result();
+
+  if (position.has_value()) {
+    if (*position == "//") {
+      res.Position = RuleRelativePosition::kAbsolute;
+    } else if (*position == "##") {
+      res.Position = RuleRelativePosition::kBuiltin;
+    }
+  } else {
+    if (package.has_value()) {
+      res.Position = RuleRelativePosition::kRelative;
+    } else {
+      res.Position = RuleRelativePosition::kThis;
+    }
   }
 
-  if (!package_name.empty()) {
-    res.PackageName = std::move(package_name);
+  res.PackageName = package;
+  res.RuleName = rule;
+  if (ver.has_value()) {
+    try {
+      auto v = semver::version(*ver);
+      res.VersionReq = v;
+    } catch (const std::exception &e) {
+      JK_THROW(
+          JKBuildError("Failed to parse ver req '{}', {}", *ver, e.what()));
+    }
   }
-  res.RuleName = str.substr(mid + 1);
 
   return res;
 }

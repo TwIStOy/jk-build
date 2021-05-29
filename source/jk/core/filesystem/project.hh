@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/configuration.hh"
@@ -16,6 +17,14 @@ enum class TargetPlatform {
   k32,
   k64,
 };
+
+inline std::string ToString(TargetPlatform plt) {
+  if (plt == TargetPlatform::k32) {
+    return "32";
+  } else {
+    return "64";
+  }
+}
 
 struct JKProject {
   //! Returns the project from current working directory

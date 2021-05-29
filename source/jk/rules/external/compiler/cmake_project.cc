@@ -34,12 +34,12 @@ void MakefileCMakeLibrary::Compile(
                                       "-B{}"_format(cmake_build_folder)};
 
   auto variables = rule->CMakeVariable;
-  variables.emplace("CMAKE_INSTALL_PREFIX", project->ExternalInstalledPrefix());
+  variables.emplace("CMAKE_INSTALL_PREFIX", project->ExternalInstalledPrefix);
   variables.emplace("CMAKE_BUILD_TYPE", "Release");
   variables.emplace("CMAKE_C_FLAGS",
-                    "-m{}"_format(ToString(common::FLAGS_platform)));
+                    "-m{}"_format(ToString(project->Platform)));
   variables.emplace("CMAKE_CXX_FLAGS",
-                    "-m{}"_format(ToString(common::FLAGS_platform)));
+                    "-m{}"_format(ToString(project->Platform)));
   std::transform(std::begin(variables), std::end(variables),
                  std::back_inserter(cmake_stmt),
                  [](const std::pair<std::string, std::string> &pr) {

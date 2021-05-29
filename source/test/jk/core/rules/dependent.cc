@@ -11,12 +11,12 @@ namespace core {
 namespace rules {
 namespace test {
 
-#define DEP_PARSE(dep, pkg, rule, pos)   \
-  auto res = ParseIdString(dep);         \
-                                         \
-  REQUIRE(res.PackageName);              \
-  REQUIRE(res.PackageName.get() == pkg); \
-  REQUIRE(res.RuleName == rule);         \
+#define DEP_PARSE(dep, pkg, rule, pos) \
+  auto res = ParseIdString(dep);       \
+                                       \
+  REQUIRE(res.PackageName);            \
+  REQUIRE(*res.PackageName == pkg);    \
+  REQUIRE(res.RuleName == rule);       \
   REQUIRE(res.Position == RuleRelativePosition::pos)
 
 TEST_CASE("Parse Absolute Id", "[core][rules][dependent]") {

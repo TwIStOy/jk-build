@@ -3,11 +3,12 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-#include <boost/optional.hpp>
+#include <optional>
 #include <string>
 
 #include "fmt/format.h"
 #include "jk/utils/str.hh"
+#include "semver.hpp"
 
 namespace jk {
 namespace core {
@@ -26,9 +27,10 @@ enum class RuleRelativePosition : uint8_t {
 //!   rule from pwd:        {PACKAGE_NAME}[/BUILD]:{RULE_NAME}
 //!   rule in this package: :{RULE_NAME}
 struct BuildRuleId : utils::Stringifiable {
-  boost::optional<std::string> PackageName;
+  std::optional<std::string> PackageName;
   std::string RuleName;
   RuleRelativePosition Position;
+  std::optional<semver::version> VersionReq;
 
   std::string Stringify() const final;
 };

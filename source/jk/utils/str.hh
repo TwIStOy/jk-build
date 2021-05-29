@@ -18,6 +18,7 @@
 
 #include "boost/optional.hpp"
 #include "jk/utils/cpp_features.hh"
+#include "semver.hpp"
 
 namespace jk {
 
@@ -226,6 +227,46 @@ struct formatter<boost::optional<T>> {
     }
 
     return format_to(ctx.out(), "Optional()");
+  }
+};
+
+template<typename T>
+struct formatter<std::optional<T>> {
+  using value_type = std::optional<T>;
+
+  template<typename ParseContext>
+  typename ParseContext::iterator parse(
+      ParseContext &ctx) {  // NOLINT(runtime/references)
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const value_type &v,
+              FormatContext &ctx)  // NOLINT(runtime/references)
+      -> decltype(ctx.out()) {
+    if (v) {
+      return format_to(ctx.out(), "Optional({})", *v);
+    }
+
+    return format_to(ctx.out(), "Optional()");
+  }
+};
+
+template<>
+struct formatter<semver::version> {
+  using value_type = semver::version;
+
+  template<typename ParseContext>
+  typename ParseContext::iterator parse(
+      ParseContext &ctx) {  // NOLINT(runtime/references)
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const value_type &v,
+              FormatContext &ctx)  // NOLINT(runtime/references)
+      -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "{}", v.to_string());
   }
 };
 

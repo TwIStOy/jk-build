@@ -12,8 +12,8 @@
 namespace jk::utils::test {
 
 TEST_CASE("Check ending", "[utils]") {
-  REQUIRE(StringEndWith("TESTABC", "ABC"));
-  REQUIRE_FALSE(StringEndWith("TESTABC", "ABCD"));
+  REQUIRE(StringEndsWith("TESTABC", "ABC"));
+  REQUIRE_FALSE(StringEndsWith("TESTABC", "ABCD"));
 }
 
 TEST_CASE("Join String", "[utils]") {

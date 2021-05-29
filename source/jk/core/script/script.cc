@@ -75,7 +75,7 @@ pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {
 
 void ScriptInterpreter::AddConnomLocals(filesystem::JKProject *project,
                                         pybind11::dict *locals) {
-  if (common::FLAGS_platform == common::Platform::k32) {
+  if (project->Platform == filesystem::TargetPlatform::k32) {
     (*locals)["platform"] = 32;
     (*locals)["PLATFORM"] = 32;
   } else {
@@ -87,7 +87,7 @@ void ScriptInterpreter::AddConnomLocals(filesystem::JKProject *project,
     (*locals)["JK_SOURCE_DIR"] = project->ProjectRoot.Stringify();
     (*locals)["JK_BINARY_DIR"] = project->BuildRoot.Stringify();
     (*locals)["JK_BUNDLE_LIBRARY_PREFIX"] =
-        project->ExternalInstalledPrefix().Stringify();
+        project->ExternalInstalledPrefix.Stringify();
     (*locals)["JK_CXX_STANDARD"] = project->Config().cxx_standard;
   }
   // TODO(hawtian): fill common

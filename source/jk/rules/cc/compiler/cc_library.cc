@@ -300,15 +300,17 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
 
   makefile->DefineEnvironment(
       "CXX",
-      fmt::format(
-          "{} {}", utils::JoinString(" ", project->Config().cxx),
-          common::FLAGS_platform == common::Platform::k64 ? "-m64" : "-m32"));
+      fmt::format("{} {}", utils::JoinString(" ", project->Config().cxx),
+                  project->Platform == core::filesystem::TargetPlatform::k64
+                      ? "-m64"
+                      : "-m32"));
 
   makefile->DefineEnvironment(
       "CC",
-      fmt::format(
-          "{} {}", utils::JoinString(" ", project->Config().cc),
-          common::FLAGS_platform == common::Platform::k64 ? "-m64" : "-m32"));
+      fmt::format("{} {}", utils::JoinString(" ", project->Config().cc),
+                  project->Platform == core::filesystem::TargetPlatform::k64
+                      ? "-m64"
+                      : "-m32"));
 
   makefile->DefineEnvironment("LINKER", "g++");
 
@@ -325,11 +327,14 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateToolchain(
   return makefile;
 }
 
-static std::vector<std::string> cppincludes() {
-  return {"-I.", "-isystem",
-          ".build/.lib/m{}/include"_format(
-              common::FLAGS_platform == common::Platform::k32 ? 32 : 64),
-          "-I.build/include"};
+static std::vector<std::string> cppincludes(
+    core::filesystem::JKProject *project) {
+  return {
+      "-I.", "-isystem",
+      ".build/.lib/m{}/include"_format(
+          project->Platform == core::filesystem::TargetPlatform::k64 ? "-m64"
+                                                                     : "-m32"),
+      "-I.build/include"};
 }
 
 static std::vector<std::string> cxxincludes() {
@@ -341,14 +346,14 @@ static std::vector<std::string> cxxincludes() {
       #tag "_CFLAGS",                                                         \
       utils::JoinString(                                                      \
           " ", utils::ConcatArrays(compile_flags, project->Config().cflags,   \
-                                   cppincludes(),                             \
+                                   cppincludes(project),                      \
                                    project->Config().tag##_cflags_extra)));   \
                                                                               \
   makefile->DefineEnvironment(                                                \
       #tag "_CXXFLAGS",                                                       \
       utils::JoinString(                                                      \
           " ", utils::ConcatArrays(compile_flags, project->Config().cxxflags, \
-                                   cppincludes(), cxxincludes(),              \
+                                   cppincludes(project), cxxincludes(),       \
                                    project->Config().tag##_cxxflags_extra)));
 
 core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
@@ -454,9 +459,9 @@ void CompileDatabaseCCLibraryCompiler::Compile(
   }
 
   cxx_flags = utils::ConcatArrays(cxx_flags, project->Config().cxxflags,
-                                  cppincludes(), cxxincludes());
-  c_flags =
-      utils::ConcatArrays(c_flags, project->Config().cflags, cppincludes());
+                                  cppincludes(project), cxxincludes());
+  c_flags = utils::ConcatArrays(c_flags, project->Config().cflags,
+                                cppincludes(project));
 
   std::copy(std::begin(rule->CppFlags), std::end(rule->CppFlags),
             std::back_inserter(cxx_flags));

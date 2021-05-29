@@ -25,7 +25,7 @@ struct is_from_impl<T, U, decltype(T::From(std::declval<U>()))>
     : std::true_type {};
 
 template<typename target_type, typename from_type>
-target_type custom_cast(from_type &&from) {
+target_type jk_cast(from_type &&from) {
   static_assert(
       std::is_base_of_v<IInto<target_type>, std::decay_t<from_type>> ||
           is_from_impl<target_type, from_type>::value,

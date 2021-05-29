@@ -59,8 +59,7 @@ void MakefileShellScriptCompiler::Compile(
 
     auto run_stmt = core::builder::CustomCommandLine::Make(
         {"@{}/{}"_format(project->Resolve(rule->Package->Path), rule->Script),
-         "{}"_format(common::FLAGS_platform == common::Platform::k32 ? 32
-                                                                     : 64)});
+         ToString(project->Platform)});
     auto touch_stmt = core::builder::CustomCommandLine::Make(
         {"@touch", "{}"_format(script_target)});
 

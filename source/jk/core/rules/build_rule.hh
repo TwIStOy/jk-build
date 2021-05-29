@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/constant.hh"
 #include "jk/core/error.h"
@@ -184,7 +185,7 @@ struct BuildRule : public utils::Stringifiable {
  private:
   InitializeState dependencies_built_state_{InitializeState::kStart};
 
-  std::unordered_map<std::string, uint32_t> key_numbers_;
+  common::CountableSteps steps_;
 
 #ifdef JK_TEST
  public:

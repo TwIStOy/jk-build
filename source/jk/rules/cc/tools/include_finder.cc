@@ -29,7 +29,7 @@ void IncludeFinder::IncludeDirectory(core::filesystem::JKProject *project,
     include_directories_.push_back(common::AbsolutePath(std::move(p)));
   } else {
     common::ProjectRelativePath rp(std::move(p));
-    include_directories_.push_back(project->ProjectRoot.Sub(rp));
+    include_directories_.push_back(project->ProjectRoot.Sub(rp.Path));
   }
 }
 
@@ -51,7 +51,7 @@ static auto espaced_char = (core::parser::MakeCharEq('\\') +
   return std::get<1>(r);
 };
 static auto string_ch = core::parser::MakeCharPredict([](char c) {
-                          return c != '\\' && c != '"';
+                          return c != '\\' && c != '"' && c != '>';
                         }) |
                         espaced_char;
 static auto string_literal =

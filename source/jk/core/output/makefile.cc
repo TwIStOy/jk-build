@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "boost/dll.hpp"
 #include "jk/common/flags.hh"
 #include "jk/core/builder/custom_command.hh"
 #include "jk/core/filesystem/project.hh"
@@ -50,19 +51,22 @@ void UnixMakefile::DefaultTarget(std::string target) {
 }
 
 void UnixMakefile::DefineCommon(filesystem::JKProject *project) {
+  static auto program_localtion = boost::dll::program_location().string();
+
   DefineEnvironment("SHELL", "/bin/bash",
                     "The shell in which to execute make rules.");
 
-  DefineEnvironment("JK_COMMAND", "jk", "The command Jk executable.");
+  DefineEnvironment("JK_COMMAND", program_localtion,
+                    "The command Jk executable.");
 
-  DefineEnvironment("JK_SOURCE_DIR", project->ProjectRoot.Stringify(),
+  DefineEnvironment("JK_SOURCE_DIR", project->ProjectRoot,
                     "The top-level source directory on which Jk was run.");
 
-  DefineEnvironment("JK_BINARY_DIR", project->BuildRoot.Stringify(),
+  DefineEnvironment("JK_BINARY_DIR", project->BuildRoot,
                     "The top-level build directory on which Jk was run.");
 
   DefineEnvironment("JK_BUNDLE_LIBRARY_PREFIX",
-                    project->ExternalInstalledPrefix().Stringify(),
+                    project->ExternalInstalledPrefix,
                     "The bundled libraries prefix on which Jk was run.");
 
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
@@ -71,7 +75,7 @@ void UnixMakefile::DefineCommon(filesystem::JKProject *project) {
 
   DefineEnvironment("JK_VERBOSE_FLAG", "V$(VERBOSE)");
 
-  if (common::FLAGS_platform == common::Platform::k32) {
+  if (project->Platform == filesystem::TargetPlatform::k32) {
     DefineEnvironment("PLATFORM", "32");
   } else {
     DefineEnvironment("PLATFORM", "64");

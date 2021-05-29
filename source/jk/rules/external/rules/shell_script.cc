@@ -75,18 +75,15 @@ std::vector<std::string> ShellScript::ExportedFilesSimpleName(
   (void)build_type;
   std::vector<std::string> res;
 
-  std::transform(
-      std::begin(Exports), std::end(Exports), std::back_inserter(res),
-      [&](const std::string &p) {
-        return project->ProjectRoot.Sub(".build")
-            .Sub(".lib")
-            .Sub(fmt::format(
-                "m{}",
-                common::FLAGS_platform == common::Platform::k32 ? 32 : 64))
-            .Sub("lib")
-            .Sub(p)
-            .Stringify();
-      });
+  std::transform(std::begin(Exports), std::end(Exports),
+                 std::back_inserter(res), [&](const std::string &p) {
+                   return project->ProjectRoot.Sub(".build")
+                       .Sub(".lib")
+                       .Sub(fmt::format("m{}", ToString(project->Platform)))
+                       .Sub("lib")
+                       .Sub(p)
+                       .Stringify();
+                 });
 
   return res;
 }
