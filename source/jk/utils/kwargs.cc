@@ -64,7 +64,7 @@ Kwargs::ListType Kwargs::ListRequired(const std::string &name) const {
 }
 
 Kwargs::ListType Kwargs::ListOptional(
-    const std::string &name, boost::optional<ListType> default_value) const {
+    const std::string &name, std::optional<ListType> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     if (default_value) {
@@ -81,7 +81,7 @@ Kwargs::ListType Kwargs::ListOptional(
 }
 
 Kwargs::StringType Kwargs::StringOptional(
-    const std::string &name, boost::optional<StringType> default_value) const {
+    const std::string &name, std::optional<StringType> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     if (default_value) {
@@ -111,7 +111,7 @@ bool Kwargs::BooleanRequired(const std::string &name) const {
 }
 
 bool Kwargs::BooleanOptional(const std::string &name,
-                             boost::optional<bool> default_value) const {
+                             std::optional<bool> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     if (default_value) {

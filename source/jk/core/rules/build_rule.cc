@@ -158,7 +158,7 @@ BuildRule::BuildRule(BuildPackage *package, std::string name,  // {{{
 }  // }}}
 
 std::string BuildRule::FullQualifiedName() const {  // {{{
-  return fmt::format("{}/{}", Package->Name, Name);
+  return fmt::format("{}/{}@{}", Package->Name, Name, Version);
 }  // }}}
 
 std::string BuildRule::FullQuotedQualifiedName() const {  // {{{
@@ -181,8 +181,8 @@ std::string BuildRule::FullQualifiedTarget(  // {{{
 }  // }}}
 
 void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {  // {{{
-  dependencies_str_ =
-      kwargs.ListOptional("deps", boost::optional<utils::Kwargs::ListType>{{}});
+  dependencies_str_ = kwargs.ListOptional("deps", utils::Kwargs::ListType{});
+  Version = kwargs.StringOptional("version", "DEFAULT");
 }  // }}}
 
 void BuildRule::BuildDependencies(  // {{{
@@ -242,7 +242,7 @@ void BuildRule::BuildDependencies(  // {{{
 
 common::AbsolutePath BuildRule::WorkingFolder(  // {{{
     const common::AbsolutePath &build_root) const {
-  return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@"));
+  return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@@"));
 }  // }}}
 
 void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
@@ -260,22 +260,6 @@ void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
   }
 
   func(this);
-}  // }}}
-
-json BuildRule::CacheState() const {  // {{{
-  json res;
-
-  res["name"] = FullQualifiedName();
-  res["package"] = Package->Name;
-  res["type_name"] = TypeName;
-  std::vector<std::string> deps;
-  std::transform(std::begin(Dependencies), std::end(Dependencies),
-                 std::back_inserter(deps), [](BuildRule *r) {
-                   return r->FullQualifiedName();
-                 });
-  res["deps"] = deps;
-
-  return res;
 }  // }}}
 
 std::unordered_map<std::string, std::string>  // {{{

@@ -26,8 +26,6 @@ class ProtoLibrary : public CCLibrary {
  public:
   ProtoLibrary(BuildPackage *package, std::string name);
 
-  bool IsStable() const override;
-
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedLinkFlags() const override;

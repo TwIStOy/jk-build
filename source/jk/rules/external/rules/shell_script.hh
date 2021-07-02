@@ -26,8 +26,6 @@ class ShellScript : public core::rules::BuildRule {
  public:
   ShellScript(core::rules::BuildPackage *package, std::string name);
 
-  bool IsStable() const override;
-
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedFilesSimpleName(

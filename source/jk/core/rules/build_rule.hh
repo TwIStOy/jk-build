@@ -118,10 +118,6 @@ struct BuildRule : public utils::Stringifiable {
     return static_cast<T *const>(this);
   }
 
-  //! Check if this rule is *stable*. *Stable* means that the generated result
-  //! and build result of this rule can be cached.
-  virtual bool IsStable() const = 0;
-
   //! Returns exported names. Other rules which depend on this, will
   //! automatically depend on all exported files.
   virtual std::vector<std::string> ExportedFilesSimpleName(
@@ -146,9 +142,6 @@ struct BuildRule : public utils::Stringifiable {
   //!   THIRD_PARTY_PROTOBUF_PROTOC
   virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
       filesystem::JKProject *project) const;
-
-  //! Return json object in cache
-  virtual json CacheState() const;
 
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
@@ -178,6 +171,7 @@ struct BuildRule : public utils::Stringifiable {
   std::list<BuildRule *> Dependencies;
   const RuleType Type;
   const std::string_view TypeName;
+  std::string Version;
 
   // inherited from |utils::Stringifiable|
   std::string Stringify() const final;

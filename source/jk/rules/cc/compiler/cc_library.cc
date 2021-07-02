@@ -362,6 +362,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   auto makefile = std::make_unique<core::output::UnixMakefile>("flags.make");
 
   auto git_desc = R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
+  auto build_time = R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
+
   auto compile_flags = project->Config().compile_flags;
   compile_flags.push_back(fmt::format(git_desc, rule->Package->Path));
 

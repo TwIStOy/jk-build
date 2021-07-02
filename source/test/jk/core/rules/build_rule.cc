@@ -20,10 +20,6 @@ struct DummyRule final : public BuildRule {
       : BuildRule(pkg, std::move(name), {RuleTypeEnum::kBinary}, "dummy") {
   }
 
-  bool IsStable() const final {
-    return false;
-  }
-
   std::vector<std::string> ExportedFilesSimpleName(
       filesystem::JKProject *, const std::string &) const final {
     return {};

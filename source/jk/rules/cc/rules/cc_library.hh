@@ -36,8 +36,6 @@ class CCLibrary : public BuildRule {
             std::string_view type_name = "cc_library",
             std::string exported_file_name = "");
 
-  bool IsStable() const override;
-
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedFilesSimpleName(

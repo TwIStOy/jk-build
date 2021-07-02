@@ -204,7 +204,7 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
                                         ->Rules["base"]
                                         .get()
                                         ->FullQualifiedName(),
-                                    '/', "@"))
+                                    '/', "@@"))
                 .Sub("DEBUG")
                 .Sub(simple_project.Package("library/base")
                          ->Rules["base"]
@@ -217,7 +217,7 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
                                         ->Rules["memory"]
                                         .get()
                                         ->FullQualifiedName(),
-                                    '/', "@"))
+                                    '/', "@@"))
                 .Sub("DEBUG")
                 .Sub(simple_project.Package("library/memory")
                          ->Rules["memory"]

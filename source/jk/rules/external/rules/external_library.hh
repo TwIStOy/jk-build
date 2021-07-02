@@ -33,8 +33,6 @@ class ExternalLibrary : public core::rules::BuildRule {
   ExternalLibrary(core::rules::BuildPackage *package, std::string name,
                   std::string_view rule_type_name = "external_library");
 
-  bool IsStable() const override;
-
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedFilesSimpleName(
@@ -49,7 +47,6 @@ class ExternalLibrary : public core::rules::BuildRule {
   std::string Url;
   std::string Sha256;
   std::string ArchiveType;
-  std::string Version;
   std::vector<std::string> DownloadCommand;
   std::vector<std::string> ConfigureCommand;
   std::vector<std::string> BuildCommand;

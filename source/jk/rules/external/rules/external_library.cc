@@ -15,14 +15,10 @@ ExternalLibrary::ExternalLibrary(core::rules::BuildPackage *package,
                 rule_type_name) {
 }
 
-bool ExternalLibrary::IsStable() const {
-  return true;
-}
-
 void ExternalLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   BuildRule::ExtractFieldFromArguments(kwargs);
 
-  auto empty_list = boost::make_optional<std::vector<std::string>>({});
+  auto empty_list = std::make_optional<std::vector<std::string>>({});
 
   Url = kwargs.StringRequired("url");
   Sha256 = kwargs.StringRequired("sha256");
@@ -35,8 +31,6 @@ void ExternalLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   BuildCommand = kwargs.ListOptional("build_command", empty_list);
   // default: $(MAKE) install
   InstallCommand = kwargs.ListOptional("install_command", empty_list);
-  // default: "DEFAULT" for backwards compatibility
-  Version = kwargs.StringOptional("version", std::string("DEFAULT"));
 
   Libraries = kwargs.ListOptional("libraries", empty_list);
   LdFlags = kwargs.ListOptional("ldflags", empty_list);

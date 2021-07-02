@@ -19,14 +19,10 @@ ShellScript::ShellScript(core::rules::BuildPackage *package, std::string name)
                 "shell_script") {
 }
 
-bool ShellScript::IsStable() const {
-  return true;
-}
-
 void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   core::rules::BuildRule::ExtractFieldFromArguments(kwargs);
 
-  auto empty_list = boost::make_optional<std::vector<std::string>>({});
+  auto empty_list = std::make_optional<std::vector<std::string>>({});
 
   Script = kwargs.StringRequired("script");
   do {

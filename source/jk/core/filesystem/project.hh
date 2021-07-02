@@ -54,8 +54,11 @@ struct JKProject {
   //! Returns configuration loaded from project root.
   const Configuration &Config() const;
 
+  // -- flags section --
+  bool AlwaysCheckPattern() const;
+
  private:
-  mutable boost::optional<Configuration> config_;
+  mutable std::optional<Configuration> config_;
 };
 
 }  // namespace jk::core::filesystem

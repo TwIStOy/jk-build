@@ -39,16 +39,12 @@ CCLibrary::CCLibrary(BuildPackage *package, std::string name,
                                                   : exported_file_name) {
 }
 
-bool CCLibrary::IsStable() const {
-  return false;
-}
-
 #define FILL_LIST_FIELD(field, key) field = kwargs.ListOptional(key, empty_list)
 
 void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   BuildRule::ExtractFieldFromArguments(kwargs);
 
-  auto empty_list = boost::make_optional<std::vector<std::string>>({});
+  auto empty_list = std::make_optional<std::vector<std::string>>({});
 
   // clang-format off
   FILL_LIST_FIELD(CFlags,   "cflags");

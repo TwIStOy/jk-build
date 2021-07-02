@@ -19,14 +19,10 @@ ProtoLibrary::ProtoLibrary(BuildPackage *package, std::string name)
   ExtraIncludes.push_back(IncludeArgument::Placehoder::WorkingFolder);
 }
 
-bool ProtoLibrary::IsStable() const {
-  return true;
-}
-
 void ProtoLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   BuildRule::ExtractFieldFromArguments(kwargs);
 
-  auto empty_list = boost::make_optional<std::vector<std::string>>({});
+  auto empty_list = std::make_optional<std::vector<std::string>>({});
 
   Sources = kwargs.ListRequired("srcs");
   Excludes = kwargs.ListOptional("excludes", empty_list);

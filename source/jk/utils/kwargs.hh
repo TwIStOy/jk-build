@@ -3,9 +3,8 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-#include <boost/optional.hpp>
-#include <boost/optional/optional.hpp>
 #include <list>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -32,15 +31,15 @@ class __JK_HIDDEN Kwargs final : public Stringifiable {
   ListType ListRequired(const std::string &name) const;
 
   StringType StringOptional(const std::string &name,
-                            boost::optional<StringType> default_value) const;
+                            std::optional<StringType> default_value) const;
 
   ListType ListOptional(const std::string &name,
-                        boost::optional<ListType> default_value) const;
+                        std::optional<ListType> default_value) const;
 
   bool BooleanRequired(const std::string &name) const;
 
   bool BooleanOptional(const std::string &name,
-                       boost::optional<bool> default_value) const;
+                       std::optional<bool> default_value) const;
 
   std::string Stringify() const final;
 
