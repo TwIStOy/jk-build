@@ -128,8 +128,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
         rule->ResolveDependenciesAndLdFlags(project, build_type);
 
     auto binary_deps = all_objects;
-    binary_deps.insert(binary_deps.end(), std::begin(header_files),
-                       std::end(header_files));
+    binary_deps.insert(binary_deps.end(), std::begin(lint_header_targets),
+                       std::end(lint_header_targets));
     // depend on all static libraries
     for (auto dep : rule->DependenciesInOrder()) {
       if (!dep->Type.IsExternal() && dep != rule) {
