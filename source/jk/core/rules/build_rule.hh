@@ -99,6 +99,13 @@ struct BuildRule : public utils::Stringifiable {
 
   //! Return the rule's full qualifed name. This named will automatically be
   //! converted into the rules folder name, just like cmake does.
+  std::string FullQualifiedNameWithNoVersion() const;
+
+  //! Return the rule's full quoted qualifed name.
+  std::string FullQuotedQualifiedNameWithNoVersion() const;
+
+  //! Return the rule's full qualifed name. This named will automatically be
+  //! converted into the rules folder name, just like cmake does.
   std::string FullQualifiedTarget(const std::string &output = "") const;
 
   //! After dependencies has been built, this filed will be available

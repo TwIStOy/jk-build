@@ -39,10 +39,11 @@ static auto escape_char = (parser::MakeCharEq('\\') + parser::MakeCharAny()) >>
   return std::get<1>(r);
 };
 
-static auto package_name_ch = parser::MakeCharPredict([](char ch) {
-                                return std::isalnum(ch) || ch == '_';
-                              }) |
-                              escape_char;
+static auto package_name_ch =
+    parser::MakeCharPredict([](char ch) {
+      return std::isalnum(ch) || ch == '_' || ch == '-';
+    }) |
+    escape_char;
 static auto package_name = parser::Many(package_name_ch, 1) >>
                            [](const auto &r) -> std::string {
   return utils::JoinString("", r);
@@ -67,7 +68,7 @@ static auto p_package =
 };
 
 static auto rule_name_ch = parser::MakeCharPredict([](char ch) {
-  return std::isalnum(ch) || ch == '_' || ch == '.';
+  return std::isalnum(ch) || ch == '_' || ch == '.' || ch == '-';
 });
 static auto rule_name = (parser::MakeCharEq(':') +
                          (parser::Many(rule_name_ch, 1) >>

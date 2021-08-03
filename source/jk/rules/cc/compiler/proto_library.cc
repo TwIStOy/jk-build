@@ -76,6 +76,8 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
          "--progress-dir={}"_format(project->BuildRoot),
          "Compiling proto file into .cc/.h {}"_format(
              source_file->FullQualifiedPath())});
+    auto mkdir = core::builder::CustomCommandLine::Make(
+        {"@$(MKDIR)", working_folder.Stringify()});
     auto protoc = core::builder::CustomCommandLine::Make(
         {"${THIRD_PARTY_PROTOBUF_PROTOC}",
          "--python_out={}"_format(working_folder),
@@ -87,7 +89,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
         "{}.cc {}.h"_format(source_file->FullQualifiedPbPath(working_folder),
                             source_file->FullQualifiedPbPath(working_folder)),
         {project->Resolve(source_file->FullQualifiedPath())},
-        core::builder::CustomCommandLines::Multiple(print_stmt, protoc));
+        core::builder::CustomCommandLines::Multiple(print_stmt, mkdir, protoc));
 
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"$(RM)",

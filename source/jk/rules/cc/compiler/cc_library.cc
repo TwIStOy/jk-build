@@ -119,6 +119,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   // lint headers
   const auto &header_files = rule->ExpandedHeaderFiles(project, expander);
+  logger->debug("header files for rule {}: [{}]", rule->FullQualifiedName(),
+                utils::JoinString(", ", header_files));
+  std::list<std::string> lint_header_targets;
   for (const auto &filename : header_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
     if (rule->IsNolint(project->Resolve(source_file->FullQualifiedPath()))) {
@@ -126,6 +129,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     }
 
     LintSourceFile(project, rule, source_file, build.get(), working_folder);
+    lint_header_targets.push_back(
+        source_file->FullQualifiedLintPath(working_folder));
   }
 
   core::builder::CustomCommandLines clean_statements;
@@ -133,6 +138,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   auto library_progress_num = rule->KeyNumber(".library");
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
+
+    all_objects.insert(all_objects.end(), std::begin(lint_header_targets),
+                       std::end(lint_header_targets));
 
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
@@ -341,8 +349,8 @@ static std::vector<std::string> cppincludes(
       "-I.", "-isystem",
       // third party library installed
       ".build/.lib/m{}/include"_format(
-          project->Platform == core::filesystem::TargetPlatform::k64 ? "-m64"
-                                                                     : "-m32"),
+          project->Platform == core::filesystem::TargetPlatform::k64 ? "64"
+                                                                     : "32"),
       "-I.build/include"};
 }
 
@@ -415,7 +423,9 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
         [mk = makefile.get(), project](const auto *rule) {
           for (const auto &[k, v] : rule->ExportedEnvironmentVar(project)) {
             mk->DefineEnvironment(
-                fmt::format("{}_{}", rule->FullQuotedQualifiedName(), k), v);
+                fmt::format("{}_{}",
+                            rule->FullQuotedQualifiedNameWithNoVersion(), k),
+                v);
           }
         },
         &record);

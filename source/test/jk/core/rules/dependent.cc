@@ -11,17 +11,23 @@ namespace core {
 namespace rules {
 namespace test {
 
-#define DEP_PARSE(dep, pkg, rule, pos) \
-  auto res = ParseIdString(dep);       \
-                                       \
-  REQUIRE(res.PackageName);            \
-  REQUIRE(*res.PackageName == pkg);    \
-  REQUIRE(res.RuleName == rule);       \
-  REQUIRE(res.Position == RuleRelativePosition::pos)
+#define DEP_PARSE(dep, pkg, rule, pos)                  \
+  do {                                                  \
+    auto res = ParseIdString(dep);                      \
+                                                        \
+    REQUIRE(res.PackageName);                           \
+    REQUIRE(*res.PackageName == pkg);                   \
+    REQUIRE(res.RuleName == rule);                      \
+    REQUIRE(res.Position == RuleRelativePosition::pos); \
+  } while (0);
 
 TEST_CASE("Parse Absolute Id", "[core][rules][dependent]") {
   DEP_PARSE("//media_server_library/base:base", "media_server_library/base",
             "base", kAbsolute);
+  DEP_PARSE(
+      "//agora_universal_transport/third_party/tiny-AES-c/BUILD:tiny-AES-c",
+      "agora_universal_transport/third_party/tiny-AES-c", "tiny-AES-c",
+      kAbsolute);
 }
 
 TEST_CASE("Parse Relative Id", "[core][rules][dependent]") {

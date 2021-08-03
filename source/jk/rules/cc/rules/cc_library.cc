@@ -257,8 +257,8 @@ const std::vector<std::string> &CCLibrary::ExpandedHeaderFiles(
     }
   }
 
-  for (const auto &source : Sources) {
-    auto expanded = expander->Expand(source, project->Resolve(Package->Path));
+  for (const auto &header : Headers) {
+    auto expanded = expander->Expand(header, project->Resolve(Package->Path));
 
     for (const auto &f : expanded) {
       if (excludes.find(f) == excludes.end()) {
@@ -270,15 +270,15 @@ const std::vector<std::string> &CCLibrary::ExpandedHeaderFiles(
 
   std::sort(std::begin(result), std::end(result));
   logger->info(
-      "SourceFiles in {}: [{}]", *this,
+      "Headers in {}: [{}]", *this,
       utils::JoinString(", ", std::begin(result), std::end(result),
                         [](const std::string &filename) -> std::string {
                           return fmt::format(R"("{}")", filename);
                         }));
 
-  expanded_source_files_ = std::move(result);
+  expanded_header_files_ = std::move(result);
 
-  return expanded_source_files_.value();
+  return expanded_header_files_.value();
 }
 
 std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(

@@ -88,11 +88,29 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     LintSourceFile(project, rule, source_file, build.get(), working_folder);
   }
 
+  // lint headers
+  const auto &header_files = rule->ExpandedHeaderFiles(project, expander);
+  std::list<std::string> lint_header_targets;
+  for (const auto &filename : header_files) {
+    auto source_file = SourceFile::Create(rule, rule->Package, filename);
+    if (rule->IsNolint(project->Resolve(source_file->FullQualifiedPath()))) {
+      continue;
+    }
+
+    LintSourceFile(project, rule, source_file, build.get(), working_folder);
+    lint_header_targets.push_back(
+        source_file->FullQualifiedLintPath(working_folder));
+  }
+
   core::builder::CustomCommandLines clean_statements;
 
   auto binary_progress_num = rule->KeyNumber(".binary");
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
+
+    all_objects.insert(all_objects.end(), std::begin(lint_header_targets),
+                       std::end(lint_header_targets));
+
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
 

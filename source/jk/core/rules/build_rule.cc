@@ -171,6 +171,20 @@ std::string BuildRule::FullQuotedQualifiedName() const {  // {{{
   return str;
 }  // }}}
 
+std::string BuildRule::FullQualifiedNameWithNoVersion() const {  // {{{
+  return fmt::format("{}/{}", Package->Name, Name);
+}  // }}}
+
+std::string BuildRule::FullQuotedQualifiedNameWithNoVersion() const {  // {{{
+  auto str = FullQualifiedNameWithNoVersion();
+  for (auto &ch : str) {
+    if (ch == '/') {
+      ch = '_';
+    }
+  }
+  return str;
+}  // }}}
+
 std::string BuildRule::FullQualifiedTarget(  // {{{
     const std::string &output) const {
   if (Type.IsCC()) {
