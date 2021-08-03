@@ -34,8 +34,6 @@ class ShellScript : public core::rules::BuildRule {
 
   std::vector<std::string> ExportedLinkFlags() const override;
 
-  std::vector<std::string> ExportedHeaders() const override;
-
   std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
       core::filesystem::JKProject *) const override;
 
@@ -43,7 +41,6 @@ class ShellScript : public core::rules::BuildRule {
   std::string Script;
   std::vector<std::string> Exports;
   std::vector<std::string> LdFlags;
-  std::vector<std::string> Headers;
   std::unordered_map<std::string, std::string> ExportBin;
   // --- Fields End ---
 };

@@ -61,6 +61,7 @@ struct SourceFile : public utils::Stringifiable {
   bool IsCppSourceFile() const;
   bool IsCSourceFile() const;
   bool IsSourceFile() const;
+  bool IsHeaderFile() const;
 
   std::string Stringify() const final;
 

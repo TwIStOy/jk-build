@@ -41,8 +41,6 @@ class ExternalLibrary : public core::rules::BuildRule {
 
   std::vector<std::string> ExportedLinkFlags() const override;
 
-  std::vector<std::string> ExportedHeaders() const override;
-
   // --- Fields Start ---
   std::string Url;
   std::string Sha256;

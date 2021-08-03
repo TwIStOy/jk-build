@@ -19,8 +19,6 @@
 namespace jk::rules::cc {
 
 using core::rules::BuildPackage;
-using core::rules::BuildRule;
-using core::rules::RuleTypeEnum;
 
 class ProtoLibrary : public CCLibrary {
  public:
@@ -29,8 +27,6 @@ class ProtoLibrary : public CCLibrary {
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
   std::vector<std::string> ExportedLinkFlags() const override;
-
-  std::vector<std::string> ExportedHeaders() const override;
 
   std::vector<std::string> ExportedFilesSimpleName(
       core::filesystem::JKProject *project,

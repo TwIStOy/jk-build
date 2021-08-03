@@ -25,7 +25,6 @@
 #include "jk/core/writer/writer.hh"
 #include "jk/rules/cc/rules/cc_binary.hh"
 #include "jk/rules/cc/rules/cc_library.hh"
-#include "jk/rules/cc/rules/cc_library_helper.hh"
 #include "jk/rules/cc/rules/cc_test.hh"
 #include "jk/rules/cc/source_file.hh"
 #include "jk/utils/array.hh"
@@ -106,17 +105,23 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
-  // TODO(hawtian): record source files
-
-  // headers
-  std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
-
   // lint sources first
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
 
     if (rule->IsNolint(
             project->Resolve(source_file->FullQualifiedPath()).Stringify())) {
+      continue;
+    }
+
+    LintSourceFile(project, rule, source_file, build.get(), working_folder);
+  }
+
+  // lint headers
+  const auto &header_files = rule->ExpandedHeaderFiles(project, expander);
+  for (const auto &filename : header_files) {
+    auto source_file = SourceFile::Create(rule, rule->Package, filename);
+    if (rule->IsNolint(project->Resolve(source_file->FullQualifiedPath()))) {
       continue;
     }
 
@@ -132,8 +137,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
 
-      MakeSourceFile(project, rule, build_type, source_file, all_dep_headers,
-                     build.get(), working_folder);
+      MakeSourceFile(project, rule, build_type, source_file, {}, build.get(),
+                     working_folder);
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());
@@ -192,12 +197,15 @@ uint32_t MakefileCCLibraryCompiler::LintSourceFile(
   auto progress_num =
       rule->KeyNumber(source_file->FullQualifiedPath().Stringify() + "/lint");
 
+  auto file_type = source_file->IsHeaderFile() ? "Header" : "CXX";
+
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
        "--progress-num={}"_format(progress_num),
        "--progress-dir={}"_format(project->BuildRoot),
-       "Linting CXX file {}"_format(
-           project->Resolve(source_file->FullQualifiedPath()))});
+       "Linting {} file {}"_format(
+           file_type, project->Resolve(source_file->FullQualifiedPath()))});
+
   using core::builder::operator""_c_raw;
   auto lint_stmt = core::builder::CustomCommandLine::Make(
       {"@$(CPPLINT)",
@@ -331,6 +339,7 @@ static std::vector<std::string> cppincludes(
     core::filesystem::JKProject *project) {
   return {
       "-I.", "-isystem",
+      // third party library installed
       ".build/.lib/m{}/include"_format(
           project->Platform == core::filesystem::TargetPlatform::k64 ? "-m64"
                                                                      : "-m32"),
@@ -338,6 +347,7 @@ static std::vector<std::string> cppincludes(
 }
 
 static std::vector<std::string> cxxincludes() {
+  // generated pb output
   return {"-I.build/pb/c++"};
 }
 
@@ -362,7 +372,6 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   auto makefile = std::make_unique<core::output::UnixMakefile>("flags.make");
 
   auto git_desc = R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
-  auto build_time = R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
 
   auto compile_flags = project->Config().compile_flags;
   compile_flags.push_back(fmt::format(git_desc, rule->Package->Path));

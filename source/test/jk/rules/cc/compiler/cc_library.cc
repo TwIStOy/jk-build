@@ -20,7 +20,6 @@
 #include "jk/core/writer/buffer_writer.hh"
 #include "jk/core/writer/writer.hh"
 #include "jk/rules/cc/compiler/cc_library.hh"
-#include "jk/rules/cc/rules/cc_library_helper.hh"
 #include "jk/rules/cc/source_file.hh"
 #include "jk/utils/array.hh"
 #include "jk/utils/str.hh"
@@ -298,7 +297,6 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
             working_folder.Sub("flags.make").Stringify(),
             working_folder.Sub("toolchain.make").Stringify(),
             "~/Projects/test_project/library/memory/memory1.cpp",
-            "~/Projects/test_project/library/base/base.h",
             working_folder.Sub("library/memory/memory1.cpp.lint").Stringify(),
         }));
 

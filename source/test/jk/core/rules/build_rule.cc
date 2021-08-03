@@ -28,10 +28,6 @@ struct DummyRule final : public BuildRule {
   std::vector<std::string> ExportedLinkFlags() const final {
     return {};
   }
-
-  std::vector<std::string> ExportedHeaders() const final {
-    return {};
-  }
 };
 
 }  // namespace jk::core::rules::test

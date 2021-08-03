@@ -16,7 +16,6 @@
 #include "jk/core/writer/writer.hh"
 #include "jk/rules/cc/rules/cc_binary.hh"
 #include "jk/rules/cc/rules/cc_library.hh"
-#include "jk/rules/cc/rules/cc_library_helper.hh"
 #include "jk/rules/cc/source_file.hh"
 #include "jk/utils/array.hh"
 #include "jk/utils/str.hh"
@@ -183,7 +182,6 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
             working_folder.Sub("flags.make").Stringify(),
             working_folder.Sub("toolchain.make").Stringify(),
             "~/Projects/test_project/application/app/main.cpp",
-            "~/Projects/test_project/library/base/base.h",
             working_folder.Sub("application/app/main.cpp.lint").Stringify()}));
 
     auto exec_target =

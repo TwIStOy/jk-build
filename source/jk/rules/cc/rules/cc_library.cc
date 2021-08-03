@@ -57,6 +57,13 @@ void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   FILL_LIST_FIELD(Defines,  "defines");
   FILL_LIST_FIELD(Headers,  "headers");
   // clang-format on
+
+  // if no headers specified, add all headers
+  if (Headers.empty()) {
+    Headers.push_back("*.h");
+    Headers.push_back("*.hh");
+    Headers.push_back("*.hpp");
+  }
 }
 
 std::vector<std::string> CCLibrary::ResolveIncludes(
@@ -232,13 +239,46 @@ std::vector<std::string> CCLibrary::ExportedLinkFlags() const {
   return LdFlags;
 }
 
-std::vector<std::string> CCLibrary::ExportedHeaders() const {
-  std::vector<std::string> res;
-  std::transform(Headers.begin(), Headers.end(), std::back_inserter(res),
-                 [this](const std::string &hdr) {
-                   return Package->Path.Sub(hdr).Stringify();
-                 });
-  return Headers;
+const std::vector<std::string> &CCLibrary::ExpandedHeaderFiles(
+    core::filesystem::JKProject *project,
+    core::filesystem::FileNamePatternExpander *expander) const {
+  if (expanded_header_files_) {
+    return expanded_header_files_.value();
+  }
+
+  std::vector<std::string> result;
+  std::unordered_set<std::string> excludes;
+
+  fs::path package_root = Package->Name;
+  for (const auto &exclude : Excludes) {
+    auto expanded = expander->Expand(exclude, project->Resolve(Package->Path));
+    for (const auto &f : expanded) {
+      excludes.insert(f);
+    }
+  }
+
+  for (const auto &source : Sources) {
+    auto expanded = expander->Expand(source, project->Resolve(Package->Path));
+
+    for (const auto &f : expanded) {
+      if (excludes.find(f) == excludes.end()) {
+        result.push_back(
+            fs::relative(f, project->Resolve(Package->Path).Path).string());
+      }
+    }
+  }
+
+  std::sort(std::begin(result), std::end(result));
+  logger->info(
+      "SourceFiles in {}: [{}]", *this,
+      utils::JoinString(", ", std::begin(result), std::end(result),
+                        [](const std::string &filename) -> std::string {
+                          return fmt::format(R"("{}")", filename);
+                        }));
+
+  expanded_source_files_ = std::move(result);
+
+  return expanded_source_files_.value();
 }
 
 std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(

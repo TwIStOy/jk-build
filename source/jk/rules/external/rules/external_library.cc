@@ -54,10 +54,6 @@ std::vector<std::string> ExternalLibrary::ExportedLinkFlags() const {
   return LdFlags;
 }
 
-std::vector<std::string> ExternalLibrary::ExportedHeaders() const {
-  return {};
-}
-
 }  // namespace jk::rules::external
 
 // vim: fdm=marker

@@ -16,6 +16,7 @@
 #include "jk/common/path.hh"
 #include "jk/core/constant.hh"
 #include "jk/core/error.h"
+#include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/utils/kwargs.hh"
 #include "jk/utils/stack.hh"
@@ -126,14 +127,6 @@ struct BuildRule : public utils::Stringifiable {
   //! Return exported link flags. Other rules which depend on this, will
   //! automatically add these flags into its link flags.
   virtual std::vector<std::string> ExportedLinkFlags() const = 0;
-
-  //! Return exported header files.
-  //!
-  //! Some rules such as `cc_library`, `shell_script` may generate some headers,
-  //! these headers must be generated before sources files used them. So a rule
-  //! should hint `JK` to make dependencies between source files and these
-  //! headers.
-  virtual std::vector<std::string> ExportedHeaders() const = 0;
 
   //! Return exported environment variables, that its dependencies can be used.
   //!

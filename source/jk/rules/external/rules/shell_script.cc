@@ -63,7 +63,6 @@ void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   } while (0);
 
   LdFlags = kwargs.ListOptional("ldflags", empty_list);
-  Headers = kwargs.ListOptional("headers", empty_list);
 }
 
 std::vector<std::string> ShellScript::ExportedFilesSimpleName(
@@ -86,10 +85,6 @@ std::vector<std::string> ShellScript::ExportedFilesSimpleName(
 
 std::vector<std::string> ShellScript::ExportedLinkFlags() const {
   return LdFlags;
-}
-
-std::vector<std::string> ShellScript::ExportedHeaders() const {
-  return Headers;
 }
 
 std::unordered_map<std::string, std::string>

@@ -13,7 +13,6 @@
 #include "jk/common/flags.hh"
 #include "jk/core/builder/custom_command.hh"
 #include "jk/core/rules/package.hh"
-#include "jk/rules/cc/rules/cc_library_helper.hh"
 #include "jk/utils/array.hh"
 #include "jk/utils/str.hh"
 
@@ -82,9 +81,6 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
 
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
-  // headers
-  std::list<std::string> all_dep_headers = MergeDepHeaders(rule, project);
-
   // lint files first
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
@@ -100,8 +96,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
 
-      MakeSourceFile(project, rule, build_type, source_file, all_dep_headers,
-                     build.get(), working_folder);
+      MakeSourceFile(project, rule, build_type, source_file, {}, build.get(),
+                     working_folder);
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());

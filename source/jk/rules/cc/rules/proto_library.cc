@@ -40,10 +40,6 @@ std::vector<std::string> ProtoLibrary::ExportedLinkFlags() const {
   return {};
 }
 
-std::vector<std::string> ProtoLibrary::ExportedHeaders() const {
-  return {};
-}
-
 }  // namespace jk::rules::cc
 
 // vim: fdm=marker

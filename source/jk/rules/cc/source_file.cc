@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -18,19 +19,22 @@
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/utils/logging.hh"
+#include "jk/utils/str.hh"
 
-namespace jk {
-namespace rules {
-namespace cc {
+namespace jk::rules::cc {
 
 auto logger = utils::Logger("source_file");
 
 static std::unordered_set<std::string> CppExtensions = {
-    ".cc", ".cpp", ".cxx", ".CC", ".CPP", ".CXX",
+    ".cc",
+    ".cpp",
+    ".cxx",
 };
 static std::unordered_set<std::string> CExtensions = {
     ".c",
 };
+static std::unordered_set<std::string> HeaderExtensions = {".h", ".hh", ".hxx",
+                                                           ".hpp"};
 
 std::string SourceFile::Stringify() const {
   return "SourceFile({})"_format(FullQualifiedPath());
@@ -117,18 +121,24 @@ common::AbsolutePath SourceFile::FullQualifiedPbPath(
 
 bool SourceFile::IsCSourceFile() const {
   auto p = fs::path(Package->Name) / FileName;
-  return CExtensions.find(p.extension().string()) != CExtensions.end();
+  return CExtensions.find(utils::ToLower(p.extension().string())) !=
+         CExtensions.end();
 }
 
 bool SourceFile::IsCppSourceFile() const {
   auto p = fs::path(Package->Name) / FileName;
-  return CppExtensions.find(p.extension().string()) != CppExtensions.end();
+  return CppExtensions.find(utils::ToLower(p.extension().string())) !=
+         CppExtensions.end();
 }
 
 bool SourceFile::IsSourceFile() const {
   return IsCSourceFile() || IsCppSourceFile();
 }
 
-}  // namespace cc
-}  // namespace rules
-}  // namespace jk
+bool SourceFile::IsHeaderFile() const {
+  auto p = fs::path(Package->Name) / FileName;
+  return HeaderExtensions.find(utils::ToLower(p.extension().string())) !=
+         HeaderExtensions.end();
+}
+
+}  // namespace jk::rules::cc
