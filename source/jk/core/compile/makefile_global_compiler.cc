@@ -53,10 +53,15 @@ void MakefileGlobalCompiler::Compile(
 
   makefile->AddTarget(
       "pre", {regen_target},
-      builder::CustomCommandLines::Single(
-          {"@$(JK_COMMAND)", "start_progress",
-           "--progress-mark={}"_format(project->BuildRoot.Sub("progress.mark")),
-           "--progress-dir={}"_format(project->BuildRoot)}),
+      builder::CustomCommandLines::Multiple(
+          builder::CustomCommandLine::Make(
+              {"@$(JK_COMMAND)", "start_progress",
+               "--progress-mark={}"_format(
+                   project->BuildRoot.Sub("progress.mark")),
+               "--progress-dir={}"_format(project->BuildRoot)}),
+          builder::CustomCommandLine::Make(
+              {"mkdir", "-p",
+               project->BuildRoot.Sub("pb", "c++").Stringify()})),
       "", true);
   makefile->AddTarget("external", {}, {}, "", true);
 
