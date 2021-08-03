@@ -139,8 +139,10 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
 
-    all_objects.insert(all_objects.end(), std::begin(lint_header_targets),
-                       std::end(lint_header_targets));
+    /*
+     * all_objects.insert(all_objects.end(), std::begin(lint_header_targets),
+     *                    std::end(lint_header_targets));
+     */
 
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
@@ -163,8 +165,11 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     std::copy(std::begin(all_objects), std::end(all_objects),
               std::back_inserter(ar_stmt));
 
+    auto binary_deps = all_objects;
+    binary_deps.insert(binary_deps.end(), std::begin(header_files), std::end(header_files));
+
     build->AddTarget(
-        library_file.Stringify(), all_objects,
+        library_file.Stringify(), binary_deps,
         core::builder::CustomCommandLines::Multiple(
             core::builder::CustomCommandLine::Make(
                 {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
@@ -179,7 +184,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"$(RM)", library_file.Stringify()}));
-    for (const auto &it : all_objects) {
+    for (const auto &it : binary_deps) {
       clean_statements.push_back(
           core::builder::CustomCommandLine::Make({"$(RM)", it}));
     }

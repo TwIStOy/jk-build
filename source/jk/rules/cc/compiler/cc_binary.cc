@@ -108,8 +108,10 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   for (const auto &build_type : common::FLAGS_BuildTypes) {
     std::list<std::string> all_objects;
 
-    all_objects.insert(all_objects.end(), std::begin(lint_header_targets),
-                       std::end(lint_header_targets));
+    /*
+     * all_objects.insert(all_objects.end(), std::begin(lint_header_targets),
+     *                    std::end(lint_header_targets));
+     */
 
     for (const auto &filename : source_files) {
       auto source_file = SourceFile::Create(rule, rule->Package, filename);
@@ -126,6 +128,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
         rule->ResolveDependenciesAndLdFlags(project, build_type);
 
     auto binary_deps = all_objects;
+    binary_deps.insert(binary_deps.end(), std::begin(header_files),
+                       std::end(header_files));
     // depend on all static libraries
     for (auto dep : rule->DependenciesInOrder()) {
       if (!dep->Type.IsExternal() && dep != rule) {
@@ -159,7 +163,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
                          print_stmt, mkdir_stmt, link_stmt));
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"@$(RM)", "{}"_format(binary_file.Stringify())}));
-    for (const auto &obj : all_objects) {
+    for (const auto &obj : binary_deps) {
       clean_statements.push_back(
           core::builder::CustomCommandLine::Make({"@$(RM)", obj}));
     }
