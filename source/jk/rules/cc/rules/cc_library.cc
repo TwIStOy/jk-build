@@ -61,6 +61,7 @@ void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   // if no headers specified, add all headers
   if (Headers.empty()) {
     Headers.push_back("*.h");
+    Headers.push_back("**/*.h");
     // Some files in library can't not lint, but it passed. Because the old
     // build system only check files with suffix '.h' and '.inl'.
 
