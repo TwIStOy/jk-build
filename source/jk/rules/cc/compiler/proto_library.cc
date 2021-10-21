@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "jk/common/counter.hh"
 #include "jk/common/flags.hh"
@@ -66,6 +67,7 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
 
   auto library_progress_num = rule->KeyNumber(".library");
 
+  std::list<std::string> all_headers;
   // genereate ".cc" and ".h" files
   for (const auto &filename : source_files) {
     auto source_file = SourceFile::Create(rule, rule->Package, filename);
@@ -97,6 +99,8 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"$(RM)",
          "{}.h"_format(source_file->FullQualifiedPbPath(working_folder))}));
+    all_headers.push_back(
+        "{}.h"_format(source_file->FullQualifiedPbPath(working_folder)));
   }
 
   for (const auto &build_type : common::FLAGS_BuildTypes) {
@@ -107,8 +111,8 @@ core::output::UnixMakefilePtr MakefileProtoLibraryCompiler::GenerateBuild(
           filename.substr(0, filename.find_last_of('.')) + ".pb.cc";
       auto source_file = SourceFile::Create(rule, rule->Package, cc_filename);
 
-      MakeSourceFile(project, rule, build_type, source_file, {}, build.get(),
-                     working_folder);
+      MakeSourceFile(project, rule, build_type, source_file, all_headers,
+                     build.get(), working_folder);
 
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type));

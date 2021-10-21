@@ -4,6 +4,7 @@
 #include "jk/cli/gen.hh"
 
 #include <algorithm>
+#include <boost/filesystem/operations.hpp>
 #include <fstream>
 #include <iterator>
 #include <string>
@@ -50,6 +51,13 @@ void Generate(args::Subparser &parser) {
   auto project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
   core::writer::FileWriterFactory writer_factory;
+
+  // check if python39.zip exists
+  if (fs::exists(project.BuildRoot.Sub(".jk_req")
+                     .Sub("lib")
+                     .Sub("python39.zip")
+                     .Path)) {
+  }
 
   // generate global compile_commands.json
   core::writer::JSONMergeWriterFactory json_merge_factory;
