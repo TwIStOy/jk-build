@@ -47,7 +47,7 @@ class __JK_HIDDEN ScriptInterpreter {
   void AddConnomLocals(filesystem::JKProject *project, pybind11::dict *);
 
  private:
-  pybind11::scoped_interpreter interpreter_;
+  std::unique_ptr<pybind11::scoped_interpreter> interpreter_;
 
   struct __JK_HIDDEN HookFunction {
     std::string FuncName;

@@ -7,10 +7,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 
+#include <codecvt>
 #include <exception>
 #include <fstream>
 #include <functional>
 #include <iterator>
+#include <memory>
+#include <string>
 #include <utility>
 
 #include "jk/common/flags.hh"
@@ -123,6 +126,17 @@ void ScriptInterpreter::EvalScript(filesystem::JKProject *project,
 
 ScriptInterpreter::ScriptInterpreter() {
   HookFunctions();
+
+  auto pythonhome = getenv("JK_PYTHONHOME");
+  if (pythonhome) {
+    typedef std::codecvt_utf8<wchar_t> convert_type;
+    std::wstring_convert<convert_type, wchar_t> converter;
+    auto str = converter.from_bytes(pythonhome);
+    logger->info("Use pythohome: {}", pythonhome);
+    Py_SetPythonHome(str.data());
+  }
+
+  interpreter_ = std::make_unique<pybind11::scoped_interpreter>();
 }
 
 }  // namespace script
