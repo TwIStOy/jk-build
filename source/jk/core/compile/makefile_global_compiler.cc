@@ -59,9 +59,14 @@ void MakefileGlobalCompiler::Compile(
                "--progress-mark={}"_format(
                    project->BuildRoot.Sub("progress.mark")),
                "--progress-dir={}"_format(project->BuildRoot)}),
+          // backward compatibility
           builder::CustomCommandLine::Make(
               {"mkdir", "-p",
-               project->BuildRoot.Sub("pb", "c++").Stringify()})),
+               project->ProjectRoot.Sub(".build", "pb", "c++").Stringify()}),
+          builder::CustomCommandLine::Make(
+              {"mkdir", "-p",
+               project->ProjectRoot.Sub(".build", ".lib", "m64", "include")
+                   .Stringify()})),
       "", true);
   makefile->AddTarget("external", {}, {}, "", true);
 
