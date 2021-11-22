@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <functional>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -109,6 +110,17 @@ std::vector<ValueType> ConcatArrays(const First &first, const Args &...args) {
   std::vector<ValueType> res;
   __detail::ConcatArraysImpl(&res, first, args...);
   return res;
+}
+
+template<typename T, typename Iter, typename Func>
+void CopyArray(Iter begin, Iter end, std::vector<T> *output, Func func) {
+  for (auto it = begin; it != end; ++it) {
+    if (func) {
+      output->push_back(func(*it));
+    } else {
+      output->push_back(*it);
+    }
+  }
 }
 
 }  // namespace jk::utils

@@ -39,6 +39,20 @@ core::filesystem::JKProject *IncludesResolvingContextImpl::Project() const {
 
 static auto logger = utils::Logger("compiler.cc_library");
 
+static std::string FixCpp20Gcc2ClangFlags(const std::string &flag) {
+  if (flag == "-fcoroutines") {
+    return "-fcoroutines-ts";
+  }
+  return flag;
+}
+
+static std::string FixCpp20Clang2GccFlags(const std::string &flag) {
+  if (flag == "-fcoroutines-ts") {
+    return "-fcoroutines";
+  }
+  return flag;
+}
+
 // makefile {{{
 std::string MakefileCCLibraryCompiler::Name() const {
   return "Makefile.cc_library";
@@ -490,11 +504,11 @@ void CompileDatabaseCCLibraryCompiler::Compile(
   c_flags = utils::ConcatArrays(c_flags, project->Config().cflags,
                                 cppincludes(project));
 
-  std::copy(std::begin(rule->CppFlags), std::end(rule->CppFlags),
-            std::back_inserter(cxx_flags));
+  utils::CopyArray(std::begin(rule->CppFlags), std::end(rule->CppFlags),
+                   &cxx_flags, &FixCpp20Gcc2ClangFlags);
 
-  std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
-            std::back_inserter(c_flags));
+  utils::CopyArray(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
+                   &cxx_flags, &FixCpp20Gcc2ClangFlags);
 
   std::copy(std::begin(rule->CxxFlags), std::end(rule->CxxFlags),
             std::back_inserter(cxx_flags));
@@ -527,6 +541,8 @@ void CompileDatabaseCCLibraryCompiler::Compile(
           command.push_back("g++");
           std::copy(std::begin(cxx_flags), std::end(cxx_flags),
                     std::back_inserter(command));
+          // FIX g++ option '-fcoroutines' in clang toolchains
+          command.push_back("-D__cpp_impl_coroutine");
         } else {
           command.push_back("gcc");
           std::copy(std::begin(c_flags), std::end(c_flags),
