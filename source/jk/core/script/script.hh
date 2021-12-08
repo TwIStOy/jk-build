@@ -22,6 +22,8 @@ namespace jk {
 namespace core {
 namespace script {
 
+extern std::unordered_map<std::string, std::string> GlobalVariables;
+
 class __JK_HIDDEN ScriptInterpreter {
  public:
   using Kwargs = std::unordered_map<std::string, pybind11::object>;

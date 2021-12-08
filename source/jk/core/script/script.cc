@@ -13,6 +13,7 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -32,6 +33,8 @@ namespace core {
 namespace script {
 
 static auto logger = utils::Logger("script");
+
+std::unordered_map<std::string, std::string> GlobalVariables;
 
 ScriptInterpreter *ScriptInterpreter::Instance() {
   static ScriptInterpreter interp;
@@ -76,6 +79,14 @@ pybind11::dict ScriptInterpreter::Initialize(rules::BuildPackage *pkg) {
   return locals;
 }
 
+std::optional<std::string> GetGlobalVariables(const std::string &str) {
+  if (auto it = GlobalVariables.find(str); it == GlobalVariables.end()) {
+    return {};
+  } else {
+    return it->second;
+  }
+}
+
 void ScriptInterpreter::AddConnomLocals(filesystem::JKProject *project,
                                         pybind11::dict *locals) {
   if (project->Platform == filesystem::TargetPlatform::k32) {
@@ -93,6 +104,7 @@ void ScriptInterpreter::AddConnomLocals(filesystem::JKProject *project,
         project->ExternalInstalledPrefix.Stringify();
     (*locals)["JK_CXX_STANDARD"] = project->Config().cxx_standard;
   }
+  (*locals)["e"] = pybind11::cpp_function(GetGlobalVariables);
   // TODO(hawtian): fill common
 }
 

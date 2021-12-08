@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -21,6 +22,7 @@
 namespace jk::rules::cc {
 
 extern std::vector<std::string> BuildTypes;
+extern std::vector<std::string> GlobalDefines;
 
 struct IncludesResolvingContextImpl final
     : public CCLibrary::IncludesResolvingContext {

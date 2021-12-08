@@ -21,9 +21,12 @@
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/dependent.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/core/script/script.hh"
 #include "jk/core/writer/file_writer.hh"
 #include "jk/core/writer/json_merge_writer.hh"
+#include "jk/rules/cc/compiler/cc_library.hh"
 #include "jk/utils/logging.hh"
+#include "jk/utils/str.hh"
 #include "jk/version.h"
 
 namespace jk::cli {
@@ -45,12 +48,35 @@ void Generate(args::Subparser &parser) {
                                       {"format"}, "Makefile");
   args::ValueFlag<uint32_t> platform(parser, "platform", "Only 32 or 64",
                                      {'m', "platform"}, 64);
+  args::ValueFlagList<std::string> defines(
+      parser, "defines", "Defines variables used in BUILD files",
+      {'d', "defines"});
+  args::ValueFlagList<std::string> extra_flags(
+      parser, "extra_flags", "Define extra flags", {'e', "extra"});
+
   args::PositionalList<std::string> rules_name(parser, "RULE", "Rules...");
+
   parser.Parse();
 
   auto project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
   core::writer::FileWriterFactory writer_factory;
+
+  if (defines) {
+    for (const auto &str : args::get(defines)) {
+      std::vector<std::string> parts;
+      utils::SplitString(str, std::back_inserter(parts), '=');
+      if (parts.size() == 1) {
+        core::script::GlobalVariables[parts[0]] = "";
+      } else {
+        core::script::GlobalVariables[parts[0]] = parts[1];
+      }
+    }
+  }
+
+  if (extra_flags) {
+    rules::cc::GlobalDefines = args::get(extra_flags);
+  }
 
   // check if python39.zip exists
   if (fs::exists(project.BuildRoot.Sub(".jk_req")

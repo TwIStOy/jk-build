@@ -38,6 +38,7 @@ core::filesystem::JKProject *IncludesResolvingContextImpl::Project() const {
 }
 
 static auto logger = utils::Logger("compiler.cc_library");
+std::vector<std::string> GlobalDefines;
 
 static std::string FixCpp20Gcc2ClangFlags(const std::string &flag) {
   if (flag == "-fcoroutines") {
@@ -419,8 +420,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateFlags(
   DEFINE_FLAGS(profiling);
 
   makefile->DefineEnvironment(
-      "CXXFLAGS",
-      utils::JoinString(" ", rule->CxxFlags.begin(), rule->CxxFlags.end()));
+      "CXXFLAGS", utils::JoinString(
+                      " ", utils::ConcatArrays(rule->CxxFlags, GlobalDefines)));
 
   IncludesResolvingContextImpl includes_resolving_context(project);
 
