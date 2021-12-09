@@ -51,12 +51,10 @@ void UnixMakefile::DefaultTarget(std::string target) {
 }
 
 void UnixMakefile::DefineCommon(filesystem::JKProject *project) {
-  static auto program_localtion = boost::dll::program_location().string();
-
   DefineEnvironment("SHELL", "/bin/bash",
                     "The shell in which to execute make rules.");
 
-  DefineEnvironment("JK_COMMAND", program_localtion,
+  DefineEnvironment("JK_COMMAND", FLAGS_exec_path,
                     "The command Jk executable.");
 
   DefineEnvironment("JK_SOURCE_DIR", project->ProjectRoot,
@@ -71,7 +69,7 @@ void UnixMakefile::DefineCommon(filesystem::JKProject *project) {
 
   DefineEnvironment("EQUALS", "=", "Escaping for special characters.");
 
-  DefineEnvironment("PRINT", "jk echo_color");
+  DefineEnvironment("PRINT", FLAGS_exec_path + " echo_color");
 
   DefineEnvironment("JK_VERBOSE_FLAG", "V$(VERBOSE)");
 
