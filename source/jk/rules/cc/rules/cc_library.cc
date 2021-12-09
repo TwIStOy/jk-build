@@ -160,7 +160,7 @@ void CCLibrary::LoadNolintFiles(
   }
 
   auto p = project->Resolve(Package->Path).Sub("nolint.txt");
-  if (!boost::filesystem::exists(p.Path)) {
+  if (!std::filesystem::exists(p.Path)) {
     return;
   }
 

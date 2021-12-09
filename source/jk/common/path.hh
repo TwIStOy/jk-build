@@ -4,15 +4,15 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <cassert>
+#include <filesystem>
 #include <string>
 #include <utility>
 
-#include "boost/filesystem.hpp"
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace jk::common {
 

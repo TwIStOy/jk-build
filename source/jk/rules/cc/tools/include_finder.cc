@@ -95,7 +95,7 @@ std::optional<std::string> IncludeFinder::ParseIncludeLine(
 std::vector<common::AbsolutePath> IncludeFinder::Headers(
     const common::AbsolutePath &ap) {
   // Read all lines from file with 'filename'
-  fs::ifstream ifs(ap.Path);
+  std::ifstream ifs(ap.Path);
   if (!ifs) {
     return {};
   }

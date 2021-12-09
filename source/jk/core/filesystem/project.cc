@@ -3,6 +3,7 @@
 
 #include "jk/core/filesystem/project.hh"
 
+#include <filesystem>
 #include <string>
 
 #include "jk/common/path.hh"
@@ -36,7 +37,8 @@ std::string ToExternalPathSpec(TargetPlatform plt) {
 
 static bool HasRootMarker(const fs::path &root) {
   auto marker = root / ROOT_MARKER;
-  if (fs::exists(marker) && fs::is_regular_file(marker)) {
+  if (std::filesystem::exists(marker.string()) &&
+      std::filesystem::is_regular_file(marker.string())) {
     return true;
   }
   return false;
@@ -68,7 +70,7 @@ const Configuration &JKProject::Config() const {
   }
 
   auto file = ProjectRoot.Path / ROOT_MARKER;
-  if (boost::filesystem::exists(file)) {
+  if (std::filesystem::exists(file.string())) {
     config_ = Configuration(toml::parse(file.string()));
   } else {
     config_ = Configuration(toml::value());

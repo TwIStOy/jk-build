@@ -8,32 +8,35 @@
 #define JK_TEST
 
 #include <catch.hpp>
+#include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <list>
-
-#include "boost/filesystem.hpp"
+#include <random>
 
 namespace jk::core::filesystem::testing {
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 TEST_CASE("DefaultExpanderTest", "[core][filesystem][expander]") {
   /*
    * kDefaultPatternExpander.Expand(const std::string &pattern,
    *                                const common::AbsolutePath &path);
    */
-  auto temp_folder = "/tmp" / fs::unique_path();
+  std::random_device rd;
+
+  auto temp_folder = fs::path("/tmp") / "jk-test";
   fs::create_directory(temp_folder);
 
   SECTION("no name") {
     for (auto i = 0u; i < 10; ++i) {
       auto filename = temp_folder / fmt::format("expander_test_{}", i);
-      boost::filesystem::ofstream ofs(filename);
+      std::ofstream ofs(filename);
       ofs << "TMP";
     }
     for (auto i = 0u; i < 10; ++i) {
       auto filename = temp_folder / fmt::format("expander_test2_{}", i);
-      boost::filesystem::ofstream ofs(filename);
+      std::ofstream ofs(filename);
       ofs << "TMP";
     }
 
