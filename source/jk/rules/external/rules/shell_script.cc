@@ -30,11 +30,11 @@ void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
     if (it == kwargs.End()) {
       JK_THROW(core::JKBuildError("expect field '{}' but not found", "export"));
     }
-    if (it->second.get_type().is(pybind11::str().get_type())) {
+    if (pybind11::isinstance<pybind11::str()>(it->second)) {
       Exports = std::vector<std::string>{it->second.cast<std::string>()};
       break;
     }
-    if (it->second.get_type().is(pybind11::list().get_type())) {
+    if (pybind11::isinstance<pybind11::list()>(it->second)) {
       Exports =
           std::vector<std::string>{it->second.cast<utils::Kwargs::ListType>()};
       break;
@@ -48,13 +48,13 @@ void ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
     if (it == kwargs.End()) {
       break;
     }
-    if (!it->second.get_type().is(pybind11::dict().get_type())) {
+    if (!pybind11::isinstance<pybind11::dict()>(it->second)) {
       JK_THROW(core::JKBuildError("field '{}' expect type dict", "export_bin"));
     }
 
     ExportBin.clear();
     for (auto k : it->second) {
-      if (!k.get_type().is(pybind11::str().get_type())) {
+      if (!pybind11::isinstance<pybind11::str()>(k)) {
         JK_THROW(core::JKBuildError("key in field '{}' expect type str",
                                     "export_bin"));
       }

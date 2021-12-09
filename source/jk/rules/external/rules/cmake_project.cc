@@ -24,7 +24,7 @@ void CMakeLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   {
     auto it = kwargs.Find("var");
     if (it != kwargs.End()) {
-      if (!it->second.get_type().is(pybind11::dict().get_type())) {
+      if (!pybind11::isinstance<pybind11::dict()>(it->second)) {
         JK_THROW(core::JKBuildError("field 'var' expect type dict"));
       }
 
@@ -36,7 +36,7 @@ void CMakeLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   {
     auto it = kwargs.Find("job");
     if (it != kwargs.End()) {
-      if (!it->second.get_type().is(pybind11::int_().get_type())) {
+      if (!pybind11::isinstance<pybind11::int_()>(it->second)) {
         JK_THROW(core::JKBuildError("field 'define' expect type int"));
       }
 
@@ -49,11 +49,11 @@ void CMakeLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
     if (it == kwargs.End()) {
       JK_THROW(core::JKBuildError("expect field '{}' but not found", "export"));
     }
-    if (it->second.get_type().is(pybind11::str().get_type())) {
+    if (pybind11::isinstance<pybind11::str()>(it->second)) {
       Libraries = std::vector<std::string>{it->second.cast<std::string>()};
       break;
     }
-    if (it->second.get_type().is(pybind11::list().get_type())) {
+    if (pybind11::isinstance<pybind11::list()>(it->second)) {
       Libraries =
           std::vector<std::string>{it->second.cast<utils::Kwargs::ListType>()};
       break;

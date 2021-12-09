@@ -58,8 +58,8 @@ if(MINGW AND CMAKE_GENERATOR MATCHES "Ninja")
   endif()
 endif()
 
-set(PYTHON_URL https://github.com/python/cpython/archive/v3.9.1.tar.gz)
-set(PYTHON_SHA256 4de9ef9631daa85971420d1f5912296ec58105d0a95057720a7c008217e9e827)
+set(PYTHON_URL https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz)
+set(PYTHON_SHA256 da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814)
 include(BuildPython)
 
 set(OPENSSL_URL https://www.openssl.org/source/openssl-1.1.1i.tar.gz)

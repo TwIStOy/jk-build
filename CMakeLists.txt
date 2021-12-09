@@ -52,19 +52,19 @@ message(STATUS "PkgConfig Path: $ENV{PKG_CONFIG_PATH}")
 find_package(PkgConfig REQUIRED)
 
 # bundled python3
-pkg_search_module(PKG_python3 REQUIRED IMPORTED_TARGET python3)
-set(PKG_python3_STATIC_LIBRARIES "${DEPS_PREFIX}/lib/libpython3.9.a")
-add_library(BundledPython3 INTERFACE)
-set_property(TARGET BundledPython3
+pkg_search_module(PKG_python2 REQUIRED IMPORTED_TARGET python2)
+set(PKG_python2_STATIC_LIBRARIES "${DEPS_PREFIX}/lib/libpython2.7.a")
+add_library(BundledPython2 INTERFACE)
+set_property(TARGET BundledPython2
   APPEND
-  PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${PKG_python3_INCLUDE_DIRS}>)
-set_property(TARGET BundledPython3
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${PKG_python2_INCLUDE_DIRS}>)
+set_property(TARGET BundledPython2
   APPEND
-  PROPERTY INTERFACE_COMPILE_OPTIONS $<BUILD_INTERFACE:${PKG_python3_STATIC_CFLAGS}>)
-set_property(TARGET BundledPython3
+  PROPERTY INTERFACE_COMPILE_OPTIONS $<BUILD_INTERFACE:${PKG_python2_STATIC_CFLAGS}>)
+set_property(TARGET BundledPython2
   APPEND
-  PROPERTY INTERFACE_LINK_LIBRARIES $<BUILD_INTERFACE:${PKG_python3_STATIC_LIBRARIES}> ${PKG_python3_STATIC_LDFLAGS})
-target_link_libraries(libjk PUBLIC BundledPython3)
+  PROPERTY INTERFACE_LINK_LIBRARIES $<BUILD_INTERFACE:${PKG_python2_STATIC_LIBRARIES}> ${PKG_python2_STATIC_LDFLAGS})
+target_link_libraries(libjk PUBLIC BundledPython2)
 
 # bundled openssl
 pkg_search_module(PKG_openssl REQUIRED IMPORTED_TARGET openssl)

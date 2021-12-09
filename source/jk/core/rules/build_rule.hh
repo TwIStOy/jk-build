@@ -199,15 +199,16 @@ void NewRuleFromScript(
   if (it == kwargs.end()) {
     JK_THROW(JKBuildError("expect field 'name' but not found"));
   }
-  if (it->second.get_type().is(pybind11::str().get_type())) {
+  if (pybind11::isinstance<pybind11::str>(it->second)) {
     auto name = it->second.cast<std::string>();
     // construct a new rule
     auto rule = new RuleType(pkg, name);
     rule->ExtractFieldFromArguments(utils::Kwargs{kwargs});
   } else {
-    JK_THROW(
-        JKBuildError("field 'name' expect str but {} found",
-                     pybind11::str(it->second.get_type()).cast<std::string>()));
+    JK_THROW(JKBuildError(
+        "field 'name' expect {} but {} found",
+        pybind11::str(pybind11::str().get_type()).cast<std::string>(),
+        pybind11::str(it->second.get_type()).cast<std::string>()));
   }
 }
 

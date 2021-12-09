@@ -14,6 +14,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -116,9 +117,10 @@ void ScriptInterpreter::EvalScriptContent(filesystem::JKProject *project,
 
   try {
     pybind11::exec(content, pybind11::globals(), locals);
-  } catch (...) {
-    logger->error("Failed to execute script in {}", pkg->Path);
-    throw std::current_exception();
+  } catch (const std::runtime_error &e) {
+    logger->error("Failed to execute script in {}, what: {}", pkg->Path,
+                  e.what());
+    std::terminate();
   }
 }
 
@@ -139,17 +141,6 @@ void ScriptInterpreter::EvalScript(filesystem::JKProject *project,
 ScriptInterpreter::ScriptInterpreter() {
   HookFunctions();
 
-  /*
-   * auto pythonhome = getenv("JK_PYTHONHOME");
-   * if (pythonhome) {
-   *   typedef std::codecvt_utf8<wchar_t> convert_type;
-   *   std::wstring_convert<convert_type, wchar_t> converter;
-   *   auto str = converter.from_bytes(pythonhome);
-   *   logger->info("Use pythohome: {}", pythonhome);
-   *   Py_SetPythonHome(str.data());
-   * } else {
-   * }
-   */
   Py_NoSiteFlag = 1;
   Py_IgnoreEnvironmentFlag = 1;
   Py_NoUserSiteDirectory = 1;

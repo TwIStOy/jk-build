@@ -43,7 +43,7 @@ Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!it->second.get_type().is(pybind11::str().get_type())) {
+  if (!pybind11::isinstance<pybind11::str>(it->second)) {
     JK_THROW(core::JKBuildError("field '{}' expect type str", name));
   }
 
@@ -56,7 +56,7 @@ Kwargs::ListType Kwargs::ListRequired(const std::string &name) const {
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!it->second.get_type().is(pybind11::list().get_type())) {
+  if (!pybind11::isinstance<pybind11::list>(it->second)) {
     JK_THROW(core::JKBuildError("field '{}' expect type list", name));
   }
 
@@ -73,7 +73,7 @@ Kwargs::ListType Kwargs::ListOptional(
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!it->second.get_type().is(pybind11::list().get_type())) {
+  if (!pybind11::isinstance<pybind11::list>(it->second)) {
     JK_THROW(core::JKBuildError("field '{}' expect type list", name));
   }
 
@@ -90,7 +90,7 @@ Kwargs::StringType Kwargs::StringOptional(
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!it->second.get_type().is(pybind11::str().get_type())) {
+  if (!pybind11::isinstance<pybind11::str>(it->second)) {
     JK_THROW(core::JKBuildError("field '{}' expect type str", name));
   }
 
@@ -103,7 +103,7 @@ bool Kwargs::BooleanRequired(const std::string &name) const {
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!it->second.get_type().is(pybind11::bool_().get_type())) {
+  if (!pybind11::isinstance<pybind11::bool_>(it->second)) {
     JK_THROW(core::JKBuildError("field '{}' expect type boolean", name));
   }
 
@@ -120,7 +120,7 @@ bool Kwargs::BooleanOptional(const std::string &name,
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!it->second.get_type().is(pybind11::bool_().get_type())) {
+  if (!pybind11::isinstance<pybind11::bool_>(it->second)) {
     JK_THROW(core::JKBuildError("field '{}' expect type boolean", name));
   }
 
