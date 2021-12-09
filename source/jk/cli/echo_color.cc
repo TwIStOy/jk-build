@@ -3,6 +3,7 @@
 
 #include "jk/cli/echo_color.hh"
 
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -147,13 +148,10 @@ void EchoColor(args::Subparser &parser) {
     num.push_back(x);
   }
 
-  std::cout << fmt::format(
-                   "{} {}{}{}",
-                   ProgressReport(fs::path{args::get(progress_dir)}, num),
-                   code_st,
-                   utils::JoinString(" ", std::begin(msg), std::end(msg)),
-                   code_ed)
-            << std::endl;
+  auto final_msg = fmt::format(
+      "{} {}{}{}", ProgressReport(fs::path{args::get(progress_dir)}, num),
+      code_st, utils::JoinString(" ", std::begin(msg), std::end(msg)), code_ed);
+  printf("%s\n", final_msg.c_str());
 }
 
 }  // namespace jk::cli
