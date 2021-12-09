@@ -70,7 +70,7 @@ set(CURL_URL https://curl.se/download/curl-7.74.0.tar.gz)
 set(CURL_SHA256 e56b3921eeb7a2951959c02db0912b5fcd5fdba5aca071da819e1accf338bbd7)
 include(BuildCurl)
 
-set(BOOST_URL https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.gz)
+set(BOOST_URL https://boostorg.jfrog.io/artifactory/main/release/1.75.0/source/boost_1_75_0.tar.gz)
 set(BOOST_SHA256 aeb26f80e80945e82ee93e5939baebdca47b9dee80a07d3144be1e1a6a66dd6a)
 include(BuildBoost)
 

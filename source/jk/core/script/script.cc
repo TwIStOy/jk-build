@@ -151,6 +151,8 @@ ScriptInterpreter::ScriptInterpreter() {
    * }
    */
   Py_NoSiteFlag = 1;
+  Py_IgnoreEnvironmentFlag = 1;
+  Py_NoUserSiteDirectory = 1;
 
   interpreter_ = std::make_unique<pybind11::scoped_interpreter>();
 }

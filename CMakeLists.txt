@@ -8,9 +8,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 SET(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_C_COMPILER "/home/hawtian/project/musl/new/x86_64-linux-musl-cross/bin/x86_64-linux-musl-gcc")
-set(CMAKE_CXX_COMPILER "/home/hawtian/project/musl/new/x86_64-linux-musl-cross/bin/x86_64-linux-musl-c++")
-
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -fPIC -g2 -static")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3 -fPIC -g2 -static")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -g2")
