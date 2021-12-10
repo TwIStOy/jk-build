@@ -9,9 +9,7 @@
 #include "jk/common/flags.hh"
 
 int main(int argc, char const *argv[]) {
-  std::cout << "exe path: " << std::filesystem::read_symlink("/proc/self/exe")
-            << std::endl;
-  FLAGS_exec_path = std::filesystem::read_symlink("/proc/self/exe");
+  jk::common::FLAGS_exec_path = std::filesystem::read_symlink("/proc/self/exe");
 
   jk::cli::CommandLineArguments.clear();
   for (auto i = 0; i < argc; i++) {
