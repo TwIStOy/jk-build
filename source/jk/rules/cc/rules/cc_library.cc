@@ -175,7 +175,7 @@ void CCLibrary::LoadNolintFiles(
     }
   }
 
-  logger->info("NOLINT files: [{}]", utils::JoinString(", ", nolint_files));
+  logger->debug("NOLINT files: [{}]", utils::JoinString(", ", nolint_files));
 
   nolint_files_ = std::move(nolint_files);
 }
@@ -219,7 +219,7 @@ const std::vector<std::string> &CCLibrary::ExpandSourceFiles(
   }
 
   std::sort(std::begin(result), std::end(result));
-  logger->info(
+  logger->debug(
       "SourceFiles in {}: [{}]", *this,
       utils::JoinString(", ", std::begin(result), std::end(result),
                         [](const std::string &filename) -> std::string {
@@ -273,7 +273,7 @@ const std::vector<std::string> &CCLibrary::ExpandedHeaderFiles(
   }
 
   std::sort(std::begin(result), std::end(result));
-  logger->info(
+  logger->debug(
       "Headers in {}: [{}]", *this,
       utils::JoinString(", ", std::begin(result), std::end(result),
                         [](const std::string &filename) -> std::string {
