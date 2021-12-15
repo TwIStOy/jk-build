@@ -14,6 +14,7 @@
 namespace jk::core::filesystem {
 
 static constexpr auto ROOT_MARKER = "JK_ROOT";
+static constexpr auto OLD_STYLE_ROOT_MARKER = "BLADE_ROOT";
 
 std::string ToPathSpec(TargetPlatform plt) {
   switch (plt) {
@@ -35,8 +36,8 @@ std::string ToExternalPathSpec(TargetPlatform plt) {
   return "";
 }
 
-static bool HasRootMarker(const fs::path &root) {
-  auto marker = root / ROOT_MARKER;
+static bool HasRootMarker(const fs::path &root, const char *const marker_file) {
+  auto marker = root / marker_file;
   if (std::filesystem::exists(marker.string()) &&
       std::filesystem::is_regular_file(marker.string())) {
     return true;
@@ -71,9 +72,9 @@ const Configuration &JKProject::Config() const {
 
   auto file = ProjectRoot.Path / ROOT_MARKER;
   if (std::filesystem::exists(file.string())) {
-    config_ = Configuration(toml::parse(file.string()));
+    config_ = Configuration(this, toml::parse(file.string()));
   } else {
-    config_ = Configuration(toml::value());
+    config_ = Configuration(this, toml::value());
   }
 
   return config_.value();
@@ -83,9 +84,17 @@ JKProject JKProject::ResolveFrom(const common::AbsolutePath &cwd) {
   auto current = cwd.Path;
   while (current.parent_path() != current) {
     utils::Logger("jk")->debug(R"(Checking folder "{}"...)", current.string());
-    if (HasRootMarker(current)) {
+    if (HasRootMarker(current, ROOT_MARKER)) {
       utils::Logger("jk")->info("Project Root: {}", current.string());
-      return JKProject(common::AbsolutePath{current});
+      JKProject project(common::AbsolutePath{current});
+      return project;
+    } else if (HasRootMarker(current, OLD_STYLE_ROOT_MARKER)) {
+      // backward compatibility
+      utils::Logger("jk")->info("Project Root(Old Style): {}",
+                                current.string());
+      JKProject project(common::AbsolutePath{current});
+      project.old_style_ = true;
+      return project;
     }
     current = current.parent_path();
   }

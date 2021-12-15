@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "jk/core/filesystem/project.hh"
 #include "jk/utils/logging.hh"
 
 namespace jk::core::filesystem {
@@ -126,8 +127,19 @@ static T extract_value(const toml::value &value, const char *name,
   { "-static-libasan", "-Wl,-Bstatic,-lasan", "-Wl,-Bdynamic", "-ldl", }
 // }}}
 
-Configuration::Configuration(const toml::value &value)
-    : EXTRACT_VALUE(cpplint_path, "cpplint"),
+static std::string CppLintDefaultValue(const JKProject *project) {
+  if (project->IsOldStyle()) {
+    // old style: use bundled
+    return project->ProjectRoot.Sub("build_tools", "lint", "cpplint.py")
+        .Stringify();
+  } else {
+    // new style: use global
+    return "cpplint";
+  }
+}
+
+Configuration::Configuration(const JKProject *project, const toml::value &value)
+    : EXTRACT_VALUE(cpplint_path, CppLintDefaultValue(project)),
       EXTRACT_VALUE(cxx_standard, "11"),
       EXTRACT_VALUE(cc, {"gcc"}),
       EXTRACT_VALUE(cxx, {"g++"}),

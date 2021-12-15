@@ -54,6 +54,8 @@ void Generate(args::Subparser &parser) {
       {'d', "defines"});
   args::ValueFlagList<std::string> extra_flags(
       parser, "extra_flags", "Define extra flags", {'e', "extra"});
+  args::Flag old_style(parser, "old_style", "Rule pattern in old-style",
+                       {"old"});
 
   args::PositionalList<std::string> rules_name(parser, "RULE", "Rules...");
 
@@ -90,16 +92,33 @@ void Generate(args::Subparser &parser) {
   core::writer::JSONMergeWriterFactory json_merge_factory;
 
   std::vector<core::rules::BuildRuleId> rules_id;
-  std::transform(
-      std::begin(rules_name), std::end(rules_name),
-      std::back_inserter(rules_id), [](const std::string &str) {
-        auto id = core::rules::ParseIdString(str);
-        if (id.Position != core::rules::RuleRelativePosition::kAbsolute) {
-          JK_THROW(core::JKBuildError(
-              "Only absolute rule is allowed in command-line."));
-        }
-        return id;
-      });
+  if (args::get(old_style)) {
+    // old style
+    std::transform(
+        std::begin(rules_name), std::end(rules_name),
+        std::back_inserter(rules_id), [](const std::string &str) {
+          if (!utils::StringEndsWith(str, "BUILD")) {
+            JK_THROW(
+                core::JKBuildError("Only support rule file named 'BUILD'."));
+          }
+
+          auto id = core::rules::ParseIdString("//{}:..."_format(str));
+          assert(id.Position == core::rules::RuleRelativePosition::kAbsolute);
+          return id;
+        });
+  } else {
+    // new style
+    std::transform(
+        std::begin(rules_name), std::end(rules_name),
+        std::back_inserter(rules_id), [](const std::string &str) {
+          auto id = core::rules::ParseIdString(str);
+          if (id.Position != core::rules::RuleRelativePosition::kAbsolute) {
+            JK_THROW(core::JKBuildError(
+                "Only absolute rule is allowed in command-line."));
+          }
+          return id;
+        });
+  }
 
   core::rules::BuildPackageFactory package_factory;
 

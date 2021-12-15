@@ -183,6 +183,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
     auto binary_deps = all_objects;
     binary_deps.insert(binary_deps.end(), std::begin(lint_header_targets),
                        std::end(lint_header_targets));
+    binary_deps.push_back(working_folder.Sub("build.make"));
 
     build->AddTarget(
         library_file.Stringify(), binary_deps,
@@ -200,10 +201,16 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"$(RM)", library_file.Stringify()}));
-    for (const auto &it : binary_deps) {
-      clean_statements.push_back(
-          core::builder::CustomCommandLine::Make({"$(RM)", it}));
-    }
+    utils::CopyArray(
+        std::begin(all_objects), std::end(all_objects), &clean_statements,
+        [](const auto &str) {
+          return core::builder::CustomCommandLine::Make({"$(RM)", str});
+        });
+    utils::CopyArray(
+        std::begin(lint_header_targets), std::end(lint_header_targets),
+        &clean_statements, [](const auto &str) {
+          return core::builder::CustomCommandLine::Make({"$(RM)", str});
+        });
 
     auto build_target = working_folder.Sub(build_type).Sub("build").Stringify();
     build->AddTarget(build_target, {library_file.Stringify()}, {},

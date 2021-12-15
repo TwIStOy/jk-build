@@ -57,8 +57,16 @@ struct JKProject {
   // -- flags section --
   bool AlwaysCheckPattern() const;
 
+  //! Returns if its old-style project.
+  bool IsOldStyle() const;
+
  private:
+  bool old_style_{false};
   mutable std::optional<Configuration> config_;
 };
+
+inline bool JKProject::IsOldStyle() const {
+  return old_style_;
+}
 
 }  // namespace jk::core::filesystem

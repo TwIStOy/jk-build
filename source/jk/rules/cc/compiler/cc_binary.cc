@@ -138,6 +138,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
                   std::back_inserter(binary_deps));
       }
     }
+    // depend on my 'build.make'
+    binary_deps.push_back(working_folder.Sub("build.make"));
 
     auto mkdir_stmt = core::builder::CustomCommandLine::Make(
         {"@$(MKDIR)", binary_file.Path.parent_path().string()});
@@ -163,7 +165,11 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
                          print_stmt, mkdir_stmt, link_stmt));
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"@$(RM)", "{}"_format(binary_file.Stringify())}));
-    for (const auto &obj : binary_deps) {
+    for (const auto &obj : all_objects) {
+      clean_statements.push_back(
+          core::builder::CustomCommandLine::Make({"@$(RM)", obj}));
+    }
+    for (const auto &obj : lint_header_targets) {
       clean_statements.push_back(
           core::builder::CustomCommandLine::Make({"@$(RM)", obj}));
     }

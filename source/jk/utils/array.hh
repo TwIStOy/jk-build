@@ -8,6 +8,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -115,11 +116,7 @@ std::vector<ValueType> ConcatArrays(const First &first, const Args &...args) {
 template<typename T, typename Iter, typename Func>
 void CopyArray(Iter begin, Iter end, std::vector<T> *output, Func func) {
   for (auto it = begin; it != end; ++it) {
-    if (func) {
-      output->push_back(func(*it));
-    } else {
-      output->push_back(*it);
-    }
+    output->push_back(func(*it));
   }
 }
 

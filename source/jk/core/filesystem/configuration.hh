@@ -10,9 +10,11 @@
 
 namespace jk::core::filesystem {
 
+struct JKProject;
+
 class Configuration {
  public:
-  explicit Configuration(const toml::value &value);
+  Configuration(const JKProject *project, const toml::value &value);
 
   std::string cpplint_path;
   std::string cxx_standard;
