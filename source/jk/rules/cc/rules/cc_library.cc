@@ -56,6 +56,7 @@ void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   FILL_LIST_FIELD(Includes, "includes");
   FILL_LIST_FIELD(Defines,  "defines");
   FILL_LIST_FIELD(Headers,  "headers");
+  FILL_LIST_FIELD(AlwaysCompile,  "always_compile");
   // clang-format on
 
   // if no headers specified, add all headers
