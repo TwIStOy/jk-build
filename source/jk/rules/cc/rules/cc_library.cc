@@ -289,6 +289,49 @@ const std::vector<std::string> &CCLibrary::ExpandedHeaderFiles(
   return expanded_header_files_.value();
 }
 
+const std::unordered_set<std::string> &CCLibrary::ExpandedAlwaysCompileFiles(
+    core::filesystem::JKProject *project,
+    core::filesystem::FileNamePatternExpander *expander) const {
+  if (expanded_always_compile_files_) {
+    return expanded_always_compile_files_.value();
+  }
+
+  std::vector<std::string> result;
+  std::unordered_set<std::string> excludes;
+
+  fs::path package_root = Package->Name;
+  for (const auto &exclude : Excludes) {
+    auto expanded = expander->Expand(exclude, project->Resolve(Package->Path));
+    for (const auto &f : expanded) {
+      excludes.insert(f);
+    }
+  }
+
+  for (const auto &source : AlwaysCompile) {
+    auto expanded = expander->Expand(source, project->Resolve(Package->Path));
+
+    for (const auto &f : expanded) {
+      if (excludes.find(f) == excludes.end()) {
+        result.push_back(
+            fs::relative(f, project->Resolve(Package->Path).Path).string());
+      }
+    }
+  }
+
+  std::sort(std::begin(result), std::end(result));
+  logger->debug(
+      "AlwaysCompile in {}: [{}]", *this,
+      utils::JoinString(", ", std::begin(result), std::end(result),
+                        [](const std::string &filename) -> std::string {
+                          return fmt::format(R"("{}")", filename);
+                        }));
+
+  expanded_always_compile_files_ =
+      std::unordered_set<std::string>(std::begin(result), std::end(result));
+
+  return expanded_always_compile_files_.value();
+}
+
 std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(
     core::filesystem::JKProject *project) const {
   std::unordered_map<std::string, std::string> res;

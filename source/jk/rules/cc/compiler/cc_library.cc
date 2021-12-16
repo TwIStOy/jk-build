@@ -149,6 +149,8 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
   }
 
   core::builder::CustomCommandLines clean_statements;
+  const auto &always_compile_files =
+      rule->ExpandedAlwaysCompileFiles(project, expander);
 
   auto library_progress_num = rule->KeyNumber(".library");
   for (const auto &build_type : common::FLAGS_BuildTypes) {
@@ -167,6 +169,15 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
       all_objects.push_back(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());
+
+      if (always_compile_files.size() &&
+          always_compile_files.count(
+              project->Resolve(source_file->FullQualifiedPath())) > 0) {
+        build->AddTarget(
+            source_file->FullQualifiedObjectPath(working_folder, build_type)
+                .Stringify(),
+            {"jk_force"});
+      }
     }
 
     auto library_file =

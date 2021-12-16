@@ -67,6 +67,10 @@ class CCLibrary : public BuildRule {
       core::filesystem::JKProject *project,
       core::filesystem::FileNamePatternExpander *expander) const;
 
+  const std::unordered_set<std::string> &ExpandedAlwaysCompileFiles(
+      core::filesystem::JKProject *project,
+      core::filesystem::FileNamePatternExpander *expander) const;
+
   std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
       core::filesystem::JKProject *project) const override;
 
@@ -80,6 +84,7 @@ class CCLibrary : public BuildRule {
   std::vector<std::string> Includes;
   std::vector<std::string> Defines;
   std::vector<std::string> Headers;
+  std::vector<std::string> AlwaysCompile;
   // --- Fields End ---
 
   const std::string ExportedFileName;
@@ -98,6 +103,8 @@ class CCLibrary : public BuildRule {
   mutable std::optional<std::vector<std::string>> resolved_cpp_flags_;
   mutable std::optional<std::vector<std::string>> expanded_source_files_;
   mutable std::optional<std::vector<std::string>> expanded_header_files_;
+  mutable std::optional<std::unordered_set<std::string>>
+      expanded_always_compile_files_;
   mutable std::optional<std::unordered_set<std::string>> nolint_files_;
 };
 
