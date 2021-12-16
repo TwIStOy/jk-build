@@ -85,6 +85,10 @@ std::vector<std::string> CCLibrary::ResolveIncludes(
                        case IncludeArgument::Placehoder::WorkingFolder: {
                          return WorkingFolder(ctx->Project()->BuildRoot);
                        }
+                       default: {
+                         assert(false);
+                         JK_THROW("not impl");
+                       }
                      }
                    }
                  });
