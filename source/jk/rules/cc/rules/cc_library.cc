@@ -313,15 +313,19 @@ const std::unordered_set<std::string> &CCLibrary::ExpandedAlwaysCompileFiles(
 
     for (const auto &f : expanded) {
       if (excludes.find(f) == excludes.end()) {
-        result.push_back(
-            fs::relative(f, project->Resolve(Package->Path).Path).string());
+        result.push_back(f);
       }
     }
   }
 
   std::sort(std::begin(result), std::end(result));
   logger->debug(
-      "AlwaysCompile in {}: [{}]", *this,
+      "AlwaysCompile in {}, patterns: [{}]: [{}]", *this,
+      utils::JoinString(", ", std::begin(AlwaysCompile),
+                        std::end(AlwaysCompile),
+                        [](const std::string &filename) -> std::string {
+                          return fmt::format(R"("{}")", filename);
+                        }),
       utils::JoinString(", ", std::begin(result), std::end(result),
                         [](const std::string &filename) -> std::string {
                           return fmt::format(R"("{}")", filename);

@@ -170,7 +170,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
           source_file->FullQualifiedObjectPath(working_folder, build_type)
               .Stringify());
 
-      if (always_compile_files.size() &&
+      if (always_compile_files.size() > 0 &&
           always_compile_files.count(
               project->Resolve(source_file->FullQualifiedPath())) > 0) {
         build->AddTarget(
