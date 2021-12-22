@@ -148,10 +148,9 @@ void EchoColor(args::Subparser &parser) {
     num.push_back(x);
   }
 
-  auto final_msg = fmt::format(
-      "{} {}{}{}", ProgressReport(fs::path{args::get(progress_dir)}, num),
-      code_st, utils::JoinString(" ", std::begin(msg), std::end(msg)), code_ed);
-  printf("%s\n", final_msg.c_str());
+  fmt::print("{} {}{}{}\n",
+             ProgressReport(fs::path{args::get(progress_dir)}, num), code_st,
+             utils::JoinString(" ", std::begin(msg), std::end(msg)), code_ed);
 }
 
 }  // namespace jk::cli
