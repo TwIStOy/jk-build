@@ -19,6 +19,9 @@ if (CMAKE_BUILD_TYPE EQUAL "Debug")
   append_coverage_compiler_flags()
 endif()
 
+execute_process(COMMAND sh third-party/build.sh
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 add_executable(jk "")
 add_library(libjk STATIC "")
 add_executable(jk_test "")

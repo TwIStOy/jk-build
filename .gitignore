@@ -7,3 +7,5 @@ cmake-build-debug/
 build/
 .third-party-build/
 third-party/.deps/
+
+cmake-build-release/
