@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.12)
 project(JK_DEPS C)
 enable_language(CXX)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Os")
+
 include(CheckCCompilerFlag)
 include(ExternalProject)
 
