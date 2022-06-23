@@ -38,6 +38,7 @@ pipeline {
           branch: "${SOURCE_CODE_BRANCH}"
 
           sh "git checkout ${SOURCE_CODE_BRANCH}"
+          sh "git submodule update --init --recursive"
         }
       }
     }
