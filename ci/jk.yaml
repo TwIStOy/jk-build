@@ -1,0 +1,29 @@
+metadata:
+  labels:
+    label-name: jk-build
+spec:
+  imagePullSecrets:
+    - regcred
+  containers:
+  - name: jnlp
+    resources:
+      limits:
+        cpu: 0.8
+        memory: 700Mi
+      requests:
+        cpu: 0.8
+        memory: 600Mi
+  - name: jkalphine
+    image: twistoywang/jk-build-build:v1
+    imagePullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: "9.6"
+        memory: "16Gi"
+      requests:
+        cpu: "8"
+        memory: "16Gi"
+    command:
+    - cat
+    tty: true
+

@@ -1,0 +1,91 @@
+// @Library('media_server_jenkins@origin/dev/pipeline_as_code') _
+pipeline {
+  agent {
+    kubernetes {
+      yamlFile 'ci/jk.yaml'
+    }
+  }
+
+  options {
+    skipDefaultCheckout()
+  }
+
+  environment {
+    // BITBUCKET_CREDENTIALS_ID = 'uap-bitbucket-cloudplatform-project'
+    BITBUCKET_CREDENTIALS_ID = 'bitbucket_ddd_credential'
+    ARTIFACTORY_SERVER_ID = 'Agora-Artifactory'
+    SOURCE_CODE_BRANCH = ""
+  }
+
+  stages {
+    stage('Choose env') {
+      steps {
+        script {
+          if (env.BRANCH_NAME?.contains('PR-')) {
+            SOURCE_CODE_BRANCH = env.CHANGE_BRANCH
+          } else {
+            SOURCE_CODE_BRANCH = env.BRANCH_NAME
+          }
+        }
+      }
+    }
+
+    stage('Fetch Main Repo') {
+      steps {
+        dir('jk-build') {
+          git credentialsId: "${BITBUCKET_CREDENTIALS_ID}",
+          url: 'ssh://git@git.agoralab.co/cloud/jk-build.git',
+          branch: "${SOURCE_CODE_BRANCH}"
+
+          sh "git checkout ${SOURCE_CODE_BRANCH}"
+        }
+      }
+    }
+
+    stage('Compile third-party') {
+      steps {
+        container("jkalphine") {
+          sh '''#!/bin/sh
+          cd jk-build/
+          ./third-party/build.sh
+          '''
+        }
+      }
+    }
+
+    stage('Compile jk-binary') {
+      steps {
+        container("jkalphine") {
+          sh '''#!/bin/sh
+          cd jk-build/
+          mkdir -p build
+          cd build/
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make
+          '''
+        }
+      }
+    }
+
+    stage('Upload binaries to artifactory') {
+      steps {
+        rtUpload (
+          serverId: "Agora-Artifactory",
+          spec: """
+          {
+            "files": [
+              {
+                "pattern": "jk-build/build/jk",
+                "target": "SDRTN_repo/jk-build/jk/${env.BRANCH_NAME}/"
+              }
+            ]
+          }
+          """
+        )
+      }
+    }
+
+  }
+}
+
+
