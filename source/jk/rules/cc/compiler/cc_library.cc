@@ -184,6 +184,10 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
         working_folder.Sub(build_type).Sub(rule->ExportedFileName);
     // build->AddTarget(library_file.Stringify(), {"jk_force"});
     build->AddTarget(library_file.Stringify(), {});
+    auto clean_old_library = core::builder::CustomCommandLine::Make({
+        "@$(RM)",
+        library_file.Stringify(),
+    });
     auto ar_stmt = core::builder::CustomCommandLine::Make({
         "@$(AR)",
         library_file.Stringify(),
@@ -208,7 +212,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
                      library_file.Stringify())}),
             core::builder::CustomCommandLine::Make(
                 {"@$(MKDIR)", library_file.Path.parent_path().string()}),
-            ar_stmt));
+            clean_old_library, ar_stmt));
 
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
         {"$(RM)", library_file.Stringify()}));
