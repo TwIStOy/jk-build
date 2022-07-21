@@ -91,12 +91,12 @@ void EchoColor(args::Subparser &parser) {
   COLOR(magenta);
   COLOR(cyan);
   args::Flag bold(parser, "BOLD", "BOLD", {"bold"});
+  args::Flag simple(parser, "SIMPLE", "SIMPLE", {"simple"});
 
-  args::ValueFlag<std::string> progress_dir(
-      parser, "DIR", "Progress-dir", {"progress-dir"}, args::Options::Required);
+  args::ValueFlag<std::string> progress_dir(parser, "DIR", "Progress-dir",
+                                            {"progress-dir"});
   args::ValueFlag<std::string> progress_num(
-      parser, "CURRENT", "Current progress number", {"progress-num"},
-      args::Options::Required);
+      parser, "CURRENT", "Current progress number", {"progress-num"});
   args::PositionalList<std::string> message(parser, "MESSAGE", "Messages.");
 
   parser.Parse();
@@ -138,19 +138,24 @@ void EchoColor(args::Subparser &parser) {
   REPLACE_COLOR_TAG(magenta);
   REPLACE_COLOR_TAG(cyan);
 
-  std::vector<uint32_t> num;
-  std::istringstream iss(args::get(progress_num));
-  std::string item;
-  while (std::getline(iss, item, ',')) {
-    std::istringstream inner(item);
-    uint32_t x;
-    inner >> x;
-    num.push_back(x);
-  }
+  if (!simple) {
+    std::vector<uint32_t> num;
+    std::istringstream iss(args::get(progress_num));
+    std::string item;
+    while (std::getline(iss, item, ',')) {
+      std::istringstream inner(item);
+      uint32_t x;
+      inner >> x;
+      num.push_back(x);
+    }
 
-  fmt::print("{} {}{}{}\n",
-             ProgressReport(fs::path{args::get(progress_dir)}, num), code_st,
-             utils::JoinString(" ", std::begin(msg), std::end(msg)), code_ed);
+    fmt::print("{} {}{}{}\n",
+               ProgressReport(fs::path{args::get(progress_dir)}, num), code_st,
+               utils::JoinString(" ", std::begin(msg), std::end(msg)), code_ed);
+  } else {
+    fmt::print("{}{}{}\n", code_st,
+               utils::JoinString(" ", std::begin(msg), std::end(msg)), code_ed);
+  }
 }
 
 }  // namespace jk::cli

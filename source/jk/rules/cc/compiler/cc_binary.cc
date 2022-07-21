@@ -18,6 +18,8 @@
 
 namespace jk::rules::cc {
 
+static auto logger = utils::Logger("compiler.cc_binary");
+
 std::string MakefileCCBinaryCompiler::Name() const {
   return "Makefile.cc_binary";
 }
@@ -51,6 +53,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     const common::AbsolutePath &working_folder, core::writer::Writer *w,
     CCLibrary *_rule,
     core::filesystem::FileNamePatternExpander *expander) const {
+  logger->debug("binary actions");
+
   auto rule = _rule->Downcast<CCBinary>();
   core::output::UnixMakefilePtr build(
       new core::output::UnixMakefile{"build.make"});
@@ -182,6 +186,8 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   }
 
   build->AddTarget("clean", {}, clean_statements, "", true);
+
+  AddtionalAction(build.get(), working_folder, rule);
 
   build->Write(w);
 

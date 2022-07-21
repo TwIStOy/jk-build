@@ -207,6 +207,7 @@ void MakefileGlobalCompiler::Compile(
   }
 
   makefile->AddTarget("clean", clean_targets, {}, "", true);
+  makefile->AddTarget("test", test_targets, {}, "", true);
 
   auto w = wf->Build(makefile->filename_);
   makefile->Write(w.get());
