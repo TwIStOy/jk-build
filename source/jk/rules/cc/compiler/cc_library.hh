@@ -68,6 +68,11 @@ struct MakefileCCLibraryCompiler : public core::compile::Compiler {
                       const std::list<std::string> &headers,
                       core::output::UnixMakefile *build,
                       const common::AbsolutePath &working_folder) const;
+
+ protected:
+  virtual void AddtionalAction(core::output::UnixMakefile *build,
+                               const common::AbsolutePath &working_folder,
+                               CCLibrary *rule) const;
 };
 
 struct CompileDatabaseCCLibraryCompiler : public core::compile::Compiler {

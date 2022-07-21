@@ -236,9 +236,16 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
 
   build->AddTarget("clean", {}, std::move(clean_statements), "", true);
 
+  AddtionalAction(build.get(), working_folder, rule);
+
   build->Write(w);
 
   return build;
+}
+
+void MakefileCCLibraryCompiler::AddtionalAction(core::output::UnixMakefile *,
+                                                const common::AbsolutePath &,
+                                                CCLibrary *) const {
 }
 
 uint32_t MakefileCCLibraryCompiler::LintSourceFile(

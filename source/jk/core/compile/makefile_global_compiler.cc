@@ -71,10 +71,11 @@ void MakefileGlobalCompiler::Compile(
   makefile->AddTarget("external", {}, {}, "", true);
 
   std::list<std::string> clean_targets;
+  std::list<std::string> test_targets;
 
   std::unordered_set<std::string> recorder;
-  auto gen_target = [&makefile, project, &recorder,
-                     &clean_targets](rules::BuildRule *rule) {
+  auto gen_target = [&makefile, project, &recorder, &clean_targets,
+                     &test_targets](rules::BuildRule *rule) {
     if (recorder.find(rule->FullQualifiedName()) != recorder.end()) {
       return;
     }
@@ -94,14 +95,27 @@ void MakefileGlobalCompiler::Compile(
     rule->RecursiveExecute(merge_numbers, &_recorder);
     _recorder.clear();
 
-    auto clean_target = working_folder.Sub("clean");
-    makefile->AddTarget(
-        clean_target, {},
-        builder::CustomCommandLines::Single(
-            {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
-             "clean"}),
-        "", true);
-    clean_targets.push_back(clean_target);
+    if (!rule->Type.IsExternal()) {
+      auto clean_target = working_folder.Sub("clean");
+      makefile->AddTarget(
+          clean_target, {},
+          builder::CustomCommandLines::Single(
+              {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
+               "clean"}),
+          "", true);
+      clean_targets.push_back(clean_target);
+    }
+
+    if (rule->Type.IsCC() && rule->Type.IsTest()) {
+      auto test_target = working_folder.Sub("test");
+      makefile->AddTarget(
+          test_target, {},
+          builder::CustomCommandLines::Single(
+              {"@$(MAKE)", "-f", working_folder.Sub("build.make").Stringify(),
+               "test"}),
+          "", true);
+      test_targets.push_back(test_target);
+    }
 
     if (rule->Type.IsCC()) {
       // cc target has build type

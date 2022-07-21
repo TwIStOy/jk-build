@@ -5,12 +5,17 @@
 
 #include <string>
 
+#include "jk/core/output/makefile.hh"
 #include "jk/rules/cc/compiler/cc_binary.hh"
 
 namespace jk::rules::cc {
 
 struct MakefileCCTestCompiler : MakefileCCBinaryCompiler {
   std::string Name() const override;
+
+  void AddtionalAction(core::output::UnixMakefile *build,
+                       const common::AbsolutePath &working_folder,
+                       CCLibrary *rule) const override;
 };
 
 }  // namespace jk::rules::cc
