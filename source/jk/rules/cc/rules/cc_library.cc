@@ -72,7 +72,7 @@ void CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
 }
 
 std::vector<std::string> CCLibrary::ResolveIncludes(
-    IncludesResolvingContext *ctx) const {
+    IncludesResolvingContext *ctx) {
   std::vector<std::string> res;
 
   std::unordered_set<std::string> recorder;
@@ -81,7 +81,7 @@ std::vector<std::string> CCLibrary::ResolveIncludes(
         if (!_self->Type.HasType(RuleTypeEnum::kLibrary)) {
           return;
         }
-        auto self = dynamic_cast<CCLibrary*>(_self);
+        auto self = dynamic_cast<CCLibrary *>(_self);
         std::copy(std::begin(self->Includes), std::end(self->Includes),
                   std::back_inserter(res));
         std::transform(

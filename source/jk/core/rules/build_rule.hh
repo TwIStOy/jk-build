@@ -148,7 +148,9 @@ struct BuildRule : public utils::Stringifiable {
   //! Extract all deps after sorting.
   //! The result list assumes that a rule's dependencies must be after its first
   //! occurrences.
-  std::list<BuildRule const *> DependenciesInOrder() const;
+  std::list<BuildRule const *> DependenciesInOrder();
+
+  std::list<BuildRule const *> DependenciesAlwaysBehind();
 
   //! Return working folder based on `build_root`
   common::AbsolutePath WorkingFolder(
@@ -169,8 +171,6 @@ struct BuildRule : public utils::Stringifiable {
     }
 
     for (auto it : Dependencies) {
-      logger->info("recur: {}, into: {}", FullQualifiedName(),
-                   it->FullQualifiedName());
       it->RecursiveExecute(func, recorder);
     }
 
@@ -204,6 +204,8 @@ struct BuildRule : public utils::Stringifiable {
 #endif
   std::vector<std::string> dependencies_str_;
   mutable boost::optional<std::list<BuildRule const *>> deps_sorted_list_;
+  mutable boost::optional<std::list<BuildRule const *>>
+      deps_always_behind_list_;
 };
 
 //! Create a **BuildRule** instance in *pkg* with *kwags".

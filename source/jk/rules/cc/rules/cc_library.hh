@@ -43,7 +43,7 @@ class CCLibrary : public BuildRule {
       const std::string &build_type) const override;
 
   //! Get all **includes** recursively
-  std::vector<std::string> ResolveIncludes(IncludesResolvingContext *ctx) const;
+  std::vector<std::string> ResolveIncludes(IncludesResolvingContext *ctx);
 
   //! Get all **definitions** recursively
   const std::vector<std::string> &ResolveDefinitions() const;

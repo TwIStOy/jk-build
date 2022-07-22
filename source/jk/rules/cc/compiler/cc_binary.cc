@@ -135,7 +135,7 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
     binary_deps.insert(binary_deps.end(), std::begin(lint_header_targets),
                        std::end(lint_header_targets));
     // depend on all static libraries
-    for (auto dep : rule->DependenciesInOrder()) {
+    for (auto dep : rule->DependenciesAlwaysBehind()) {
       if (!dep->Type.IsExternal() && dep != rule) {
         auto names = dep->ExportedFilesSimpleName(project, build_type);
         std::copy(std::begin(names), std::end(names),
