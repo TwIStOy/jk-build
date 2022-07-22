@@ -144,17 +144,19 @@ std::list<BuildRule const *> BuildRule::DependenciesAlwaysBehind() {
   std::unordered_set<std::string> record;
 
   std::function<void(BuildRule*)> dfs;
-  dfs = [&record, &deps_always_behind_list, &dfs, this](BuildRule *rule) {
+  dfs = [&record, &deps_always_behind_list, &dfs](BuildRule *rule) {
     deps_always_behind_list.push_back(rule);
     if (auto it = record.find(rule->FullQualifiedName()); it != record.end()) {
       return;
     }
     record.insert(rule->FullQualifiedName());
 
-    for (auto it : Dependencies) {
+    for (auto it : rule->Dependencies) {
       dfs(it);
     }
   };
+
+  dfs(this);
 
   deps_always_behind_list_ = std::move(deps_always_behind_list);
   return deps_always_behind_list_.value();
