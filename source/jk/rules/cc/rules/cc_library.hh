@@ -97,6 +97,9 @@ class CCLibrary : public BuildRule {
       core::filesystem::JKProject *project,
       core::filesystem::FileNamePatternExpander *expander) const;
 
+  const std::vector<std::string> &ResolveDefinitionsImpl(
+      std::unordered_set<std::string> *recorder) const;
+
  private:
   mutable std::optional<std::vector<std::string>> resolved_definitions_;
   mutable std::optional<std::vector<std::string>> resolved_c_flags_;

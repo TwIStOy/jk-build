@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <concepts>
 #include <functional>
 #include <initializer_list>
 #include <list>
@@ -49,12 +50,10 @@ enum class RuleTypeEnum : uint8_t {
 };
 // clang-format on
 
-#define TYPE_SET_GETTER(type)                              \
-  inline bool Is##type() const {                           \
-    return HasType(RuleTypeEnum::k##type);                 \
-  }                                                        \
-  inline void Set##type() {                                \
-    value_ |= static_cast<uint8_t>(RuleTypeEnum::k##type); \
+#define TYPE_SET_GETTER(type)                                             \
+  inline bool Is##type() const { return HasType(RuleTypeEnum::k##type); } \
+  inline void Set##type() {                                               \
+    value_ |= static_cast<uint8_t>(RuleTypeEnum::k##type);                \
   }
 
 struct RuleType final : public utils::Stringifiable {
@@ -156,8 +155,27 @@ struct BuildRule : public utils::Stringifiable {
       const common::AbsolutePath &build_root) const;
 
   //! Execute function recursively.
-  void RecursiveExecute(std::function<void(BuildRule *)> func,
-                        std::unordered_set<std::string> *recorder = nullptr);
+  template<typename Func>
+    requires std::invocable<Func, jk::core::rules::BuildRule *>
+  void RecursiveExecute(Func func,
+                        std::unordered_set<std::string> *recorder = nullptr) {
+    static auto logger = utils::Logger("rule");
+    if (recorder) {
+      if (auto it = recorder->find(FullQualifiedName());
+          it != recorder->end()) {
+        return;
+      }
+      recorder->insert(FullQualifiedName());
+    }
+
+    for (auto it : Dependencies) {
+      logger->info("recur: {}, into: {}", FullQualifiedName(),
+                   it->FullQualifiedName());
+      it->RecursiveExecute(func, recorder);
+    }
+
+    func(this);
+  }
 
   //! Allocate a new number if key not exists.
   uint32_t KeyNumber(const std::string &key);

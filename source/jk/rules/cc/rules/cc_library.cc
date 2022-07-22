@@ -75,31 +75,35 @@ std::vector<std::string> CCLibrary::ResolveIncludes(
     IncludesResolvingContext *ctx) const {
   std::vector<std::string> res;
 
-  std::copy(std::begin(Includes), std::end(Includes), std::back_inserter(res));
-  std::transform(std::begin(ExtraIncludes), std::end(ExtraIncludes),
-                 std::back_inserter(res),
-                 [this, ctx](const IncludeArgument &x) -> std::string {
-                   if (x.IsTrivial()) {
-                     return x.StrValue();
-                   } else {
-                     switch (x.PlacehoderValue()) {
-                       case IncludeArgument::Placehoder::WorkingFolder: {
-                         return WorkingFolder(ctx->Project()->BuildRoot);
-                       }
-                       default: {
-                         assert(false);
-                         JK_THROW("not impl");
-                       }
-                     }
-                   }
-                 });
-
-  for (const auto &dep : Dependencies) {
-    if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {
-      auto tmp = dep->Downcast<CCLibrary>()->ResolveIncludes(ctx);
-      res.insert(res.end(), tmp.begin(), tmp.end());
-    }
-  }
+  std::unordered_set<std::string> recorder;
+  RecursiveExecute(
+      [&res, ctx](BuildRule *_self) {
+        if (!_self->Type.HasType(RuleTypeEnum::kLibrary)) {
+          return;
+        }
+        auto self = dynamic_cast<CCLibrary*>(_self);
+        std::copy(std::begin(self->Includes), std::end(self->Includes),
+                  std::back_inserter(res));
+        std::transform(
+            std::begin(self->ExtraIncludes), std::end(self->ExtraIncludes),
+            std::back_inserter(res),
+            [self, ctx](const IncludeArgument &x) -> std::string {
+              if (x.IsTrivial()) {
+                return x.StrValue();
+              } else {
+                switch (x.PlacehoderValue()) {
+                  case IncludeArgument::Placehoder::WorkingFolder: {
+                    return self->WorkingFolder(ctx->Project()->BuildRoot);
+                  }
+                  default: {
+                    assert(false);
+                    JK_THROW("not impl");
+                  }
+                }
+              }
+            });
+      },
+      &recorder);
 
   std::sort(res.begin(), res.end());
   res.erase(std::unique(res.begin(), res.end()), res.end());
@@ -112,12 +116,28 @@ const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
     return resolved_definitions_.value();
   }
 
+  std::unordered_set<std::string> recorder;
+  return ResolveDefinitionsImpl(&recorder);
+}
+
+const std::vector<std::string> &CCLibrary::ResolveDefinitionsImpl(
+    std::unordered_set<std::string> *recorder) const {
+  const static std::vector<std::string> empty = {};
+  if (resolved_definitions_) {
+    return resolved_definitions_.value();
+  }
+
+  if (auto it = recorder->find(FullQualifiedName()); it != recorder->end()) {
+    return empty;
+  }
+  recorder->insert(FullQualifiedName());
+
   std::vector<std::string> res;
   res.insert(res.end(), Defines.begin(), Defines.end());
 
   for (const auto &dep : Dependencies) {
     if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {
-      auto tmp = dep->Downcast<CCLibrary>()->ResolveDefinitions();
+      auto tmp = dep->Downcast<CCLibrary>()->ResolveDefinitionsImpl(recorder);
       res.insert(res.end(), tmp.begin(), tmp.end());
     }
   }

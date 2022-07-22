@@ -259,23 +259,6 @@ common::AbsolutePath BuildRule::WorkingFolder(  // {{{
   return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@@"));
 }  // }}}
 
-void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
-                                 std::unordered_set<std::string> *recorder) {
-  if (recorder) {
-    if (auto it = recorder->find(this->FullQualifiedName());
-        it != recorder->end()) {
-      return;
-    }
-    recorder->insert(this->FullQualifiedName());
-  }
-
-  for (auto it : Dependencies) {
-    it->RecursiveExecute(func, recorder);
-  }
-
-  func(this);
-}  // }}}
-
 std::unordered_map<std::string, std::string>  // {{{
 BuildRule::ExportedEnvironmentVar(filesystem::JKProject *project) const {
   (void)project;

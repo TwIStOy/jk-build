@@ -215,7 +215,7 @@ core::output::UnixMakefilePtr MakefileCCLibraryCompiler::GenerateBuild(
             clean_old_library, ar_stmt));
 
     clean_statements.push_back(core::builder::CustomCommandLine::Make(
-        {"$(RM)", library_file.Stringify()}));
+        {"@$(RM)", library_file.Stringify()}));
     utils::CopyArray(
         std::begin(all_objects), std::end(all_objects), &clean_statements,
         [](const auto &str) {
