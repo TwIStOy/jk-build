@@ -177,7 +177,7 @@ void MakefileGlobalCompiler::Compile(
   std::unordered_set<std::string> packages;
   for (auto rule : rules) {
     packages.insert("{}/BUILD"_format(rule->Package->Name));
-    auto deps = rule->DependenciesInOrder();
+    auto deps = rule->DependenciesAlwaysBehind();
     for (auto dep : deps) {
       packages.insert("{}/BUILD"_format(dep->Package->Name));
     }
@@ -197,7 +197,8 @@ void MakefileGlobalCompiler::Compile(
       builder::CustomCommandLines::Multiple(regen_stmt, regen_touch_stmt));
 
   for (auto rule : rules) {
-    rule->RecursiveExecute(gen_target);
+    std::unordered_set<std::string> recorder;
+    rule->RecursiveExecute(gen_target, &recorder);
 
     for (const auto &output_format : formats) {
       auto tgt_name =

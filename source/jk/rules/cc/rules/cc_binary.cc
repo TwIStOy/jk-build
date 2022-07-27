@@ -20,12 +20,12 @@ namespace jk::rules::cc {
 static auto logger = utils::Logger("cc_binary");
 
 std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
-    core::filesystem::JKProject *project, const std::string &build_type) const {
+    core::filesystem::JKProject *project, const std::string &build_type) {
   std::vector<std::string> res;
 
   res.insert(res.end(), std::begin(LdFlags), std::end(LdFlags));
 
-  for (auto rule : DependenciesInOrder()) {
+  for (auto rule : DependenciesAlwaysBehind()) {
     if (rule == this) {
       continue;
     }
@@ -50,7 +50,7 @@ std::vector<std::string> CCBinary::ResolveDependenciesAndLdFlags(
   }
 
   logger->debug("Resolve dep and flags by depends in order: [{}]",
-                utils::JoinString(", ", DependenciesInOrder(), [](auto p) {
+                utils::JoinString(", ", DependenciesAlwaysBehind(), [](auto p) {
                   return p->Stringify();
                 }));
   logger->debug("Resolved dep and flags: [{}]",

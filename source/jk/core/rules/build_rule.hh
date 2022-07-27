@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <concepts>
 #include <functional>
 #include <initializer_list>
 #include <list>
@@ -49,12 +50,10 @@ enum class RuleTypeEnum : uint8_t {
 };
 // clang-format on
 
-#define TYPE_SET_GETTER(type)                              \
-  inline bool Is##type() const {                           \
-    return HasType(RuleTypeEnum::k##type);                 \
-  }                                                        \
-  inline void Set##type() {                                \
-    value_ |= static_cast<uint8_t>(RuleTypeEnum::k##type); \
+#define TYPE_SET_GETTER(type)                                             \
+  inline bool Is##type() const { return HasType(RuleTypeEnum::k##type); } \
+  inline void Set##type() {                                               \
+    value_ |= static_cast<uint8_t>(RuleTypeEnum::k##type);                \
   }
 
 struct RuleType final : public utils::Stringifiable {
@@ -149,15 +148,34 @@ struct BuildRule : public utils::Stringifiable {
   //! Extract all deps after sorting.
   //! The result list assumes that a rule's dependencies must be after its first
   //! occurrences.
-  std::list<BuildRule const *> DependenciesInOrder() const;
+  std::list<BuildRule const *> DependenciesInOrder();
+
+  std::list<BuildRule const *> DependenciesAlwaysBehind();
 
   //! Return working folder based on `build_root`
   common::AbsolutePath WorkingFolder(
       const common::AbsolutePath &build_root) const;
 
   //! Execute function recursively.
-  void RecursiveExecute(std::function<void(BuildRule *)> func,
-                        std::unordered_set<std::string> *recorder = nullptr);
+  template<typename Func>
+    requires std::invocable<Func, jk::core::rules::BuildRule *>
+  void RecursiveExecute(Func func,
+                        std::unordered_set<std::string> *recorder = nullptr) {
+    static auto logger = utils::Logger("rule");
+    if (recorder) {
+      if (auto it = recorder->find(FullQualifiedName());
+          it != recorder->end()) {
+        return;
+      }
+      recorder->insert(FullQualifiedName());
+    }
+
+    for (auto it : Dependencies) {
+      it->RecursiveExecute(func, recorder);
+    }
+
+    func(this);
+  }
 
   //! Allocate a new number if key not exists.
   uint32_t KeyNumber(const std::string &key);
@@ -186,6 +204,8 @@ struct BuildRule : public utils::Stringifiable {
 #endif
   std::vector<std::string> dependencies_str_;
   mutable boost::optional<std::list<BuildRule const *>> deps_sorted_list_;
+  mutable boost::optional<std::list<BuildRule const *>>
+      deps_always_behind_list_;
 };
 
 //! Create a **BuildRule** instance in *pkg* with *kwags".

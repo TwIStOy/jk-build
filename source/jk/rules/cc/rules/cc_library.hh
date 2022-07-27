@@ -43,7 +43,7 @@ class CCLibrary : public BuildRule {
       const std::string &build_type) const override;
 
   //! Get all **includes** recursively
-  std::vector<std::string> ResolveIncludes(IncludesResolvingContext *ctx) const;
+  std::vector<std::string> ResolveIncludes(IncludesResolvingContext *ctx);
 
   //! Get all **definitions** recursively
   const std::vector<std::string> &ResolveDefinitions() const;
@@ -96,6 +96,9 @@ class CCLibrary : public BuildRule {
   void LoadNolintFiles(
       core::filesystem::JKProject *project,
       core::filesystem::FileNamePatternExpander *expander) const;
+
+  const std::vector<std::string> &ResolveDefinitionsImpl(
+      std::unordered_set<std::string> *recorder) const;
 
  private:
   mutable std::optional<std::vector<std::string>> resolved_definitions_;

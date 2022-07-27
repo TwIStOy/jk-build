@@ -56,7 +56,7 @@ std::string RuleType::Stringify() const {  // {{{
       utils::JoinString(" | ", flags.begin(), flags.end()));
 }  // }}}
 
-std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
+std::list<BuildRule const *> BuildRule::DependenciesInOrder() {  // {{{
   if (deps_sorted_list_) {
     return deps_sorted_list_.value();
   }
@@ -134,6 +134,33 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() const {  // {{{
 
   return deps_sorted_list_.value();
 }  // }}}
+
+std::list<BuildRule const *> BuildRule::DependenciesAlwaysBehind() {
+  if (deps_always_behind_list_) {
+    return deps_always_behind_list_.value();
+  }
+
+  std::list<BuildRule const *> deps_always_behind_list;
+  std::unordered_set<std::string> record;
+
+  std::function<void(BuildRule*)> dfs;
+  dfs = [&record, &deps_always_behind_list, &dfs](BuildRule *rule) {
+    deps_always_behind_list.push_back(rule);
+    if (auto it = record.find(rule->FullQualifiedName()); it != record.end()) {
+      return;
+    }
+    record.insert(rule->FullQualifiedName());
+
+    for (auto it : rule->Dependencies) {
+      dfs(it);
+    }
+  };
+
+  dfs(this);
+
+  deps_always_behind_list_ = std::move(deps_always_behind_list);
+  return deps_always_behind_list_.value();
+}
 
 std::string BuildRule::Stringify() const {  // {{{
   return R"(<Rule:{} "{}:{}">)"_format(TypeName, Package->Name, Name);
@@ -257,23 +284,6 @@ void BuildRule::BuildDependencies(  // {{{
 common::AbsolutePath BuildRule::WorkingFolder(  // {{{
     const common::AbsolutePath &build_root) const {
   return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@@"));
-}  // }}}
-
-void BuildRule::RecursiveExecute(std::function<void(BuildRule *)> func,  // {{{
-                                 std::unordered_set<std::string> *recorder) {
-  if (recorder) {
-    if (auto it = recorder->find(this->FullQualifiedName());
-        it != recorder->end()) {
-      return;
-    }
-    recorder->insert(this->FullQualifiedName());
-  }
-
-  for (auto it : Dependencies) {
-    it->RecursiveExecute(func, recorder);
-  }
-
-  func(this);
 }  // }}}
 
 std::unordered_map<std::string, std::string>  // {{{

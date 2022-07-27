@@ -147,10 +147,10 @@ void Generate(args::Subparser &parser) {
   }
 
   auto compiler_factory = core::compile::CompilerFactory::Instance();
-  std::unordered_set<std::string> compiled;
 
   auto output_format = args::get(format);
 
+  std::unordered_set<std::string> compiled;
   auto compile_rule = [&compiled, compiler_factory, &output_format, &project,
                        &writer_factory,
                        &json_merge_factory](core::rules::BuildRule *rule) {
@@ -159,6 +159,8 @@ void Generate(args::Subparser &parser) {
       return;
     }
     compiled.insert(rule->FullQualifiedName());
+    logger->info("compile_rule: {}, now: [{}]", rule->FullQualifiedName(),
+        utils::JoinString(", ", compiled));
 
     {
       // output_format
@@ -182,8 +184,9 @@ void Generate(args::Subparser &parser) {
     }
   };
 
+  std::unordered_set<std::string> recorder;
   for (const auto &rule : rules) {
-    rule->RecursiveExecute(compile_rule);
+    rule->RecursiveExecute(compile_rule, &recorder);
   }
 
   {
