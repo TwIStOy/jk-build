@@ -13,3 +13,6 @@
 [submodule "third-party/toml11"]
 	path = third-party/toml11
 	url = https://github.com/ToruNiina/toml11
+[submodule "third-party/abseil-cpp"]
+	path = third-party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
