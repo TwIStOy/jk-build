@@ -13,13 +13,17 @@
 #include <unordered_set>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/constant.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/rules/build_rule_base.hh"
+#include "jk/core/rules/rule_type.hh"
 #include "jk/utils/kwargs.hh"
+#include "jk/utils/lazy_eval.hh"
 #include "jk/utils/stack.hh"
 #include "jk/utils/str.hh"
 #include "nlohmann/json.hpp"
@@ -40,78 +44,25 @@ namespace rules {
 struct BuildPackage;
 class BuildPackageFactory;
 
-// clang-format off
-enum class RuleTypeEnum : uint8_t {
-  kLibrary  = 1 << 0,
-  kBinary   = 1 << 1,
-  kTest     = 1 << 2,
-  kExternal = 1 << 3,
-  kCC       = 1 << 4,
-};
-// clang-format on
-
-#define TYPE_SET_GETTER(type)                                             \
-  inline bool Is##type() const { return HasType(RuleTypeEnum::k##type); } \
-  inline void Set##type() {                                               \
-    value_ |= static_cast<uint8_t>(RuleTypeEnum::k##type);                \
-  }
-
-struct RuleType final : public utils::Stringifiable {
- public:
-  inline bool HasType(RuleTypeEnum tp) const {
-    return value_ & static_cast<uint8_t>(tp);
-  }
-
-  inline void SetType(RuleTypeEnum tp) {
-    value_ |= static_cast<uint8_t>(tp);
-  }
-
-  TYPE_SET_GETTER(Library);
-  TYPE_SET_GETTER(Binary);
-  TYPE_SET_GETTER(Test);
-  TYPE_SET_GETTER(External);
-  TYPE_SET_GETTER(CC);
-
-  // inherited from |utils::Stringifiable|
-  std::string Stringify() const final;
-
- private:
-  uint8_t value_{0};
-};
-
-#undef TYPE_SET_GETTER
-
 /// BuildRule indicates a build-rule in process stage.
-struct BuildRule : public utils::Stringifiable {
+struct BuildRule : public BuildRuleBase {
+  template<typename T>
+  using lazy_t = utils::LazyEvaluatedValue<T>;
+
   BuildRule(BuildPackage *package, std::string name,
             std::initializer_list<RuleTypeEnum> types,
             std::string_view type_name);
 
   virtual ~BuildRule() = default;
 
-  //! Return the rule's full qualifed name. This named will automatically be
-  //! converted into the rules folder name, just like cmake does.
-  std::string FullQualifiedName() const;
+  //! NOTE(hawtian): MUST invoke `Prepare` before all operations
+  void Prepare(filesystem::JKProject *project, BuildPackageFactory *factory);
+  bool Prepared() const;
 
-  //! Return the rule's full quoted qualifed name.
-  std::string FullQuotedQualifiedName() const;
-
-  //! Return the rule's full qualifed name. This named will automatically be
-  //! converted into the rules folder name, just like cmake does.
-  std::string FullQualifiedNameWithNoVersion() const;
-
-  //! Return the rule's full quoted qualifed name.
-  std::string FullQuotedQualifiedNameWithNoVersion() const;
-
-  //! Return the rule's full qualifed name. This named will automatically be
-  //! converted into the rules folder name, just like cmake does.
+  //! Return the rule's full qualifed target name.
   std::string FullQualifiedTarget(const std::string &output = "") const;
 
-  //! After dependencies has been built, this filed will be available
-  //! pstk: package name stack
-  //! rstk: rule name stack
-  void BuildDependencies(filesystem::JKProject *project,
-                         BuildPackageFactory *factory);
+  lazy_t<uint32_t> SCC_ID;
 
   //! Downcast
   template<typename T>
@@ -139,8 +90,8 @@ struct BuildRule : public utils::Stringifiable {
   //! All variables start with the rule's full qualifed name. eg:
   //! <Rule, 'third_party/protobuf'>, variable: "protoc" =>
   //!   THIRD_PARTY_PROTOBUF_PROTOC
-  virtual std::unordered_map<std::string, std::string> ExportedEnvironmentVar(
-      filesystem::JKProject *project) const;
+  virtual const std::vector<std::pair<std::string, std::string>>
+      &ExportedEnvironmentVar(filesystem::JKProject *project) const;
 
   //! Extract fields from arguments
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
@@ -185,14 +136,11 @@ struct BuildRule : public utils::Stringifiable {
 
   //! Which package where this build-rule is inside
   BuildPackage *Package;
-  std::string Name;
   std::list<BuildRule *> Dependencies;
   const RuleType Type;
   const std::string_view TypeName;
-  std::string Version;
 
-  // inherited from |utils::Stringifiable|
-  std::string Stringify() const final;
+  const std::string &Stringify() const;
 
  private:
   InitializeState dependencies_built_state_{InitializeState::kStart};
@@ -204,8 +152,9 @@ struct BuildRule : public utils::Stringifiable {
 #endif
   std::vector<std::string> dependencies_str_;
   mutable boost::optional<std::list<BuildRule const *>> deps_sorted_list_;
-  mutable boost::optional<std::list<BuildRule const *>>
-      deps_always_behind_list_;
+
+  lazy_t<std::string> stringify_value_;
+  mutable std::optional<std::list<BuildRule const *>> deps_always_behind_list_;
 };
 
 //! Create a **BuildRule** instance in *pkg* with *kwags".

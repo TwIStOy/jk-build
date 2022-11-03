@@ -4,6 +4,7 @@
 #include "jk/core/rules/build_rule.hh"
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <initializer_list>
 #include <iterator>
@@ -18,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_set.h"
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "jk/common/counter.hh"
@@ -26,6 +28,7 @@
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/rules/dependent.hh"
 #include "jk/core/rules/package.hh"
+#include "jk/utils/assert.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 
@@ -33,30 +36,128 @@ namespace jk {
 namespace core {
 namespace rules {
 
-static auto logger = utils::Logger("rule");
+static auto logger                           = utils::Logger("rule");
+static std::atomic<uint32_t> CurrentObjectId = 0;
 
-std::string RuleType::Stringify() const {  // {{{
-  std::vector<std::string> flags;
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kLibrary)) {
-    flags.push_back("library");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kBinary)) {
-    flags.push_back("binary");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kTest)) {
-    flags.push_back("test");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kExternal)) {
-    flags.push_back("external");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kCC)) {
-    flags.push_back("cc");
-  }
-  return "RuleType [{}]"_format(
-      utils::JoinString(" | ", flags.begin(), flags.end()));
-}  // }}}
+BuildRule::BuildRule(BuildPackage *package, std::string name,
+                     std::initializer_list<RuleTypeEnum> types,
+                     std::string_view type_name)
+    : ObjectId(CurrentObjectId.fetch_add(1)),
+      FullQualifiedName([this] {
+        return fmt::format("{}/{}@{}", Package->Name, Name, Version);
+      }),
+      FullQuotedQualifiedName([this] {
+        std::string res;
+        for (auto ch : FullQualifiedName.Value()) {
+          if (ch == '/') {
+            res.push_back('@');
+            res.push_back('@');
+          } else {
+            res.push_back(ch);
+          }
+        }
+        return res;
+      }),
+      FullQualifiedNameWithoutVersion([this] {
+        return fmt::format("{}/{}", Package->Name, Name);
+      }),
+      FullQuotedQualifiedNameWithoutVersion([this] {
+        std::string res;
+        for (auto ch : FullQualifiedNameWithoutVersion.Value()) {
+          if (ch == '/') {
+            res.push_back('@');
+            res.push_back('@');
+          } else {
+            res.push_back(ch);
+          }
+        }
+        return res;
+      }),
+      Package(package),
+      Name(std::move(name)),
+      Type(MergeType(types)),
+      TypeName(type_name),
+      stringify_value_([this] {
+        return R"(<Rule:{} "{}:{}">)"_format(TypeName, Package->Name, Name);
+      }) {
+  package->Rules[Name].reset(this);
+}
 
-std::list<BuildRule const *> BuildRule::DependenciesInOrder() {  // {{{
+void Prepare(filesystem::JKProject *project, BuildPackageFactory *factory) {
+  // TODO(hawtian): impl
+  // step 1. parse file
+}
+
+common::AbsolutePath BuildRule::WorkingFolder(
+    const common::AbsolutePath &build_root) const {
+  return build_root.Sub(FullQuotedQualifiedName.Value());
+}
+
+const std::vector<std::pair<std::string, std::string>>
+    &BuildRule::ExportedEnvironmentVar(filesystem::JKProject *project) const {
+  static std::vector<std::pair<std::string, std::string>> empty;
+  return empty;
+}
+
+uint32_t BuildRule::KeyNumber(const std::string &key) {
+  return steps_.Step(key);
+}
+
+std::vector<uint32_t> BuildRule::KeyNumbers() const {
+  return steps_.Steps();
+}
+
+/*
+TARJAN_SEARCH(int u)
+    vis[u]=true
+    low[u]=dfn[u]=++dfncnt
+    push u to the stack
+    for each (u,v) then do
+        if v hasn't been searched then
+            TARJAN_SEARCH(v) // 搜索
+            low[u]=min(low[u],low[v]) // 回溯
+        else if v has been in the stack then
+            low[u]=min(low[u],dfn[v])
+*/
+/*
+ * void tarjan(BuildRule *from) {
+ *   std::vector<bool> visited(CurrentObjectId, false);
+ *
+ *   auto tarjan_search = [&visited](BuildRule *u, auto &&tarjan_search) {
+ *     visited[u->ObjectId] = true;
+ *   };
+ * }
+ */
+
+/*
+ * void tarjan(int u) {
+ *   low[u] = dfn[u] = ++dfncnt, s[++tp] = u, in_stack[u] = 1;
+ *   for (int i = h[u]; i; i = e[i].nex) {
+ *     const int &v = e[i].t;
+ *     if (!dfn[v]) {
+ *       tarjan(v);
+ *       low[u] = min(low[u], low[v]);
+ *     } else if (in_stack[v]) {
+ *       low[u] = min(low[u], dfn[v]);
+ *     }
+ *   }
+ *   if (dfn[u] == low[u]) {
+ *     ++sc;
+ *     while (s[tp] != u) {
+ *       scc[s[tp]] = sc;
+ *       sz[sc]++;
+ *       in_stack[s[tp]] = 0;
+ *       --tp;
+ *     }
+ *     scc[s[tp]] = sc;
+ *     sz[sc]++;
+ *     in_stack[s[tp]] = 0;
+ *     --tp;
+ *   }
+ * }
+ */
+
+std::list<BuildRule const *> BuildRule::DependenciesInOrder() {
   if (deps_sorted_list_) {
     return deps_sorted_list_.value();
   }
@@ -78,9 +179,9 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() {  // {{{
     if (item.Built) {
       return;
     }
-    item.Rule = rule;
+    item.Rule         = rule;
     item.RestOutgoing = rule->Dependencies.size();
-    item.Built = true;
+    item.Built        = true;
 
     for (const auto &dep : rule->Dependencies) {
       (*mp)[dep->FullQualifiedName()].Incoming.push_back(rule);
@@ -133,30 +234,35 @@ std::list<BuildRule const *> BuildRule::DependenciesInOrder() {  // {{{
       }));
 
   return deps_sorted_list_.value();
-}  // }}}
+}
 
 std::list<BuildRule const *> BuildRule::DependenciesAlwaysBehind() {
+  utils::assert_true(Prepared(), "Must prepare before invoking this function.");
+
   if (deps_always_behind_list_) {
     return deps_always_behind_list_.value();
   }
 
   std::list<BuildRule const *> deps_always_behind_list;
-  std::unordered_set<std::string> record;
+  absl::flat_hash_set<uint32_t> record;
 
-  std::function<void(BuildRule *)> dfs;
-  dfs = [&record, &deps_always_behind_list, &dfs](BuildRule *rule) {
+  auto dfs = [&record, &deps_always_behind_list](BuildRule *rule, auto &&dfs) {
     deps_always_behind_list.push_back(rule);
-    if (auto it = record.find(rule->FullQualifiedName()); it != record.end()) {
-      return;
-    }
-    record.insert(rule->FullQualifiedName());
-
-    for (auto it : rule->Dependencies) {
-      dfs(it);
-    }
   };
-
-  dfs(this);
+  /*
+   * dfs = [&record, &deps_always_behind_list, &dfs](BuildRule *rule) {
+   *   if (auto it = record.find(rule->FullQualifiedName()); it != record.end())
+   * { return;
+   *   }
+   *   record.insert(rule->FullQualifiedName());
+   *
+   *   for (auto it : rule->Dependencies) {
+   *     dfs(it);
+   *   }
+   * };
+   *
+   * dfs(this);
+   */
 
   logger->debug("dep always behind {}: [{}]", FullQualifiedName(),
                 utils::JoinString(", ", deps_always_behind_list, [](auto x) {
@@ -167,72 +273,25 @@ std::list<BuildRule const *> BuildRule::DependenciesAlwaysBehind() {
   return deps_always_behind_list_.value();
 }
 
-std::string BuildRule::Stringify() const {  // {{{
-  return R"(<Rule:{} "{}:{}">)"_format(TypeName, Package->Name, Name);
-}  // }}}
+const std::string &BuildRule::Stringify() const {
+  return stringify_value_.Value();
+}
 
-RuleType MergeType(std::initializer_list<RuleTypeEnum> types) {  // {{{
-  RuleType rtp;
-  for (auto tp : types) {
-    rtp.SetType(tp);
-  }
-  return rtp;
-}  // }}}
-
-BuildRule::BuildRule(BuildPackage *package, std::string name,  // {{{
-                     std::initializer_list<RuleTypeEnum> types,
-                     std::string_view type_name)
-    : Package(package),
-      Name(std::move(name)),
-      Type(MergeType(types)),
-      TypeName(type_name) {
-  package->Rules[Name].reset(this);
-}  // }}}
-
-std::string BuildRule::FullQualifiedName() const {  // {{{
-  return fmt::format("{}/{}@{}", Package->Name, Name, Version);
-}  // }}}
-
-std::string BuildRule::FullQuotedQualifiedName() const {  // {{{
-  auto str = FullQualifiedName();
-  for (auto &ch : str) {
-    if (ch == '/') {
-      ch = '_';
-    }
-  }
-  return str;
-}  // }}}
-
-std::string BuildRule::FullQualifiedNameWithNoVersion() const {  // {{{
-  return fmt::format("{}/{}", Package->Name, Name);
-}  // }}}
-
-std::string BuildRule::FullQuotedQualifiedNameWithNoVersion() const {  // {{{
-  auto str = FullQualifiedNameWithNoVersion();
-  for (auto &ch : str) {
-    if (ch == '/') {
-      ch = '_';
-    }
-  }
-  return str;
-}  // }}}
-
-std::string BuildRule::FullQualifiedTarget(  // {{{
-    const std::string &output) const {
+std::string BuildRule::FullQualifiedTarget(const std::string &output) const {
   if (Type.IsCC()) {
     return fmt::format("{}/{}", FullQualifiedName(), output);
   } else {
     return fmt::format("{}/build", FullQualifiedName());
   }
-}  // }}}
+}
 
-void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {  // {{{
+void BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   dependencies_str_ = kwargs.ListOptional("deps", utils::Kwargs::ListType{});
-  Version = kwargs.StringOptional("version", "DEFAULT");
-}  // }}}
+  Version           = kwargs.StringOptional("version", "DEFAULT");
+}
 
-void BuildRule::BuildDependencies(  // {{{
-    filesystem::JKProject *project, BuildPackageFactory *factory) {
+void BuildRule::BuildDependencies(filesystem::JKProject *project,
+                                  BuildPackageFactory *factory) {
   if (dependencies_built_state_ == InitializeState::kProcessing ||
       dependencies_built_state_ == InitializeState::kDone) {
     return;
@@ -253,7 +312,7 @@ void BuildRule::BuildDependencies(  // {{{
   };
 
   for (const auto &dep_str : dependencies_str_) {
-    auto dep_id = ParseIdString(dep_str);
+    auto dep_id    = ParseIdString(dep_str);
     BuildRule *dep = nullptr;
 
     switch (dep_id.Position) {
@@ -284,26 +343,7 @@ void BuildRule::BuildDependencies(  // {{{
   }
 
   dependencies_built_state_ = InitializeState::kDone;
-}  // }}}
-
-common::AbsolutePath BuildRule::WorkingFolder(  // {{{
-    const common::AbsolutePath &build_root) const {
-  return build_root.Sub(utils::Replace(FullQualifiedName(), '/', "@@"));
-}  // }}}
-
-std::unordered_map<std::string, std::string>  // {{{
-BuildRule::ExportedEnvironmentVar(filesystem::JKProject *project) const {
-  (void)project;
-  return {};
-}  // }}}
-
-uint32_t BuildRule::KeyNumber(const std::string &key) {  // {{{
-  return steps_.Step(key);
-}  // }}}
-
-std::vector<uint32_t> BuildRule::KeyNumbers() const {  //{{{
-  return steps_.Steps();
-}  // }}}
+}
 
 }  // namespace rules
 }  // namespace core

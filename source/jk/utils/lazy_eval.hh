@@ -18,22 +18,30 @@ struct LazyEvaluatedValue {
   explicit LazyEvaluatedValue(F &&f) : eval_func_(std::forward<F>(f)) {
   }
 
-  const T &Value() const {
+  const T &Value() const & {
     if (!value_.has_value()) {
       value_ = eval_func_();
     }
     return value_.value();
   }
 
-  T &Value() {
+  const T &operator()() const & {
+    return Value();
+  }
+
+  T &Value() & {
     if (!value_.has_value()) {
       value_ = eval_func_();
     }
     return value_.value();
+  }
+
+  void Clear() & {
+    value_.reset();
   }
 
  private:
-  eval_func_t eval_func_;
+  [[no_unique_address]] eval_func_t eval_func_;
   mutable std::optional<T> value_;
 };
 

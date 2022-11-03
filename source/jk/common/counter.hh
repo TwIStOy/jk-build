@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "jk/utils/cpp_features.hh"
 
 namespace jk::common {
@@ -43,13 +44,13 @@ class CountableSteps {
   uint32_t Count() const;
 
  private:
-  std::unordered_map<std::string, uint32_t> values_;
+  absl::flat_hash_map<std::string, uint32_t> values_;
 };
 
 __JK_ALWAYS_INLINE uint32_t CountableSteps::Step(const std::string &name) {
   auto it = values_.find(name);
   if (it == values_.end()) {
-    auto v = Counter()->Next();
+    auto v        = Counter()->Next();
     values_[name] = v;
     return v;
   }
