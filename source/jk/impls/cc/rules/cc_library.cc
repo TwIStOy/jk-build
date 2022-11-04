@@ -46,7 +46,7 @@ auto CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) -> void {
   }
 }
 
-auto CCLibrary::Prepare(core::models::Session *session) -> void {
+auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
   // super prepare
   core::models::BuildRule::Prepare(session);
 
@@ -85,15 +85,9 @@ auto CCLibrary::Prepare(core::models::Session *session) -> void {
   CppFileFlags.insert(CppFileFlags.end(), CppFlags.begin(), CppFlags.end());
   CppFileFlags.insert(CppFileFlags.end(), CxxFlags.begin(), CxxFlags.end());
 
-  // step 8. construct my include flags
-  for (const auto &s : CppFlags) {
-    if (absl::StartsWith(s, "-I")) {
-      PlainIncludeFlags.insert(s);
-    }
-  }
-  for (const auto &s : Includes) {
-    PlainIncludeFlags.insert(fmt::format("-I{}", s));
-  }
+  // step 8. construct include and define flags
+  prepare_include_flags(session);
+  prepare_define_flags(session);
 }
 
 auto CCLibrary::prepare_nolint_files(core::models::Session *session) -> void {
@@ -185,6 +179,70 @@ auto CCLibrary::prepare_always_compile_files(core::models::Session *session)
             std::end(ExpandedAlwaysCompileFiles));
   logger->debug("AlwaysCompile in {}: [{}]", *Base->StringifyValue,
                 absl::StrJoin(ExpandedAlwaysCompileFiles, ", "));
+}
+
+auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
+  absl::flat_hash_set<uint32_t> visisted;
+  auto dfs = [this, &visisted](core::models::BuildRule *rule, auto &&dfs) {
+    if (visisted.contains(rule->Base->ObjectId)) {
+      return;
+    }
+    visisted.insert(rule->Base->ObjectId);
+    auto cc_rule = dynamic_cast<CCLibrary *>(rule);
+    if (cc_rule) {
+      for (const auto &s : cc_rule->CppFlags) {
+        if (absl::StartsWith(s, "-I")) {
+          ResolvedIncludes.insert(s);
+        }
+      }
+
+      // fast-path for cc_library
+      for (const auto &s : cc_rule->Includes) {
+        ResolvedIncludes.insert(fmt::format("-I{}", s));
+      }
+    } else {
+      for (const auto &s : rule->Base->StrListProperty(
+               "includes", []() -> std::vector<std::string> {
+                 return {};
+               })) {
+        ResolvedIncludes.insert(fmt::format("-I{}", s));
+      }
+    }
+    for (auto dep : rule->Dependencies) {
+      dfs(dep, dfs);
+    }
+  };
+
+  dfs(this, dfs);
+}
+
+auto CCLibrary::prepare_define_flags(core::models::Session *) -> void {
+  absl::flat_hash_set<uint32_t> visisted;
+  auto dfs = [this, &visisted](core::models::BuildRule *rule, auto &&dfs) {
+    if (visisted.contains(rule->Base->ObjectId)) {
+      return;
+    }
+    visisted.insert(rule->Base->ObjectId);
+    auto cc_rule = dynamic_cast<CCLibrary *>(rule);
+    if (cc_rule) {
+      // fast-path for cc_library
+      for (const auto &s : cc_rule->Defines) {
+        ResolvedIncludes.insert(fmt::format("-D{}", s));
+      }
+    } else {
+      for (const auto &s : rule->Base->StrListProperty(
+               "defines", []() -> std::vector<std::string> {
+                 return {};
+               })) {
+        ResolvedIncludes.insert(fmt::format("-D{}", s));
+      }
+    }
+    for (auto dep : rule->Dependencies) {
+      dfs(dep, dfs);
+    }
+  };
+
+  dfs(this, dfs);
 }
 
 }  // namespace jk::impls::cc

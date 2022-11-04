@@ -15,7 +15,7 @@ namespace jk::impls::cc {
 
 class CCLibrary : public core::models::BuildRule {
  public:
-  void Prepare(core::models::Session *session) override;
+  void DoPrepare(core::models::Session *session) override;
 
   std::vector<std::string> CFlags;
   std::vector<std::string> CppFlags;
@@ -37,6 +37,8 @@ class CCLibrary : public core::models::BuildRule {
   void prepare_source_files(core::models::Session *session);
   void prepare_header_files(core::models::Session *session);
   void prepare_always_compile_files(core::models::Session *session);
+  void prepare_include_flags(core::models::Session *session);
+  void prepare_define_flags(core::models::Session *session);
 
   common::AbsolutePath package_root_;
   absl::flat_hash_set<std::string> excludes_;
@@ -49,7 +51,7 @@ class CCLibrary : public core::models::BuildRule {
   std::string LibraryFileName;
   std::vector<std::string> CFileFlags;
   std::vector<std::string> CppFileFlags;
-  absl::flat_hash_set<std::string> PlainIncludeFlags;
+  absl::flat_hash_set<std::string> ResolvedIncludes;
 
   template<typename T>
   bool InNoLint(T &&name) const;

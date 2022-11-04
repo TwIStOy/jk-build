@@ -10,19 +10,18 @@
 
 namespace jk::core::models {
 
-auto BuildRule::StartPrepare(core::models::Session *session)
-    -> std::future<void> {
+auto BuildRule::Prepare(core::models::Session *session) -> std::future<void> {
   std::promise<void> f;
   auto future = f.get_future();
   session->Executor->Push([this, session, f = std::move(f)]() mutable {
-    Prepare(session);
+    DoPrepare(session);
     prepared_ = true;
     f.set_value();
   });
   return future;
 }
 
-void BuildRule::Prepare(core::models::Session *session) {
+void BuildRule::DoPrepare(core::models::Session *session) {
   WorkingFolder =
       session->Project->BuildRoot.Sub(*Base->FullQuotedQualifiedName);
 }

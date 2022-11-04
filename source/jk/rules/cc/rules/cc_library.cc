@@ -79,44 +79,5 @@ std::vector<std::string> CCLibrary::ResolveIncludes(
   return res;
 }
 
-const std::vector<std::string> &CCLibrary::ResolveDefinitions() const {
-  if (resolved_definitions_) {
-    return resolved_definitions_.value();
-  }
-
-  std::unordered_set<std::string> recorder;
-  return ResolveDefinitionsImpl(&recorder);
-}
-
-const std::vector<std::string> &CCLibrary::ResolveDefinitionsImpl(
-    std::unordered_set<std::string> *recorder) const {
-  const static std::vector<std::string> empty = {};
-  if (resolved_definitions_) {
-    return resolved_definitions_.value();
-  }
-
-  if (auto it = recorder->find(FullQualifiedName()); it != recorder->end()) {
-    return empty;
-  }
-  recorder->insert(FullQualifiedName());
-
-  std::vector<std::string> res;
-  res.insert(res.end(), Defines.begin(), Defines.end());
-
-  for (const auto &dep : Dependencies) {
-    if (dep->Type.HasType(RuleTypeEnum::kLibrary)) {
-      auto tmp = dep->Downcast<CCLibrary>()->ResolveDefinitionsImpl(recorder);
-      res.insert(res.end(), tmp.begin(), tmp.end());
-    }
-  }
-  std::sort(res.begin(), res.end());
-  res.erase(std::unique(res.begin(), res.end()), res.end());
-
-  logger->debug("BuildRule: {}, ResolvedDefinitions: [{}]", FullQualifiedName(),
-                utils::JoinString(", ", res.begin(), res.end()));
-
-  resolved_definitions_ = std::move(res);
-  return resolved_definitions_.value();
-}
 
 }  // namespace jk::rules::cc

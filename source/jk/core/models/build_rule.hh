@@ -21,16 +21,25 @@ class Session;
 
 class BuildRule {
  public:
+  BuildRule(BuildPackage *package, std::string type_name, RuleType type,
+            std::string_view package_name, utils::Kwargs kwargs);
+
   //! Which package this build-rule inside
   BuildPackage *Package;
 
   //! Basic fields parsed from kwargs
   std::unique_ptr<BuildRuleBase> Base;
 
-  std::future<void> StartPrepare(core::models::Session *session);
+  std::future<void> StartDependenciesConstruct();
+
+  std::future<void> Prepare(core::models::Session *session);
 
   //! Check if the build-rule is prepared.
   bool Prepared() const;
+
+  //! This field MUST be used after `StartDependenciesConstruct` has been
+  //! invoked.
+  std::vector<BuildRule *> Dependencies;
 
   std::vector<std::string> ExportedLinkFlags;
 
@@ -53,7 +62,7 @@ class BuildRule {
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   }
 
-  virtual void Prepare(core::models::Session *session);
+  virtual void DoPrepare(core::models::Session *session);
 
   bool prepared_{false};
 
