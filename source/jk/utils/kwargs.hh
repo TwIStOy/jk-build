@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "jk/core/error.h"
 #include "jk/utils/cpp_features.hh"
 #include "jk/utils/str.hh"
@@ -20,11 +21,10 @@ namespace utils {
 
 class __JK_HIDDEN Kwargs final : public Stringifiable {
  public:
-  using ListType = std::vector<std::string>;
+  using ListType   = std::vector<std::string>;
   using StringType = std::string;
-  using MapType = std::unordered_map<std::string, pybind11::object>;
 
-  explicit Kwargs(MapType mp);
+  Kwargs();
 
   StringType StringRequired(const std::string &name) const;
 
@@ -43,23 +43,26 @@ class __JK_HIDDEN Kwargs final : public Stringifiable {
 
   std::string Stringify() const final;
 
-  MapType::const_iterator Find(const std::string &str) const;
+  template<typename T>
+  auto Find(T &&key) const {
+    return value_.find(std::forward<T>(key));
+  }
 
-  MapType::const_iterator Begin() const;
+  auto Begin() const {
+    return value_.begin();
+  }
 
-  MapType::const_iterator End() const;
+  auto End() const {
+    return value_.end();
+  }
+
+  decltype(auto) value() & {
+    return value_;
+  }
 
  private:
-  std::unordered_map<std::string, pybind11::object> value_;
+  absl::flat_hash_map<std::string, pybind11::object> value_;
 };
-
-inline Kwargs::MapType::const_iterator Kwargs::Begin() const {
-  return value_.begin();
-}
-
-inline Kwargs::MapType::const_iterator Kwargs::End() const {
-  return value_.end();
-}
 
 }  // namespace utils
 }  // namespace jk

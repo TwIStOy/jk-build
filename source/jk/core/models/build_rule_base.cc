@@ -4,6 +4,7 @@
 #include "jk/core/models/build_rule_base.hh"
 
 #include <atomic>
+#include <list>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,6 +23,18 @@ BuildRuleInfoStatic::BuildRuleInfoStatic(std::string type_name, RuleType type,
       Name(std::move(name)),
       PackageName(package_name),
       Version(std::move(version)) {
+}
+
+BuildRuleInfoStatic::BuildRuleInfoStatic()
+    : ObjectId(CurrentObjectId.fetch_add(1)) {
+}
+
+void BuildRuleInfoStatic::FromArguments(const utils::Kwargs &kwargs) {
+  static std::vector<std::string> Empty;
+
+  Name         = kwargs.StringRequired("name");
+  Version      = kwargs.StringOptional("version", "");
+  Dependencies = kwargs.ListOptional("deps", Empty);
 }
 
 }  // namespace jk::core::models

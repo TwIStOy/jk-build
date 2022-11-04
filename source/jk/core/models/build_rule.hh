@@ -26,7 +26,8 @@ class BuildRule {
   //! Basic fields parsed from kwargs
   std::unique_ptr<BuildRuleBase> Base;
 
-  void Prepare();
+  virtual void Prepare() = 0;
+
   bool Prepared() const;
 
   /*
@@ -42,10 +43,16 @@ class BuildRule {
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   }
 
+  bool prepared_{false};
+
  private:
   //! All steps in this rule, this field will only be used in makefile
   //! generator.
   common::CountableSteps steps_;
 };
+
+inline bool BuildRule::Prepared() const {
+  return prepared_;
+}
 
 }  // namespace jk::core::models

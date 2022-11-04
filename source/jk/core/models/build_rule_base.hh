@@ -18,6 +18,7 @@ namespace jk::core::models {
 
 // All threse fields can be load from BUILD.
 struct BuildRuleInfoStatic {
+  BuildRuleInfoStatic();
   BuildRuleInfoStatic(std::string TypeName, RuleType type, std::string Name,
                       std::string_view PackageName, std::string Version);
 
@@ -26,29 +27,31 @@ struct BuildRuleInfoStatic {
   BuildRuleInfoStatic &operator=(const BuildRuleInfoStatic &) = delete;
   BuildRuleInfoStatic &operator=(BuildRuleInfoStatic &&)      = delete;
 
+  void FromArguments(const utils::Kwargs &kwargs);
+
   // [[auto-generate]]
-  const uint32_t ObjectId;
+  uint32_t ObjectId;
 
   // [[rule-function]]
-  const std::string TypeName;
+  std::string TypeName;
 
   // [[rule-function]]
-  const RuleType Type;
+  RuleType Type;
 
   //! The rule's name. Name must be unique in a package.
   // [[arg: `name`]]
-  const std::string Name;
+  std::string Name;
 
   //! The rule's package's name.
   // [[rule-file-name]]
-  const std::string_view PackageName;
+  std::string_view PackageName;
 
   //! The rule's version. For backward compatible, default is 'DEFAULT'.
   // [[arg: `version`]]
-  const std::string Version;
+  std::string Version;
 
   // [[arg: `deps`]]
-  const std::vector<std::string> Dependencies;
+  std::vector<std::string> Dependencies;
 };
 
 using FullQualifiedName_t =
@@ -129,14 +132,5 @@ struct BuildRuleBase : _BuildRuleBase {
   FullQuotedQualifiedNameWithoutVersion_t FullQuotedQualifiedNameWithoutVersion{
       this};
 };
-
-inline auto FromArguments(const utils::Kwargs &kwargs)
-    -> std::tuple<std::string, std::string, std::vector<std::string>> {
-  static std::vector<std::string> Empty;
-  auto name    = kwargs.StringRequired("name");
-  auto version = kwargs.StringOptional("version", "");
-  auto deps    = kwargs.ListOptional("deps", Empty);
-  return {std::move(name), std::move(version), std::move(deps)};
-}
 
 }  // namespace jk::core::models
