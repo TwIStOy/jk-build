@@ -3,8 +3,13 @@
 
 #include "jk/impls/cc/rules/cc_library.hh"
 
+#include <algorithm>
+#include <iterator>
+#include <ranges>
+
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
 #include "jk/core/models/build_package.hh"
@@ -47,6 +52,8 @@ auto CCLibrary::Prepare(core::models::Session *session) -> void {
 
   package_root_ = session->Project->Resolve(Package->Path.Path);
 
+  LibraryFileName = fmt::format("lib{}.a", Base->Name);
+
   // step 1. prepare nolint files
   prepare_nolint_files(session);
 
@@ -61,6 +68,32 @@ auto CCLibrary::Prepare(core::models::Session *session) -> void {
 
   // step 5. source files
   prepare_always_compile_files(session);
+
+  // step 6. link flags
+  ExportedLinkFlags = LdFlags;
+
+  // step 7. environment vars;
+  for (auto tp : session->BuildTypes) {
+    auto artifact = WorkingFolder.Sub(tp, LibraryFileName).Stringify();
+    ExportedEnvironmentVars.emplace_back("artifact_" + tp, std::move(artifact));
+  }
+
+  // step 8. cache flags
+  CFileFlags.insert(CFileFlags.end(), CFlags.begin(), CFlags.end());
+  CFileFlags.insert(CFileFlags.end(), CxxFlags.begin(), CxxFlags.end());
+
+  CppFileFlags.insert(CppFileFlags.end(), CppFlags.begin(), CppFlags.end());
+  CppFileFlags.insert(CppFileFlags.end(), CxxFlags.begin(), CxxFlags.end());
+
+  // step 8. construct my include flags
+  for (const auto &s : CppFlags) {
+    if (absl::StartsWith(s, "-I")) {
+      PlainIncludeFlags.insert(s);
+    }
+  }
+  for (const auto &s : Includes) {
+    PlainIncludeFlags.insert(fmt::format("-I{}", s));
+  }
 }
 
 auto CCLibrary::prepare_nolint_files(core::models::Session *session) -> void {
@@ -69,7 +102,7 @@ auto CCLibrary::prepare_nolint_files(core::models::Session *session) -> void {
     return;
   }
 
-  nolint_files_.clear();
+  NolintFiles.clear();
   std::string line;
   std::ifstream ifs(nolint_txt.Path.string());
   while (std::getline(ifs, line)) {
@@ -78,31 +111,30 @@ auto CCLibrary::prepare_nolint_files(core::models::Session *session) -> void {
         line, session->Project->Resolve(Package->Path.Path));
 
     for (const auto &f : expanded) {
-      nolint_files_.insert(f);
+      NolintFiles.insert(f);
     }
   }
 
-  logger->debug("NOLINT files: [{}]", utils::JoinString(", ", nolint_files_));
+  logger->debug("NOLINT files: [{}]", utils::JoinString(", ", NolintFiles));
 }
 
 auto CCLibrary::prepare_source_files(core::models::Session *session) -> void {
-  expanded_source_files_.clear();
+  ExpandedSourceFiles.clear();
 
   for (const auto &source : Sources) {
     auto expanded = session->PatternExpander->Expand(source, package_root_);
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
-        expanded_source_files_.push_back(
+        ExpandedSourceFiles.push_back(
             fs::relative(f, package_root_.Path).string());
       }
     }
   }
 
-  std::sort(std::begin(expanded_source_files_),
-            std::end(expanded_source_files_));
+  std::sort(std::begin(ExpandedSourceFiles), std::end(ExpandedSourceFiles));
   logger->debug("SourceFiles in {}: [{}]", Base->StringifyValue,
-                absl::StrJoin(expanded_source_files_, ", "));
+                absl::StrJoin(ExpandedSourceFiles, ", "));
 }
 
 void CCLibrary::prepare_excludes(core::models::Session *session) {
@@ -117,42 +149,42 @@ void CCLibrary::prepare_excludes(core::models::Session *session) {
 }
 
 auto CCLibrary::prepare_header_files(core::models::Session *session) -> void {
-  expanded_header_files_.clear();
+  ExpandedHeaderFiles.clear();
 
   for (const auto &header : Headers) {
     auto expanded = session->PatternExpander->Expand(header, package_root_);
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
-        expanded_header_files_.push_back(
+        ExpandedHeaderFiles.push_back(
             fs::relative(f, package_root_.Path).string());
       }
     }
   }
 
-  std::sort(std::begin(expanded_header_files_),
-            std::end(expanded_header_files_));
+  std::sort(std::begin(ExpandedHeaderFiles), std::end(ExpandedHeaderFiles));
   logger->debug("Headers in {}: [{}]", Base->StringifyValue,
-                absl::StrJoin(expanded_header_files_, ", "));
+                absl::StrJoin(ExpandedHeaderFiles, ", "));
 }
 
 auto CCLibrary::prepare_always_compile_files(core::models::Session *session)
     -> void {
-  always_compile_files_.clear();
+  ExpandedAlwaysCompileFiles.clear();
 
   for (const auto &source : AlwaysCompile) {
     auto expanded = session->PatternExpander->Expand(source, package_root_);
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
-        always_compile_files_.push_back(f);
+        ExpandedAlwaysCompileFiles.push_back(f);
       }
     }
   }
 
-  std::sort(std::begin(always_compile_files_), std::end(always_compile_files_));
+  std::sort(std::begin(ExpandedAlwaysCompileFiles),
+            std::end(ExpandedAlwaysCompileFiles));
   logger->debug("AlwaysCompile in {}: [{}]", *Base->StringifyValue,
-                absl::StrJoin(always_compile_files_, ", "));
+                absl::StrJoin(ExpandedAlwaysCompileFiles, ", "));
 }
 
 }  // namespace jk::impls::cc

@@ -22,4 +22,9 @@ auto BuildRule::StartPrepare(core::models::Session *session)
   return future;
 }
 
+void BuildRule::Prepare(core::models::Session *session) {
+  WorkingFolder =
+      session->Project->BuildRoot.Sub(*Base->FullQuotedQualifiedName);
+}
+
 }  // namespace jk::core::models

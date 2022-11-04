@@ -29,7 +29,16 @@ class BuildRule {
 
   std::future<void> StartPrepare(core::models::Session *session);
 
+  //! Check if the build-rule is prepared.
   bool Prepared() const;
+
+  std::vector<std::string> ExportedLinkFlags;
+
+  std::vector<std::pair<std::string, std::string>> ExportedEnvironmentVars;
+
+  std::vector<std::string> Artifacts;
+
+  common::AbsolutePath WorkingFolder;
 
   /*
    * //! Returns the absolute paths of what will this build-rule generated. All
@@ -44,7 +53,7 @@ class BuildRule {
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   }
 
-  virtual void Prepare(core::models::Session *session) = 0;
+  virtual void Prepare(core::models::Session *session);
 
   bool prepared_{false};
 

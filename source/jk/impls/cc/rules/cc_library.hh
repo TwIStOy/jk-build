@@ -39,11 +39,29 @@ class CCLibrary : public core::models::BuildRule {
   void prepare_always_compile_files(core::models::Session *session);
 
   common::AbsolutePath package_root_;
-  absl::flat_hash_set<std::string> nolint_files_;
-  std::vector<std::string> expanded_header_files_;
-  std::vector<std::string> expanded_source_files_;
-  std::vector<std::string> always_compile_files_;
   absl::flat_hash_set<std::string> excludes_;
+
+ public:
+  absl::flat_hash_set<std::string> NolintFiles;
+  std::vector<std::string> ExpandedHeaderFiles;
+  std::vector<std::string> ExpandedSourceFiles;
+  std::vector<std::string> ExpandedAlwaysCompileFiles;
+  std::string LibraryFileName;
+  std::vector<std::string> CFileFlags;
+  std::vector<std::string> CppFileFlags;
+  absl::flat_hash_set<std::string> PlainIncludeFlags;
+
+  template<typename T>
+  bool InNoLint(T &&name) const;
 };
+
+template<typename T>
+auto CCLibrary::InNoLint(T &&name) const -> bool {
+  if (NolintFiles.empty()) {
+    return false;
+  }
+
+  return NolintFiles.contains(std::forward<T>(name));
+}
 
 }  // namespace jk::impls::cc

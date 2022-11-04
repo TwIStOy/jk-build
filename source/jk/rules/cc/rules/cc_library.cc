@@ -39,7 +39,6 @@ CCLibrary::CCLibrary(BuildPackage *package, std::string name,
                                                   : exported_file_name) {
 }
 
-
 std::vector<std::string> CCLibrary::ResolveIncludes(
     IncludesResolvingContext *ctx) {
   std::vector<std::string> res;
@@ -118,63 +117,6 @@ const std::vector<std::string> &CCLibrary::ResolveDefinitionsImpl(
 
   resolved_definitions_ = std::move(res);
   return resolved_definitions_.value();
-}
-
-const std::vector<std::string> &CCLibrary::FlagsForCppFiles() const {
-  if (resolved_cpp_flags_) {
-    return resolved_cpp_flags_.value();
-  }
-
-  std::vector<std::string> res;
-  res.insert(res.end(), CppFlags.begin(), CppFlags.end());
-  res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
-
-  resolved_cpp_flags_ = std::move(res);
-  return resolved_cpp_flags_.value();
-}
-
-const std::vector<std::string> &CCLibrary::FlagsForCFiles() const {
-  if (resolved_c_flags_) {
-    return resolved_c_flags_.value();
-  }
-
-  std::vector<std::string> res;
-  res.insert(res.end(), CFlags.begin(), CFlags.end());
-  res.insert(res.end(), CxxFlags.begin(), CxxFlags.end());
-
-  resolved_c_flags_ = std::move(res);
-  return resolved_c_flags_.value();
-}
-
-bool CCLibrary::IsNolint(const std::string &name) const {
-  if (!nolint_files_) {
-    return false;
-  }
-  return nolint_files_->count(name) > 0;
-}
-
-std::vector<std::string> CCLibrary::ExportedFilesSimpleName(
-    core::filesystem::JKProject *project, const std::string &build_type) const {
-  return {WorkingFolder(project->BuildRoot)
-              .Sub(build_type)
-              .Sub(ExportedFileName)
-              .Stringify()};
-}
-
-std::vector<std::string> CCLibrary::ExportedLinkFlags() const {
-  return LdFlags;
-}
-
-std::unordered_map<std::string, std::string> CCLibrary::ExportedEnvironmentVar(
-    core::filesystem::JKProject *project) const {
-  std::unordered_map<std::string, std::string> res;
-
-  for (auto tp : common::FLAGS_BuildTypes) {
-    res["artifact_" + tp] =
-        utils::JoinString(" ", ExportedFilesSimpleName(project, tp));
-  }
-
-  return res;
 }
 
 }  // namespace jk::rules::cc
