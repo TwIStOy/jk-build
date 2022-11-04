@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <future>
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,7 +27,7 @@ class BuildRule {
   //! Basic fields parsed from kwargs
   std::unique_ptr<BuildRuleBase> Base;
 
-  virtual void Prepare() = 0;
+  std::future<void> StartPrepare(core::models::Session *session);
 
   bool Prepared() const;
 
@@ -42,6 +43,8 @@ class BuildRule {
   //! types should invoke its base-class' `ExtractFieldFromArguments`.
   virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
   }
+
+  virtual void Prepare(core::models::Session *session) = 0;
 
   bool prepared_{false};
 

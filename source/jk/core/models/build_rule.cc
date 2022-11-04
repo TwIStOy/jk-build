@@ -3,9 +3,23 @@
 
 #include "jk/core/models/build_rule.hh"
 
+#include <future>
+
+#include "jk/core/models/session.hh"
 #include "jk/utils/assert.hh"
 
 namespace jk::core::models {
 
+auto BuildRule::StartPrepare(core::models::Session *session)
+    -> std::future<void> {
+  std::promise<void> f;
+  auto future = f.get_future();
+  session->Executor->Push([this, session, f = std::move(f)]() mutable {
+    Prepare(session);
+    prepared_ = true;
+    f.set_value();
+  });
+  return future;
+}
 
 }  // namespace jk::core::models

@@ -56,15 +56,6 @@ JKProject::JKProject(common::AbsolutePath ProjectRoot, TargetPlatform Platform,
           ProjectRoot.Sub(".build", ".lib", ToExternalPathSpec(Platform))) {
 }
 
-common::AbsolutePath JKProject::Resolve(const common::ProjectRelativePath &rp) {
-  return ProjectRoot.Sub(rp.Path);
-}
-
-common::AbsolutePath JKProject::ResolveBuild(
-    const common::ProjectRelativePath &rp) {
-  return BuildRoot.Sub(rp.Path);
-}
-
 const Configuration &JKProject::Config() const {
   if (config_) {
     return config_.value();

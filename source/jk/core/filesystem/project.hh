@@ -46,10 +46,16 @@ struct JKProject {
   common::AbsolutePath ExternalInstalledPrefix;
 
   //! Resolve relative path to absolute from **ProjectRoot**
-  common::AbsolutePath Resolve(const common::ProjectRelativePath &rp);
+  template<typename... Args>
+  common::AbsolutePath Resolve(Args &&...args) {
+    return (ProjectRoot.Path / ... / std::forward<Args>(args));
+  }
 
   //! Resolve relative path to absolute from **BuildRoot**
-  common::AbsolutePath ResolveBuild(const common::ProjectRelativePath &rp);
+  template<typename... Args>
+  common::AbsolutePath ResolveBuild(Args &&...args) {
+    return (BuildRoot.Path / ... / std::forward<Args>(args));
+  }
 
   //! Returns configuration loaded from project root.
   const Configuration &Config() const;

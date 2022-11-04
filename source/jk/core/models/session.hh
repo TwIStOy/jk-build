@@ -7,6 +7,10 @@
 #include <string>
 #include <vector>
 
+#include "jk/core/executor/worker_pool.hh"
+#include "jk/core/filesystem/expander.hh"
+#include "jk/core/filesystem/project.hh"
+
 namespace jk::core::models {
 
 struct Session {
@@ -17,6 +21,12 @@ struct Session {
   std::vector<std::string> BuildTypes = {"DEBUG", "RELEASE", "PROFILING"};
 
   std::string CommandPath;
+
+  filesystem::JKProject *Project;
+
+  filesystem::FileNamePatternExpander *PatternExpander;
+
+  executor::WorkerPool *Executor;
 };
 
 }  // namespace jk::core::models
