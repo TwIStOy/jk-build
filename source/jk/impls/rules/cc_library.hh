@@ -61,6 +61,7 @@ class CCLibrary : public core::models::BuildRule {
   std::vector<std::string> ExpandedCFileFlags;
   std::vector<std::string> ExpandedCppFileFlags;
   absl::flat_hash_set<std::string> ResolvedIncludes;
+  absl::flat_hash_set<std::string> ResolvedDefines;
 
   template<typename T>
   bool InNoLint(T &&name) const;

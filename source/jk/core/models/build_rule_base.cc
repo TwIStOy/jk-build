@@ -53,8 +53,7 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
     std::string res;
     for (auto ch : *FullQualifiedName) {
       if (ch == '/') {
-        res.push_back('@');
-        res.push_back('@');
+        res.push_back('_');
       } else {
         res.push_back(ch);
       }
@@ -66,8 +65,7 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
     std::string res;
     for (auto ch : *FullQualifiedNameWithoutVersion) {
       if (ch == '/') {
-        res.push_back('@');
-        res.push_back('@');
+        res.push_back('_');
       } else {
         res.push_back(ch);
       }

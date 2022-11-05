@@ -5,15 +5,19 @@
 
 #include <string>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_join.h"
 #include "jk/common/path.hh"
 #include "jk/core/generators/makefile.hh"
+#include "jk/core/models/build_package.hh"
 #include "jk/core/models/session.hh"
 #include "jk/impls/rules/cc_library.hh"
 #include "range/v3/algorithm/contains.hpp"
 #include "range/v3/all.hpp"
 #include "range/v3/view/all.hpp"
 #include "range/v3/view/concat.hpp"
+#include "range/v3/view/single.hpp"
 
 namespace jk::impls::compilers::makefile {
 
@@ -48,14 +52,14 @@ auto CCLibraryCompiler::DoCompile(core::models::Session *session,
   // TODO(hawtian): impl
 }
 
-static const auto WORKING_FOLDER  = "WORKING_FOLDER";
-static const auto CFLAGS          = "CFLAGS";
-static const auto CPPFLAGS        = "CPPFLAGS";
-static const auto CXXFLAGS        = "CXXFLAGS";
-static const auto CFLAGS_SUFFIX   = "_CFLAGS";
-static const auto CPPFLAGS_SUFFIX = "_CPPFLAGS";
-static const auto CPP_INCLUDES    = "CPP_INCLUDES";
-static const auto CPP_DEFINES     = "CPP_DEFINES";
+#define WORKING_FOLDER  "WORKING_FOLDER"
+#define CFLAGS          "CFLAGS"
+#define CPPFLAGS        "CPPFLAGS"
+#define CXXFLAGS        "CXXFLAGS"
+#define CFLAGS_SUFFIX   "_CFLAGS"
+#define CXXFLAGS_SUFFIX "_CXXFLAGS"
+#define CPP_INCLUDES    "CPP_INCLUDES"
+#define CPP_DEFINES     "CPP_DEFINES"
 
 void generate_flag_file(core::models::Session *session,
                         const common::AbsolutePath &working_folder,
@@ -64,8 +68,9 @@ void generate_flag_file(core::models::Session *session,
       R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
   core::generators::Makefile makefile(working_folder.Sub("flags.make"));
 
-  auto compile_flags = project->Config().compile_flags;
-  compile_flags.push_back(fmt::format(git_desc, rule->Package->Path));
+  auto compile_flags = session->Config->compile_flags;
+  compile_flags.push_back(
+      fmt::format(git_desc, rule->Package->Path.Stringify()));
 
   // environments
   makefile.Env(WORKING_FOLDER, working_folder.Stringify());
@@ -80,39 +85,72 @@ void generate_flag_file(core::models::Session *session,
                                  ranges::views::all(session->ExtraFlags)),
                              " "));
 
-  DEFINE_FLAGS(debug);
-  DEFINE_FLAGS(release);
-  DEFINE_FLAGS(profiling);
+  auto cppincludes = ranges::views::concat(
+      ranges::views::single("-isystem"),
+      ranges::views::single(fmt::format(
+          ".build/.lib/m{}/include",
+          session->Project->Platform == core::filesystem::TargetPlatform::k64
+              ? "64"
+              : "32")),
+      ranges::views::single("-I.build/include"));
 
-  IncludesResolvingContextImpl includes_resolving_context(project);
+  auto cxxincludes = ranges::views::single("-I.build/pb/c++");
 
-  const auto &define = rule->ResolveDefinitions();
-  makefile->DefineEnvironment(
-      "CPP_DEFINES", utils::JoinString(" ", define.begin(), define.end(),
-                                       [](const std::string &inc) {
-                                         return fmt::format("-D{}", inc);
-                                       }));
+  makefile.Env(
+      "DEBUG" CFLAGS_SUFFIX,
+      absl::StrJoin(ranges::views::concat(
+                        compile_flags, session->Config->cflags,
+                        session->Config->debug_cflags_extra, cppincludes),
+                    " "));
+  makefile.Env("DEBUG" CXXFLAGS_SUFFIX,
+               absl::StrJoin(ranges::views::concat(
+                                 compile_flags, session->Config->cxxflags,
+                                 session->Config->debug_cxxflags_extra,
+                                 cppincludes, cxxincludes),
+                             " "));
 
-  makefile.Env(CPP_DEFINES, absl::StrJoin(rule->Defines, " "));
+  makefile.Env(
+      "RELEASE" CFLAGS_SUFFIX,
+      absl::StrJoin(ranges::views::concat(
+                        compile_flags, session->Config->cflags,
+                        session->Config->release_cflags_extra, cppincludes),
+                    " "));
+  makefile.Env("RELEASE" CXXFLAGS_SUFFIX,
+               absl::StrJoin(ranges::views::concat(
+                                 compile_flags, session->Config->cxxflags,
+                                 session->Config->release_cxxflags_extra,
+                                 cppincludes, cxxincludes),
+                             " "));
+
+  makefile.Env(
+      "PROFILING" CFLAGS_SUFFIX,
+      absl::StrJoin(ranges::views::concat(
+                        compile_flags, session->Config->cflags,
+                        session->Config->profiling_cflags_extra, cppincludes),
+                    " "));
+  makefile.Env("PROFILING" CXXFLAGS_SUFFIX,
+               absl::StrJoin(ranges::views::concat(
+                                 compile_flags, session->Config->cxxflags,
+                                 session->Config->profiling_cxxflags_extra,
+                                 cppincludes, cxxincludes),
+                             " "));
+
+  makefile.Env(CPP_DEFINES, absl::StrJoin(rule->ResolvedDefines, " "));
 
   makefile.Env(CPP_INCLUDES, absl::StrJoin(rule->ResolvedIncludes, " "));
 
-  {
-    std::unordered_set<std::string> record;
-    rule->RecursiveExecute(
-        [mk = makefile.get(), project](const auto *rule) {
-          for (const auto &[k, v] : rule->ExportedEnvironmentVar(project)) {
-            mk->DefineEnvironment(
-                fmt::format("{}_{}",
-                            rule->FullQuotedQualifiedNameWithNoVersion(), k),
-                v);
-          }
-        },
-        &record);
-  }
+  absl::flat_hash_set<uint32_t> visited;
+  auto dfs = [&visited, &makefile](core::models::BuildRule *rule, auto &&dfs) {
+    for (const auto &[k, v] : rule->ExportedEnvironmentVars) {
+      makefile.Env(
+          fmt::format("{}_{}",
+                      *(rule->Base->FullQuotedQualifiedNameWithoutVersion), k),
+          v);
+    }
+  };
+  dfs(rule, dfs);
 
-  makefile->Write(w);
-  return makefile;
+  makefile.flush(session->Writer.get());
 }
 
 }  // namespace jk::impls::compilers::makefile

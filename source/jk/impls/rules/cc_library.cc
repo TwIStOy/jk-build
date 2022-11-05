@@ -239,14 +239,14 @@ auto CCLibrary::prepare_define_flags(core::models::Session *) -> void {
     if (cc_rule) {
       // fast-path for cc_library
       for (const auto &s : cc_rule->Defines) {
-        ResolvedIncludes.insert(fmt::format("-D{}", s));
+        ResolvedDefines.insert(fmt::format("-D{}", s));
       }
     } else {
       for (const auto &s : rule->Base->StrListProperty(
                "defines", []() -> std::vector<std::string> {
                  return {};
                })) {
-        ResolvedIncludes.insert(fmt::format("-D{}", s));
+        ResolvedDefines.insert(fmt::format("-D{}", s));
       }
     }
     for (auto dep : rule->Dependencies) {
