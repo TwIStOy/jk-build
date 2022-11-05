@@ -199,6 +199,9 @@ target_link_libraries(
          absl_types
          absl_utility)
 
+add_subdirectory(third-party/range-v3)
+target_link_libraries(libjk PUBLIC range-v3)
+
 # --- source fies ---
 
 file(GLOB_RECURSE JK_SOURCE_FILES ./source/jk/*.cc)

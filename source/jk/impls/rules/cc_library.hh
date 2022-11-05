@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -10,11 +11,19 @@
 #include "jk/common/path.hh"
 #include "jk/core/models/build_rule.hh"
 #include "jk/core/models/session.hh"
+#include "jk/utils/kwargs.hh"
 
-namespace jk::impls::cc {
+namespace jk::impls::rules {
 
 class CCLibrary : public core::models::BuildRule {
  public:
+  CCLibrary(core::models::BuildPackage *package, utils::Kwargs kwargs,
+            std::string type_name  = "cc_library",
+            core::models::RuleType = core::models::RuleType{
+                core::models::RuleTypeEnum::kLibrary,
+                core::models::RuleTypeEnum::kCC,
+            });
+
   void DoPrepare(core::models::Session *session) override;
 
   std::vector<std::string> CFlags;
@@ -40,7 +49,7 @@ class CCLibrary : public core::models::BuildRule {
   void prepare_include_flags(core::models::Session *session);
   void prepare_define_flags(core::models::Session *session);
 
-  common::AbsolutePath package_root_;
+  std::optional<common::AbsolutePath> package_root_;
   absl::flat_hash_set<std::string> excludes_;
 
  public:
@@ -49,8 +58,8 @@ class CCLibrary : public core::models::BuildRule {
   std::vector<std::string> ExpandedSourceFiles;
   std::vector<std::string> ExpandedAlwaysCompileFiles;
   std::string LibraryFileName;
-  std::vector<std::string> CFileFlags;
-  std::vector<std::string> CppFileFlags;
+  std::vector<std::string> ExpandedCFileFlags;
+  std::vector<std::string> ExpandedCppFileFlags;
   absl::flat_hash_set<std::string> ResolvedIncludes;
 
   template<typename T>

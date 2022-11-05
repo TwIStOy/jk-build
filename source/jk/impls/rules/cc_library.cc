@@ -1,7 +1,7 @@
 // Copyright (c) 2020 - present, Hawtian Wang (twistoy.wang@gmail.com)
 //
 
-#include "jk/impls/cc/rules/cc_library.hh"
+#include "jk/impls/rules/cc_library.hh"
 
 #include <algorithm>
 #include <iterator>
@@ -14,10 +14,17 @@
 #include "absl/strings/strip.h"
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/build_rule.hh"
+#include "jk/core/models/rule_type.hh"
 
-namespace jk::impls::cc {
+namespace jk::impls::rules {
 
 static auto logger = utils::Logger("cc_library");
+
+CCLibrary::CCLibrary(core::models::BuildPackage *package, utils::Kwargs kwargs,
+                     std::string type_name, core::models::RuleType type)
+    : BuildRule(package, std::move(type_name), type, package->Path.Stringify(),
+                std::move(kwargs)) {
+}
 
 #define FILL_LIST_FIELD(field, key) field = kwargs.ListOptional(key, empty_list)
 
@@ -79,11 +86,15 @@ auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
   }
 
   // step 8. cache flags
-  CFileFlags.insert(CFileFlags.end(), CFlags.begin(), CFlags.end());
-  CFileFlags.insert(CFileFlags.end(), CxxFlags.begin(), CxxFlags.end());
+  ExpandedCFileFlags.insert(ExpandedCFileFlags.end(), CFlags.begin(),
+                            CFlags.end());
+  ExpandedCFileFlags.insert(ExpandedCFileFlags.end(), CxxFlags.begin(),
+                            CxxFlags.end());
 
-  CppFileFlags.insert(CppFileFlags.end(), CppFlags.begin(), CppFlags.end());
-  CppFileFlags.insert(CppFileFlags.end(), CxxFlags.begin(), CxxFlags.end());
+  ExpandedCppFileFlags.insert(ExpandedCppFileFlags.end(), CppFlags.begin(),
+                              CppFlags.end());
+  ExpandedCppFileFlags.insert(ExpandedCppFileFlags.end(), CxxFlags.begin(),
+                              CxxFlags.end());
 
   // step 8. construct include and define flags
   prepare_include_flags(session);
@@ -116,12 +127,12 @@ auto CCLibrary::prepare_source_files(core::models::Session *session) -> void {
   ExpandedSourceFiles.clear();
 
   for (const auto &source : Sources) {
-    auto expanded = session->PatternExpander->Expand(source, package_root_);
+    auto expanded = session->PatternExpander->Expand(source, *package_root_);
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
         ExpandedSourceFiles.push_back(
-            fs::relative(f, package_root_.Path).string());
+            fs::relative(f, package_root_.value().Path).string());
       }
     }
   }
@@ -135,7 +146,7 @@ void CCLibrary::prepare_excludes(core::models::Session *session) {
   excludes_.clear();
 
   for (const auto &exclude : Excludes) {
-    auto expanded = session->PatternExpander->Expand(exclude, package_root_);
+    auto expanded = session->PatternExpander->Expand(exclude, *package_root_);
     for (const auto &f : expanded) {
       excludes_.insert(f);
     }
@@ -146,12 +157,12 @@ auto CCLibrary::prepare_header_files(core::models::Session *session) -> void {
   ExpandedHeaderFiles.clear();
 
   for (const auto &header : Headers) {
-    auto expanded = session->PatternExpander->Expand(header, package_root_);
+    auto expanded = session->PatternExpander->Expand(header, *package_root_);
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
         ExpandedHeaderFiles.push_back(
-            fs::relative(f, package_root_.Path).string());
+            fs::relative(f, package_root_.value().Path).string());
       }
     }
   }
@@ -166,7 +177,7 @@ auto CCLibrary::prepare_always_compile_files(core::models::Session *session)
   ExpandedAlwaysCompileFiles.clear();
 
   for (const auto &source : AlwaysCompile) {
-    auto expanded = session->PatternExpander->Expand(source, package_root_);
+    auto expanded = session->PatternExpander->Expand(source, *package_root_);
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
@@ -188,8 +199,7 @@ auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
       return;
     }
     visisted.insert(rule->Base->ObjectId);
-    auto cc_rule = dynamic_cast<CCLibrary *>(rule);
-    if (cc_rule) {
+    if (auto cc_rule = dynamic_cast<CCLibrary *>(rule); cc_rule != nullptr) {
       for (const auto &s : cc_rule->CppFlags) {
         if (absl::StartsWith(s, "-I")) {
           ResolvedIncludes.insert(s);
@@ -208,6 +218,8 @@ auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
         ResolvedIncludes.insert(fmt::format("-I{}", s));
       }
     }
+    // TODO(hawtian): ExtraIncludes
+
     for (auto dep : rule->Dependencies) {
       dfs(dep, dfs);
     }
@@ -245,4 +257,4 @@ auto CCLibrary::prepare_define_flags(core::models::Session *) -> void {
   dfs(this, dfs);
 }
 
-}  // namespace jk::impls::cc
+}  // namespace jk::impls::rules
