@@ -34,7 +34,7 @@ struct ProjectRelativePath final : public utils::Stringifiable {
   }
 
   // inherited from |utils::Stringifiable|
-  std::string Stringify() const;
+  const std::string &Stringify() const;
 };
 
 struct AbsolutePath final : public utils::Stringifiable {
@@ -51,7 +51,7 @@ struct AbsolutePath final : public utils::Stringifiable {
   }
 
   // inherited from |utils::Stringifiable|
-  std::string Stringify() const final;
+  const std::string &Stringify() const final;
 };
 
 struct AbsolutePathHasher {

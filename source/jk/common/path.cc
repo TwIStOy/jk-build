@@ -12,12 +12,22 @@
 
 namespace jk::common {
 
-std::string ProjectRelativePath::Stringify() const {
-  return Path.string();
+const std::string &ProjectRelativePath::Stringify() const {
+  if (_cached_to_string.has_func()) {
+    _cached_to_string = [this] {
+      return Path.string();
+    };
+  }
+  return *_cached_to_string;
 }
 
-std::string AbsolutePath::Stringify() const {
-  return Path.string();
+const std::string &AbsolutePath::Stringify() const {
+  if (_cached_to_string.has_func()) {
+    _cached_to_string = [this] {
+      return Path.string();
+    };
+  }
+  return *_cached_to_string;
 }
 
 uint32_t GetNumberOfFilesInDirectory(const AbsolutePath &p) {

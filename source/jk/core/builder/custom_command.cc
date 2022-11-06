@@ -6,12 +6,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_join.h"
 #include "fmt/format.h"
 #include "jk/utils/str.hh"
 
 namespace jk::core::builder {
 
-std::string CustomArgument::Stringify() const {
+const std::string &CustomArgument::Stringify() const {
   return Argument;
 }
 
@@ -32,14 +33,21 @@ CustomCommandLine CustomCommandLine::FromVec(std::vector<std::string> ilist) {
   return res;
 }
 
-std::string CustomCommandLine::Stringify() const {
-  return utils::JoinString(" ", begin(), end(), [](const CustomArgument &s) {
-    if (s.Raw) {
-      return s.Argument;
-    } else {
-      return utils::EscapeForShellStyle(s.Argument);
-    }
-  });
+const std::string &CustomCommandLine::Stringify() const {
+  if (!_cached_to_string.has_func()) {
+    _cached_to_string = [this] {
+      return utils::JoinString(
+          " ", begin(), end(), [](const CustomArgument &s) {
+            if (s.Raw) {
+              return s.Argument;
+            } else {
+              return utils::EscapeForShellStyle(s.Argument);
+            }
+          });
+    };
+  }
+
+  return *_cached_to_string;
 }
 
 CustomCommandLines CustomCommandLines::Single(
@@ -49,10 +57,15 @@ CustomCommandLines CustomCommandLines::Single(
   return res;
 }
 
-std::string CustomCommandLines::Stringify() const {
-  return utils::JoinString("\n", begin(), end(), [](const auto &s) {
-    return s.Stringify();
-  });
+const std::string &CustomCommandLines::Stringify() const {
+  if (!_cached_to_string.has_func()) {
+    _cached_to_string = [this] {
+      return utils::JoinString("\n", begin(), end(), [](const auto &s) {
+        return s.Stringify();
+      });
+    };
+  }
+  return *_cached_to_string;
 }
 
 }  // namespace jk::core::builder

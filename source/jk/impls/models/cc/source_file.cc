@@ -65,13 +65,12 @@ auto SourceFile::ResolveFullQualifiedPath(
 }
 
 common::AbsolutePath SourceFile::ResolveFullQualifiedObjectPath(
-    const common::AbsolutePath &new_root, const std::string &build_type) const {
+    const common::AbsolutePath &new_root, std::string_view build_type) const {
   return new_root.Sub(build_type, *FullQualifiedObjectPath);
 }
 
 auto SourceFile::ResolveFullQualifiedDotDPath(
-    const common::AbsolutePath &new_root, const std::string &build_type) const
-    -> common::AbsolutePath {
+    const common::AbsolutePath &new_root) const -> common::AbsolutePath {
   auto p = *FullQualifiedPath;
   p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".d");
   return new_root.Sub(p.Path);

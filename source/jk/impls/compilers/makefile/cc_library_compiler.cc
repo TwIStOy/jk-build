@@ -3,20 +3,27 @@
 
 #include "jk/impls/compilers/makefile/cc_library_compiler.hh"
 
+#include <algorithm>
+#include <iterator>
 #include <string>
+#include <string_view>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_join.h"
 #include "jk/common/path.hh"
+#include "jk/core/builder/custom_command.hh"
+#include "jk/core/filesystem/project.hh"
 #include "jk/core/generators/makefile.hh"
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/session.hh"
+#include "jk/impls/models/cc/source_file.hh"
 #include "jk/impls/rules/cc_library.hh"
 #include "range/v3/algorithm/contains.hpp"
 #include "range/v3/all.hpp"
 #include "range/v3/view/all.hpp"
 #include "range/v3/view/concat.hpp"
+#include "range/v3/view/empty.hpp"
 #include "range/v3/view/single.hpp"
 
 namespace jk::impls::compilers::makefile {
@@ -49,6 +56,13 @@ auto CCLibraryCompiler::Compile(core::models::Session *session,
 
 auto CCLibraryCompiler::DoCompile(core::models::Session *session,
                                   rules::CCLibrary *rule) const -> void {
+  auto working_folder =
+      session->Project->BuildRoot.Sub(*(rule->Base->FullQuotedQualifiedName));
+
+  generate_flag_file(session, working_folder, rule);
+
+  generate_toolchain_file(session, working_folder, rule);
+
   // TODO(hawtian): impl
 }
 
@@ -61,11 +75,12 @@ auto CCLibraryCompiler::DoCompile(core::models::Session *session,
 #define CPP_INCLUDES    "CPP_INCLUDES"
 #define CPP_DEFINES     "CPP_DEFINES"
 
-void generate_flag_file(core::models::Session *session,
-                        const common::AbsolutePath &working_folder,
-                        rules::CCLibrary *rule) {
+void CCLibraryCompiler::generate_flag_file(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule) const {
   static auto git_desc =
       R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
+
   core::generators::Makefile makefile(working_folder.Sub("flags.make"));
 
   auto compile_flags = session->Config->compile_flags;
@@ -94,7 +109,7 @@ void generate_flag_file(core::models::Session *session,
               : "32")),
       ranges::views::single("-I.build/include"));
 
-  auto cxxincludes = ranges::views::single("-I.build/pb/c++");
+  static auto cxxincludes = ranges::views::single("-I.build/pb/c++");
 
   makefile.Env(
       "DEBUG" CFLAGS_SUFFIX,
@@ -149,6 +164,323 @@ void generate_flag_file(core::models::Session *session,
     }
   };
   dfs(rule, dfs);
+
+  makefile.flush(session->Writer.get());
+}
+
+void CCLibraryCompiler::generate_toolchain_file(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule) const {
+  core::generators::Makefile makefile(working_folder.Sub("toolchain.make"));
+
+  makefile.Env("CXX",
+               fmt::format("{} {}", absl::StrJoin(session->Config->cxx, " "),
+                           session->Project->Platform ==
+                                   core::filesystem::TargetPlatform::k64
+                               ? "-m64"
+                               : "-m32"));
+
+  makefile.Env("CC",
+               fmt::format("{} {}", absl::StrJoin(session->Config->cc, " "),
+                           session->Project->Platform ==
+                                   core::filesystem::TargetPlatform::k64
+                               ? "-m64"
+                               : "-m32"));
+
+  makefile.Env("LINKER", "g++");
+
+  makefile.Env("AR", "ar rcs");
+
+  makefile.Env("RM", "$(JK_COMMAND) delete_file",
+               "The command to remove a file.");
+
+  makefile.Env("CPPLINT", session->Config->cpplint_path);
+
+  makefile.Env("MKDIR", "mkdir -p");
+
+  makefile.flush(session->Writer.get());
+}
+
+uint32_t add_source_files_lint_commands(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule, core::generators::Makefile *makefile,
+    models::cc::SourceFile *source_file) {
+  auto progress_num =
+      rule->Steps.Step(source_file->FullQualifiedPath->Stringify() + "/lint");
+
+  auto file_type = source_file->IsHeaderFile.Value() ? "Header" : "CXX";
+  auto full_qualified_path =
+      session->Project->Resolve(*source_file->FullQualifiedPath);
+  auto source_file_path = source_file->ResolveFullQualifiedPath(working_folder);
+  auto lint_file_path =
+      source_file->ResolveFullQualifiedLintPath(working_folder);
+
+  auto print_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(PRINT)", "--switch=$(COLOR)", "--green",
+       "--progress-num={}"_format(progress_num),
+       "--progress-dir={}"_format(session->Project->BuildRoot.Stringify()),
+       "Linting {} file {}"_format(file_type,
+                                   full_qualified_path.Stringify())});
+
+  using core::builder::operator""_c_raw;
+  auto lint_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(CPPLINT)", full_qualified_path.Stringify(), ">/dev/null"_c_raw});
+  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(MKDIR)", source_file_path.Path.parent_path().string()});
+  auto touch_stmt = core::builder::CustomCommandLine::Make(
+      {"@touch", lint_file_path.Stringify()});
+
+  auto toolchain_file = working_folder.Sub("toolchain.make").Stringify();
+  makefile->Target(lint_file_path.Stringify(),
+                   ranges::views::concat(
+                       ranges::views::single(full_qualified_path.Stringify()),
+                       ranges::views::single(toolchain_file)),
+                   ranges::views::concat(ranges::views::single(print_stmt),
+                                         ranges::views::single(lint_stmt),
+                                         ranges::views::single(mkdir_stmt),
+                                         ranges::views::single(touch_stmt)));
+  return progress_num;
+}
+
+template<ranges::range R>
+void add_source_files_commands(core::models::Session *session,
+                               const common::AbsolutePath &working_folder,
+                               rules::CCLibrary *rule,
+                               core::generators::Makefile *makefile,
+                               std::string_view build_type,
+                               models::cc::SourceFile *source_file, R headers) {
+  std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
+                              working_folder.Sub("toolchain.make").Stringify()};
+
+  // if not in nolint.txt, lint file
+  if (!rule->InNolint(
+          session->Project->Resolve(*source_file->FullQualifiedPath))) {
+    deps.push_back(
+        source_file->ResolveFullQualifiedLintPath(working_folder).Stringify());
+  }
+
+  auto object_file =
+      source_file->ResolveFullQualifiedObjectPath(working_folder, build_type);
+
+  makefile->Target(object_file.Stringify(), deps,
+                   ranges::views::empty<core::builder::CustomCommandLine>);
+  makefile->Include(
+      source_file->ResolveFullQualifiedDotDPath(working_folder).Stringify());
+
+  auto print_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(PRINT)", "--switch=$(COLOR)", "--green",
+       "--progress-num={}"_format(
+           rule->Steps.Step(source_file->FullQualifiedPath->Stringify())),
+       "--progress-dir={}"_format(session->Project->BuildRoot.Stringify()),
+       "Building CXX object {}"_format(object_file.Stringify())});
+
+  auto source_filename =
+      session->Project->Resolve(*source_file->FullQualifiedPath).Stringify();
+
+  auto dep =
+      ranges::views::concat(headers, ranges::views::single(source_filename));
+
+  auto mkdir_stmt = core::builder::CustomCommandLine::Make(
+      {"@$(MKDIR)", object_file.Path.parent_path().string()});
+
+  if (*source_file->IsCppSourceFile) {
+    auto build_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
+         "$(CXXFLAGS)", "$({}_CXXFLAGS)"_format(build_type), "-o",
+         object_file.Stringify(), "-c", source_filename});
+
+    makefile->Target(object_file.Stringify(), dep,
+                     core::builder::CustomCommandLines::Multiple(
+                         print_stmt, mkdir_stmt, build_stmt));
+  } else if (*source_file->IsCSourceFile) {
+    auto build_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(CC)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
+         "$(CFLAGS)", "$({}_CFLAGS)"_format(build_type), "-o",
+         object_file.Stringify(), "-c", source_filename});
+
+    makefile->Target(object_file.Stringify(), dep,
+                     core::builder::CustomCommandLines::Multiple(
+                         print_stmt, mkdir_stmt, build_stmt));
+  } else {
+    logger->info("unknown file extension: {}",
+                 source_file->FullQualifiedPath->Path.extension().string());
+  }
+}
+
+void CCLibraryCompiler::generate_build_file(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule) const {
+  core::generators::Makefile makefile(working_folder.Sub("build.make"));
+
+  makefile.Env("SHELL", "/bin/bash",
+               "The shell in which to execute make rules.");
+
+  makefile.Env("JK_COMMAND", session->JKPath, "The command Jk executable.");
+
+  makefile.Env("JK_SOURCE_DIR", session->Project->ProjectRoot.Stringify(),
+               "The top-level source directory on which Jk was run.");
+
+  makefile.Env("JK_BINARY_DIR", session->Project->BuildRoot.Stringify(),
+               "The top-level build directory on which Jk was run.");
+
+  makefile.Env("JK_BUNDLE_LIBRARY_PREFIX",
+               session->Project->ExternalInstalledPrefix.Stringify(),
+               "The bundled libraries prefix on which Jk was run.");
+
+  makefile.Env("EQUALS", "=", "Escaping for special characters.");
+
+  makefile.Env("PRINT", session->JKPath + " echo_color");
+
+  makefile.Env("JK_VERBOSE_FLAG", "V$(VERBOSE)");
+
+  if (session->Project->Platform == core::filesystem::TargetPlatform::k32) {
+    makefile.Env("PLATFORM", "32");
+  } else {
+    makefile.Env("PLATFORM", "64");
+  }
+
+  makefile.Target(core::generators::Makefile::DEFAULT_TARGET,
+                  ranges::views::empty<std::string>,
+                  ranges::views::empty<core::builder::CustomCommandLine>);
+
+  makefile.Include(working_folder.Sub("flags.make").Path.string(),
+                   "Include the compile flags for this rule's objectes.", true);
+  makefile.Include(working_folder.Sub("toolchain.make").Path.string(),
+                   "Include used toolchains for this rule's objects.", true);
+
+  makefile.Target("all", ranges::views::single("DEBUG"),
+                  ranges::views::empty<core::builder::CustomCommandLine>, "",
+                  true);
+  makefile.Target(
+      "all", ranges::views::single(core::generators::Makefile::DEFAULT_TARGET),
+      ranges::views::empty<core::builder::CustomCommandLine>);
+
+  makefile.Target("jk_force", ranges::views::empty<std::string>,
+                  ranges::views::empty<core::builder::CustomCommandLine>,
+                  "This target is always outdated.", true);
+
+  core::builder::CustomCommandLines clean_statements;
+
+  // lint headers
+  std::vector<std::string> lint_header_targets;
+  for (const auto &filename : rule->ExpandedHeaderFiles) {
+    auto source_file = models::cc::SourceFile(filename, rule);
+
+    if (rule->InNolint(session->Project->Resolve(*source_file.FullQualifiedPath)
+                           .Stringify())) {
+      continue;
+    }
+
+    add_source_files_lint_commands(session, working_folder, rule, &makefile,
+                                   &source_file);
+    lint_header_targets.push_back(
+        source_file.ResolveFullQualifiedLintPath(working_folder).Stringify());
+  }
+
+  auto library_progress_num = rule->Steps.Step(".library");
+
+  for (const auto &build_type : session->BuildTypes) {
+    std::list<std::string> all_objects;
+
+    for (const auto &filename : rule->ExpandedHeaderFiles) {
+      auto source_file = models::cc::SourceFile(filename, rule);
+
+      if (!source_file.lint) {
+        source_file.lint = true;
+        if (!rule->InNolint(
+                session->Project->Resolve(*source_file.FullQualifiedPath)
+                    .Stringify())) {
+          add_source_files_lint_commands(session, working_folder, rule,
+                                         &makefile, &source_file);
+        }
+      }
+
+      add_source_files_commands(session, working_folder, rule, &makefile,
+                                build_type, &source_file,
+                                ranges::views::all(lint_header_targets));
+
+      all_objects.push_back(
+          source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)
+              .Stringify());
+
+      // rule->AlwaysCompile
+
+      if (rule->ExpandedAlwaysCompileFiles.contains(
+              session->Project->Resolve(*source_file.FullQualifiedPath)
+                  .Stringify())) {
+        makefile.Target(
+            source_file
+                .ResolveFullQualifiedObjectPath(working_folder, build_type)
+                .Stringify(),
+            ranges::views::single("jk_force"),
+            ranges::views::empty<core::builder::CustomCommandLine>);
+      }
+    }
+
+    auto library_file = working_folder.Sub(build_type, rule->LibraryFileName);
+    // build->AddTarget(library_file.Stringify(), {"jk_force"});
+    makefile.Target(library_file.Stringify(), ranges::views::empty<std::string>,
+                    ranges::views::empty<core::builder::CustomCommandLine>);
+
+    auto clean_old_library = core::builder::CustomCommandLine::Make({
+        "@$(RM)",
+        library_file.Stringify(),
+    });
+
+    auto ar_stmt = core::builder::CustomCommandLine::Make({
+        "@$(AR)",
+        library_file.Stringify(),
+    });
+    std::copy(std::begin(all_objects), std::end(all_objects),
+              std::back_inserter(ar_stmt));
+
+    auto print_stmt = core::builder::CustomCommandLine::Make(
+        {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
+         "--progress-num={}"_format(absl::StrJoin(rule->Steps.Steps(), ",")),
+         "--progress-dir={}"_format(session->Project->BuildRoot.Stringify()),
+         "Linking CXX static library {}"_format(library_file.Stringify())});
+
+    makefile.Target(
+        library_file.Stringify(),
+        ranges::views::concat(
+            ranges::views::all(all_objects),
+            ranges::views::all(lint_header_targets),
+            ranges::views::single(
+                working_folder.Sub("build.make").Stringify())),
+        ranges::views::concat(
+            ranges::views::single(print_stmt),
+            ranges::views::single(core::builder::CustomCommandLine::Make(
+                {"@$(MKDIR)", library_file.Path.parent_path().string()})),
+            ranges::views::single(clean_old_library),
+            ranges::views::single(ar_stmt)));
+
+    auto gen_rm = [](const auto &str) {
+      return core::builder::CustomCommandLine::Make({"$(RM)", str});
+    };
+
+    clean_statements.push_back(core::builder::CustomCommandLine::Make(
+        {"@$(RM)", library_file.Stringify()}));
+    std::transform(std::begin(all_objects), std::end(all_objects),
+                   std::back_inserter(clean_statements), gen_rm);
+    std::transform(std::begin(lint_header_targets),
+                   std::end(lint_header_targets),
+                   std::back_inserter(clean_statements), gen_rm);
+
+    auto build_target = working_folder.Sub(build_type, "build").Stringify();
+    makefile.Target(build_target,
+                    ranges::views::single(library_file.Stringify()),
+                    ranges::views::empty<core::builder::CustomCommandLine>,
+                    "Rule to build all files generated by this target.", true);
+
+    makefile.Target(build_type, ranges::views::single(build_target),
+                    ranges::views::empty<core::builder::CustomCommandLine>,
+                    "Rule to build all files generated by this target.", true);
+  }
+
+  makefile.Target("clean", ranges::views::empty<std::string>,
+                  ranges::views::all(clean_statements), "", true);
+
+  end_of_generate_build_file(&makefile, session, working_folder, rule);
 
   makefile.flush(session->Writer.get());
 }

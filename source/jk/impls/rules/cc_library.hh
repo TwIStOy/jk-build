@@ -56,7 +56,7 @@ class CCLibrary : public core::models::BuildRule {
   absl::flat_hash_set<std::string> NolintFiles;
   std::vector<std::string> ExpandedHeaderFiles;
   std::vector<std::string> ExpandedSourceFiles;
-  std::vector<std::string> ExpandedAlwaysCompileFiles;
+  absl::flat_hash_set<std::string> ExpandedAlwaysCompileFiles;
   std::string LibraryFileName;
   std::vector<std::string> ExpandedCFileFlags;
   std::vector<std::string> ExpandedCppFileFlags;
@@ -64,11 +64,11 @@ class CCLibrary : public core::models::BuildRule {
   absl::flat_hash_set<std::string> ResolvedDefines;
 
   template<typename T>
-  bool InNoLint(T &&name) const;
+  bool InNolint(T &&name) const;
 };
 
 template<typename T>
-auto CCLibrary::InNoLint(T &&name) const -> bool {
+auto CCLibrary::InNolint(T &&name) const -> bool {
   if (NolintFiles.empty()) {
     return false;
   }
@@ -76,4 +76,4 @@ auto CCLibrary::InNoLint(T &&name) const -> bool {
   return NolintFiles.contains(std::forward<T>(name));
 }
 
-}  // namespace jk::impls::cc
+}  // namespace jk::impls::rules

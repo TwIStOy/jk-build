@@ -42,6 +42,18 @@ class LazyProperty {
     return Value();
   }
 
+  T const *operator->() const & {
+    return &value_.value();
+  }
+
+  T *operator->() & {
+    return &value_.value();
+  }
+
+  bool has_func() const {
+    return func_ != nullptr;
+  }
+
   template<typename F>
   LazyProperty &operator=(F &&f) {
     Reset(std::forward<F>(f));

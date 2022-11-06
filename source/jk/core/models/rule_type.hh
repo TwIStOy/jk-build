@@ -50,31 +50,34 @@ struct RuleType final : public utils::Stringifiable {
   TYPE_SET_GETTER(CC);
 
   // inherited from |utils::Stringifiable|
-  std::string Stringify() const final;
+  const std::string &Stringify() const final;
 
  private:
   uint8_t value_{0};
 };
 
-inline std::string RuleType::Stringify() const {
-  std::vector<std::string> flags;
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kLibrary)) {
-    flags.push_back("library");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kBinary)) {
-    flags.push_back("binary");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kTest)) {
-    flags.push_back("test");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kExternal)) {
-    flags.push_back("external");
-  }
-  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kCC)) {
-    flags.push_back("cc");
-  }
-  return "RuleType [{}]"_format(
-      utils::JoinString(" | ", flags.begin(), flags.end()));
+inline const std::string &RuleType::Stringify() const {
+  _cached_to_string = [this] {
+    std::vector<std::string> flags;
+    if (value_ & static_cast<uint8_t>(RuleTypeEnum::kLibrary)) {
+      flags.push_back("library");
+    }
+    if (value_ & static_cast<uint8_t>(RuleTypeEnum::kBinary)) {
+      flags.push_back("binary");
+    }
+    if (value_ & static_cast<uint8_t>(RuleTypeEnum::kTest)) {
+      flags.push_back("test");
+    }
+    if (value_ & static_cast<uint8_t>(RuleTypeEnum::kExternal)) {
+      flags.push_back("external");
+    }
+    if (value_ & static_cast<uint8_t>(RuleTypeEnum::kCC)) {
+      flags.push_back("cc");
+    }
+    return "RuleType [{}]"_format(
+        utils::JoinString(" | ", flags.begin(), flags.end()));
+  };
+  return *_cached_to_string;
 }
 
 #undef TYPE_SET_GETTER

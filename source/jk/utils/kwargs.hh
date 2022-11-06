@@ -23,6 +23,7 @@ class __JK_HIDDEN Kwargs final : public Stringifiable {
  public:
   using ListType   = std::vector<std::string>;
   using StringType = std::string;
+  using MapType    = absl::flat_hash_map<std::string, pybind11::object>;
 
   Kwargs();
 
@@ -41,7 +42,7 @@ class __JK_HIDDEN Kwargs final : public Stringifiable {
   bool BooleanOptional(const std::string &name,
                        std::optional<bool> default_value) const;
 
-  std::string Stringify() const final;
+  const std::string &Stringify() const final;
 
   template<typename T>
   auto Find(T &&key) const {

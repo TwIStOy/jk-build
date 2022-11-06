@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "boost/optional.hpp"
+#include "jk/common/lazy_property.hh"
 #include "jk/utils/cpp_features.hh"
 #include "semver.hpp"
 
@@ -28,23 +29,20 @@ namespace utils {
 
 struct Stringifiable {
   //! Returns the result of stringify current object
-  virtual std::string Stringify() const = 0;
-
-  operator std::string() const;
+  virtual const std::string &Stringify() const = 0;
 
   virtual ~Stringifiable() = default;
-};
 
-__JK_ALWAYS_INLINE Stringifiable::operator std::string() const {
-  return Stringify();
-}
+ protected:
+  mutable common::LazyProperty<std::string> _cached_to_string;
+};
 
 /**
  * Returns the result of stringify object `v`
  */
 template<typename T, typename = std::enable_if<
                          std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
-__JK_ALWAYS_INLINE std::string ToString(const T &v) {
+__JK_ALWAYS_INLINE const std::string &ToString(const T &v) {
   return v.Stringify();
 }
 
@@ -53,7 +51,7 @@ __JK_ALWAYS_INLINE std::string ToString(const T &v) {
  */
 template<typename T, typename = std::enable_if<
                          std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
-__JK_ALWAYS_INLINE std::string ToString(T *v) {
+__JK_ALWAYS_INLINE const std::string &ToString(T *v) {
   return v->Stringify();
 }
 

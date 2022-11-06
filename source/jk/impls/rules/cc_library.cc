@@ -181,13 +181,11 @@ auto CCLibrary::prepare_always_compile_files(core::models::Session *session)
 
     for (const auto &f : expanded) {
       if (!excludes_.contains(f)) {
-        ExpandedAlwaysCompileFiles.push_back(f);
+        ExpandedAlwaysCompileFiles.insert(f);
       }
     }
   }
 
-  std::sort(std::begin(ExpandedAlwaysCompileFiles),
-            std::end(ExpandedAlwaysCompileFiles));
   logger->debug("AlwaysCompile in {}: [{}]", *Base->StringifyValue,
                 absl::StrJoin(ExpandedAlwaysCompileFiles, ", "));
 }

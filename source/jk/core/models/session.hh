@@ -22,7 +22,7 @@ struct Session {
 
   std::vector<std::string> BuildTypes = {"DEBUG", "RELEASE", "PROFILING"};
 
-  std::string CommandPath;
+  std::string JKPath;
 
   std::unique_ptr<filesystem::JKProject> Project;
 

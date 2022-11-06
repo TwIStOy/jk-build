@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <string>
+#include <string_view>
 
 #include "jk/common/lazy_property.hh"
 #include "jk/common/path.hh"
@@ -24,6 +25,8 @@ struct SourceFile {
   std::string FileName;
   core::models::BuildRule *Rule;
 
+  bool lint{false};
+
   common::LazyProperty<bool> IsCSourceFile;
   common::LazyProperty<bool> IsCppSourceFile;
   common::LazyProperty<bool> IsSourceFile;
@@ -36,12 +39,10 @@ struct SourceFile {
       const common::AbsolutePath &new_root) const;
 
   common::AbsolutePath ResolveFullQualifiedObjectPath(
-      const common::AbsolutePath &new_root,
-      const std::string &build_type) const;
+      const common::AbsolutePath &new_root, std::string_view build_type) const;
 
   common::AbsolutePath ResolveFullQualifiedDotDPath(
-      const common::AbsolutePath &new_root,
-      const std::string &build_type) const;
+      const common::AbsolutePath &new_root) const;
 
   common::AbsolutePath ResolveFullQualifiedLintPath(
       const common::AbsolutePath &new_root) const;

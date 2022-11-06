@@ -18,23 +18,29 @@
 namespace jk {
 namespace utils {
 
-Kwargs::Kwargs(MapType mp) : value_(std::move(mp)) {
+Kwargs::Kwargs() {
 }
 
-std::string Kwargs::Stringify() const {
-  std::ostringstream oss;
+const std::string &Kwargs::Stringify() const {
+  if (_cached_to_string.has_func()) {
+    _cached_to_string = [this] {
+      std::ostringstream oss;
 
-  oss << "Kwargs {";
+      oss << "Kwargs {";
 
-  oss << JoinString(
-      ", ", value_.begin(), value_.end(), [](const auto &pr) -> std::string {
-        return "{}: {}"_format(pr.first,
-                               pybind11::str(pr.second).cast<std::string>());
-      });
+      oss << JoinString(", ", value_.begin(), value_.end(),
+                        [](const auto &pr) -> std::string {
+                          return "{}: {}"_format(
+                              pr.first,
+                              pybind11::str(pr.second).cast<std::string>());
+                        });
 
-  oss << "}";
+      oss << "}";
 
-  return oss.str();
+      return oss.str();
+    };
+  }
+  return *_cached_to_string;
 }
 
 Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
@@ -125,11 +131,6 @@ bool Kwargs::BooleanOptional(const std::string &name,
   }
 
   return it->second.cast<bool>();
-}
-
-Kwargs::MapType::const_iterator Kwargs::Find(const std::string &str) const {
-  auto it = value_.find(str);
-  return it;
 }
 
 }  // namespace utils

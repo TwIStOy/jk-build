@@ -56,6 +56,10 @@ class BuildRule {
    *     Session *session) const = 0;
    */
 
+  //! All steps in this rule, this field will only be used in makefile
+  //! generator.
+  common::CountableSteps Steps;
+
  protected:
   //! Extract and parse fields from rule-function's arguments. Every derived
   //! types should invoke its base-class' `ExtractFieldFromArguments`.
@@ -65,11 +69,6 @@ class BuildRule {
   virtual void DoPrepare(core::models::Session *session);
 
   bool prepared_{false};
-
- private:
-  //! All steps in this rule, this field will only be used in makefile
-  //! generator.
-  common::CountableSteps steps_;
 };
 
 inline bool BuildRule::Prepared() const {
