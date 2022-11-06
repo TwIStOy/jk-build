@@ -18,9 +18,9 @@ struct BuildRuleFactory {
       const std::string &TypeName, const utils::Kwargs &kwargs)>;
 
   inline std::unique_ptr<BuildRule> Create(const std::string &TypeName,
-                                           const utils::Kwargs &kwargs) {
+                                           utils::Kwargs kwargs) {
     if (auto it = creators_.find(TypeName); it != creators_.end()) {
-      return (it->second)(TypeName, kwargs);
+      return (it->second)(TypeName, std::move(kwargs));
     } else {
       return nullptr;
     }

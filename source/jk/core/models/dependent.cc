@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
-#include "jk/core/rules/dependent.hh"
+#include "jk/core/models/dependent.hh"
 
 #include <cctype>
 #include <iostream>
@@ -23,13 +23,14 @@
 #include "jk/utils/str.hh"
 #include "semver.hpp"
 
-namespace jk {
-namespace core {
-namespace rules {
+namespace jk::core::models {
 
-std::string BuildRuleId::Stringify() const {
-  return "BuildRuleId(Id = \"{}:{}\", Position: {}, VerReq: {})"_format(
-      PackageName, RuleName, Position, VersionReq);
+const std::string &BuildRuleId::Stringify() const {
+  _cached_to_string = [this] {
+    return "BuildRuleId(Id = \"{}:{}\", Position: {}, VerReq: {})"_format(
+        PackageName, RuleName, Position, VersionReq);
+  };
+  return *_cached_to_string;
 }
 
 static auto position_prefix =
@@ -70,7 +71,7 @@ static auto p_package =
 static auto rule_name_ch = parser::MakeCharPredict([](char ch) {
   return std::isalnum(ch) || ch == '_' || ch == '.' || ch == '-';
 });
-static auto rule_name = (parser::MakeCharEq(':') +
+static auto rule_name    = (parser::MakeCharEq(':') +
                          (parser::Many(rule_name_ch, 1) >>
                               [](const auto &r) -> std::string {
                            return utils::JoinString("", r);
@@ -116,10 +117,10 @@ BuildRuleId ParseIdString(std::string_view str) {
   }
 
   res.PackageName = package;
-  res.RuleName = rule;
+  res.RuleName    = rule;
   if (ver.has_value()) {
     try {
-      auto v = semver::version(*ver);
+      auto v         = semver::version(*ver);
       res.VersionReq = v;
     } catch (const std::exception &e) {
       JK_THROW(
@@ -130,6 +131,4 @@ BuildRuleId ParseIdString(std::string_view str) {
   return res;
 }
 
-}  // namespace rules
-}  // namespace core
-}  // namespace jk
+}  // namespace jk::core::models

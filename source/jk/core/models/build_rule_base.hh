@@ -21,6 +21,8 @@
 
 namespace jk::core::models {
 
+uint32_t __CurrentObjectId();
+
 // All threse fields can be load from BUILD.
 struct BuildRuleBase {
   BuildRuleBase(std::string TypeName, RuleType type,

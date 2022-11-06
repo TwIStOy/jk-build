@@ -10,9 +10,7 @@
 #include "jk/utils/str.hh"
 #include "semver.hpp"
 
-namespace jk {
-namespace core {
-namespace rules {
+namespace jk::core::models {
 
 enum class RuleRelativePosition : uint8_t {
   kAbsolute,
@@ -32,20 +30,18 @@ struct BuildRuleId : utils::Stringifiable {
   RuleRelativePosition Position;
   std::optional<semver::version> VersionReq;
 
-  std::string Stringify() const final;
+  const std::string &Stringify() const final;
 };
 
 BuildRuleId ParseIdString(std::string_view str);
 
-}  // namespace rules
-}  // namespace core
-}  // namespace jk
+}  // namespace jk::core::models
 
 namespace fmt {
 
 template<>
-struct formatter<jk::core::rules::RuleRelativePosition> {
-  using Type = jk::core::rules::RuleRelativePosition;
+struct formatter<jk::core::models::RuleRelativePosition> {
+  using Type = jk::core::models::RuleRelativePosition;
 
   template<typename ParseContext>
   constexpr auto parse(ParseContext &ctx) {

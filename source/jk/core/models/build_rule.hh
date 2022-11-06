@@ -60,6 +60,8 @@ class BuildRule {
   //! generator.
   common::CountableSteps Steps;
 
+  uint32_t _scc_id;
+
  protected:
   //! Extract and parse fields from rule-function's arguments. Every derived
   //! types should invoke its base-class' `ExtractFieldFromArguments`.

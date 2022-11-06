@@ -35,6 +35,8 @@ struct Session {
   std::unique_ptr<filesystem::Configuration> Config;
 
   std::vector<std::string> ExtraFlags;
+
+  executor::WorkerPool Workers;
 };
 
 }  // namespace jk::core::models

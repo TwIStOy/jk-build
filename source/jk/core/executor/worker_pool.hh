@@ -5,6 +5,7 @@
 
 #include <condition_variable>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <queue>
 #include <stop_token>
@@ -53,10 +54,18 @@ class WorkerPool {
   }
 
   template<typename F>
-  void Push(F &&f) {
+  std::future<void> Push(F &&f) {
     std::unique_lock lk(mutex_);
-    queue_.emplace(std::forward<F>(f));
+
+    std::promise<void> p;
+    std::future<void> fur = p.get_future();
+    queue_.emplace([f = std::forward<F>(f), p = std::move(p)]() mutable {
+      f();
+      p.set_value();
+    });
     cond_.notify_one();
+
+    return fur;
   }
 
  private:

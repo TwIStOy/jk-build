@@ -15,6 +15,10 @@ namespace jk::core::models {
 
 static std::atomic_uint_fast32_t CurrentObjectId = 0;
 
+uint32_t __CurrentObjectId() {
+  return CurrentObjectId;
+}
+
 BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
                              std::string_view package_name,
                              utils::Kwargs kwargs)
