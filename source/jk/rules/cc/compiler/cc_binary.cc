@@ -59,30 +59,6 @@ core::output::UnixMakefilePtr MakefileCCBinaryCompiler::GenerateBuild(
   core::output::UnixMakefilePtr build(
       new core::output::UnixMakefile{"build.make"});
 
-  build->DefineCommon(project);
-
-  build->Include(working_folder.Sub("flags.make").Path,
-                 "Include the compile flags for this rule's objectes.", true);
-  build->Include(working_folder.Sub("toolchain.make").Path, "", true);
-
-  build->DefineEnvironment(
-      "DEBUG_LDFLAGS",
-      utils::JoinString(
-          " ",
-          utils::ConcatArrays(DEBUG_LDFLAGS_BEFORE, project->Config().ld_flags,
-                              project->Config().debug_ld_flags_extra)));
-  build->DefineEnvironment(
-      "RELEASE_LDFLAGS",
-      utils::JoinString(
-          " ", utils::ConcatArrays(project->Config().ld_flags,
-                                   project->Config().release_ld_flags_extra)));
-
-  build->DefineEnvironment(
-      "PROFILING_LDFLAGS",
-      utils::JoinString(" ", utils::ConcatArrays(
-                                 project->Config().ld_flags,
-                                 project->Config().profiling_ld_flags_extra)));
-
   const auto &source_files = rule->ExpandSourceFiles(project, expander);
 
   // lint files first

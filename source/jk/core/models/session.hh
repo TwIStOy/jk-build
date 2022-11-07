@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "jk/core/executor/worker_pool.hh"
 #include "jk/core/filesystem/configuration.hh"
 #include "jk/core/filesystem/expander.hh"

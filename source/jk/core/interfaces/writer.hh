@@ -6,11 +6,14 @@
 #include <string_view>
 
 #include "fmt/format.h"
+#include "jk/common/path.hh"
 
 namespace jk::core::interfaces {
 
 struct Writer {
   virtual ~Writer() = default;
+
+  virtual void open(const common::AbsolutePath &) = 0;
 
   virtual Writer *write_line(std::string_view) = 0;
 

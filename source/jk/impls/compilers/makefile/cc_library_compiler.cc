@@ -48,14 +48,19 @@ auto CCLibraryCompiler::Name() const -> std::string_view {
   return "makefile.cc_library";
 }
 
-auto CCLibraryCompiler::Compile(core::models::Session *session,
-                                core::models::BuildRule *rule) const -> void {
+auto CCLibraryCompiler::Compile(
+    core::models::Session *session,
+    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+    core::models::BuildRule *rule) const -> void {
+  (void)scc;
   auto cc = dynamic_cast<rules::CCLibrary *>(rule);
-  DoCompile(session, cc);
+  DoCompile(session, scc, cc);
 }
 
-auto CCLibraryCompiler::DoCompile(core::models::Session *session,
-                                  rules::CCLibrary *rule) const -> void {
+auto CCLibraryCompiler::DoCompile(
+    core::models::Session *session,
+    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+    rules::CCLibrary *rule) const -> void {
   auto working_folder =
       session->Project->BuildRoot.Sub(*(rule->Base->FullQuotedQualifiedName));
 
@@ -63,7 +68,7 @@ auto CCLibraryCompiler::DoCompile(core::models::Session *session,
 
   generate_toolchain_file(session, working_folder, rule);
 
-  // TODO(hawtian): impl
+  generate_build_file(session, working_folder, scc, rule);
 }
 
 #define WORKING_FOLDER  "WORKING_FOLDER"
@@ -243,12 +248,12 @@ uint32_t add_source_files_lint_commands(
 }
 
 template<ranges::range R>
-void add_source_files_commands(core::models::Session *session,
-                               const common::AbsolutePath &working_folder,
-                               rules::CCLibrary *rule,
-                               core::generators::Makefile *makefile,
-                               std::string_view build_type,
-                               models::cc::SourceFile *source_file, R headers) {
+void add_source_file_commands(core::models::Session *session,
+                              const common::AbsolutePath &working_folder,
+                              rules::CCLibrary *rule,
+                              core::generators::Makefile *makefile,
+                              std::string_view build_type,
+                              models::cc::SourceFile *source_file, R headers) {
   std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
                               working_folder.Sub("toolchain.make").Stringify()};
 
@@ -307,7 +312,7 @@ void add_source_files_commands(core::models::Session *session,
   }
 }
 
-void CCLibraryCompiler::generate_build_file(
+core::generators::Makefile CCLibraryCompiler::new_makefile_with_common_commands(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule) const {
   core::generators::Makefile makefile(working_folder.Sub("build.make"));
@@ -359,9 +364,12 @@ void CCLibraryCompiler::generate_build_file(
                   ranges::views::empty<core::builder::CustomCommandLine>,
                   "This target is always outdated.", true);
 
-  core::builder::CustomCommandLines clean_statements;
+  return makefile;
+}
 
-  // lint headers
+std::vector<std::string> CCLibraryCompiler::lint_headers(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule, core::generators::Makefile *makefile) const {
   std::vector<std::string> lint_header_targets;
   for (const auto &filename : rule->ExpandedHeaderFiles) {
     auto source_file = models::cc::SourceFile(filename, rule);
@@ -371,54 +379,79 @@ void CCLibraryCompiler::generate_build_file(
       continue;
     }
 
-    add_source_files_lint_commands(session, working_folder, rule, &makefile,
+    add_source_files_lint_commands(session, working_folder, rule, makefile,
                                    &source_file);
     lint_header_targets.push_back(
         source_file.ResolveFullQualifiedLintPath(working_folder).Stringify());
   }
+  return lint_header_targets;
+}
+
+std::vector<std::string> CCLibraryCompiler::add_source_files_commands(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule, core::generators::Makefile *makefile,
+    std::vector<std::string> *lint_header_targets,
+    std::string_view build_type) const {
+  std::vector<std::string> all_objects;
+  all_objects.reserve(rule->ExpandedSourceFiles.size());
+
+  for (const auto &filename : rule->ExpandedSourceFiles) {
+    auto source_file = models::cc::SourceFile(filename, rule);
+
+    if (!source_file.lint) {
+      source_file.lint = true;
+      if (!rule->InNolint(
+              session->Project->Resolve(*source_file.FullQualifiedPath)
+                  .Stringify())) {
+        add_source_files_lint_commands(session, working_folder, rule, makefile,
+                                       &source_file);
+      }
+    }
+
+    add_source_file_commands(session, working_folder, rule, makefile,
+                             build_type, &source_file,
+                             ranges::views::all(*lint_header_targets));
+
+    if (rule->ExpandedAlwaysCompileFiles.contains(
+            session->Project->Resolve(*source_file.FullQualifiedPath)
+                .Stringify())) {
+      makefile->Target(
+          source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)
+              .Stringify(),
+          ranges::views::single("jk_force"),
+          ranges::views::empty<core::builder::CustomCommandLine>);
+    }
+
+    all_objects.push_back(
+        source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)
+            .Stringify());
+  }
+
+  return all_objects;
+}
+
+void CCLibraryCompiler::generate_build_file(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+    rules::CCLibrary *rule) const {
+  (void)scc;
+  auto makefile =
+      new_makefile_with_common_commands(session, working_folder, rule);
+
+  core::builder::CustomCommandLines clean_statements;
+
+  // lint headers
+  std::vector<std::string> lint_header_targets =
+      lint_headers(session, working_folder, rule, &makefile);
 
   auto library_progress_num = rule->Steps.Step(".library");
 
   for (const auto &build_type : session->BuildTypes) {
-    std::list<std::string> all_objects;
-
-    for (const auto &filename : rule->ExpandedHeaderFiles) {
-      auto source_file = models::cc::SourceFile(filename, rule);
-
-      if (!source_file.lint) {
-        source_file.lint = true;
-        if (!rule->InNolint(
-                session->Project->Resolve(*source_file.FullQualifiedPath)
-                    .Stringify())) {
-          add_source_files_lint_commands(session, working_folder, rule,
-                                         &makefile, &source_file);
-        }
-      }
-
-      add_source_files_commands(session, working_folder, rule, &makefile,
-                                build_type, &source_file,
-                                ranges::views::all(lint_header_targets));
-
-      all_objects.push_back(
-          source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)
-              .Stringify());
-
-      // rule->AlwaysCompile
-
-      if (rule->ExpandedAlwaysCompileFiles.contains(
-              session->Project->Resolve(*source_file.FullQualifiedPath)
-                  .Stringify())) {
-        makefile.Target(
-            source_file
-                .ResolveFullQualifiedObjectPath(working_folder, build_type)
-                .Stringify(),
-            ranges::views::single("jk_force"),
-            ranges::views::empty<core::builder::CustomCommandLine>);
-      }
-    }
+    auto all_objects =
+        add_source_files_commands(session, working_folder, rule, &makefile,
+                                  &lint_header_targets, build_type);
 
     auto library_file = working_folder.Sub(build_type, rule->LibraryFileName);
-    // build->AddTarget(library_file.Stringify(), {"jk_force"});
     makefile.Target(library_file.Stringify(), ranges::views::empty<std::string>,
                     ranges::views::empty<core::builder::CustomCommandLine>);
 
@@ -481,8 +514,6 @@ void CCLibraryCompiler::generate_build_file(
                   ranges::views::all(clean_statements), "", true);
 
   end_of_generate_build_file(&makefile, session, working_folder, rule);
-
-  makefile.flush(session->Writer.get());
 }
 
 }  // namespace jk::impls::compilers::makefile

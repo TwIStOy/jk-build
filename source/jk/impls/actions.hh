@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <concepts>
 #include <future>
 #include <list>
 #include <mutex>
@@ -26,15 +27,19 @@
 #include "jk/impls/compilers/compiler_factory.hh"
 #include "range/v3/algorithm/transform.hpp"
 #include "range/v3/range/concepts.hpp"
+#include "range/v3/range/traits.hpp"
 #include "range/v3/view/for_each.hpp"
 #include "range/v3/view/transform.hpp"
 
 namespace jk::impls {
 
-template<ranges::range R>
-void CompileRules(core::models::Session *session,
+auto CompileRules(core::models::Session *session,
                   std::string_view generator_name,
-                  impls::compilers::CompilerFactory *factory, R rg) {
+                  impls::compilers::CompilerFactory *factory, auto rg)
+  requires ranges::range<decltype(rg)> &&
+           std::same_as<ranges::range_value_t<decltype(rg)>,
+                        core::models::BuildRule *>
+{
   std::vector<std::future<void>> futures;
   for (auto rule : rg) {
     futures.push_back(session->Workers.Push([=]() {
@@ -45,13 +50,14 @@ void CompileRules(core::models::Session *session,
       }
     }));
   }
-  for (auto &f : futures) {
-    f.wait();
-  }
+  return futures;
 }
 
-template<ranges::range R>
-void PrepareRules(core::models::Session *session, R rg) {
+void PrepareRules(core::models::Session *session, auto rg)
+  requires ranges::range<decltype(rg)> &&
+           std::same_as<ranges::range_value_t<decltype(rg)>,
+                        core::models::BuildRule *>
+{
   std::vector<std::future<void>> futures;
   for (core::models::BuildRule *rule : rg) {
     futures.push_back(rule->Prepare(session));
@@ -62,8 +68,11 @@ void PrepareRules(core::models::Session *session, R rg) {
 }
 
 void PrepareDependencies(core::models::Session *session,
-                         core::models::BuildPackageFactory *package,
-                         auto rules) {
+                         core::models::BuildPackageFactory *package, auto rules)
+  requires ranges::range<decltype(rules)> &&
+           std::same_as<ranges::range_value_t<decltype(rules)>,
+                        core::models::BuildRule *>
+{
   auto make_dep_str_to_rule = [package](core::models::BuildRule *rule) {
     for (const auto &_dep : *rule->Base->Dependencies) {
       auto dep = core::models::ParseIdString(_dep);
@@ -143,6 +152,7 @@ inline auto LoadBuildFile(core::models::Session *session,
 }
 
 template<ranges::range R>
+  requires std::convertible_to<ranges::range_value_t<R>, std::string>
 void LoadBuildFiles(core::models::Session *session,
                     core::models::BuildPackageFactory *package_factory,
                     core::models::BuildRuleFactory *rule_factory, R files) {

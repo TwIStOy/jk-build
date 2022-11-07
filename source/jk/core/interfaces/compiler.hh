@@ -5,7 +5,9 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
+#include "jk/core/algorithms/tarjan.hh"
 #include "jk/core/models/build_rule.hh"
 #include "jk/core/models/session.hh"
 
@@ -19,8 +21,10 @@ struct Compiler {
   virtual std::string_view Name() const = 0;
 
   //! Compile a rule.
-  virtual void Compile(models::Session *session,
-                       models::BuildRule *rule) const = 0;
+  virtual void Compile(
+      models::Session *session,
+      const std::vector<algorithms::StronglyConnectedComponent> &scc,
+      models::BuildRule *rule) const = 0;
 };
 
 }  // namespace jk::core::interfaces

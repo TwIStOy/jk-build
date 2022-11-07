@@ -37,24 +37,20 @@ class BuildRule {
   //! Check if the build-rule is prepared.
   bool Prepared() const;
 
-  //! This field MUST be used after `StartDependenciesConstruct` has been
-  //! invoked.
   std::vector<BuildRule *> Dependencies;
 
   std::vector<std::string> ExportedLinkFlags;
 
   std::vector<std::pair<std::string, std::string>> ExportedEnvironmentVars;
 
+  //! Returns the absolute paths of what will this build-rule generated without
+  //! build_type specifyed
   std::vector<std::string> Artifacts;
 
-  common::AbsolutePath WorkingFolder;
+  const std::vector<std::string> &ExportedFiles(Session *session,
+                                                std::string_view build_type);
 
-  /*
-   * //! Returns the absolute paths of what will this build-rule generated. All
-   * //! rules depend on myself, will automatically depend on all my artifacts.
-   * virtual const std::vector<common::AbsolutePath> &Artifacts(
-   *     Session *session) const = 0;
-   */
+  common::AbsolutePath WorkingFolder;
 
   //! All steps in this rule, this field will only be used in makefile
   //! generator.

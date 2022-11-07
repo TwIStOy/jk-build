@@ -16,8 +16,10 @@ namespace jk::impls::compilers::makefile {
 struct CCLibraryCompiler : core::interfaces::Compiler {
   std::string_view Name() const override;
 
-  void Compile(core::models::Session *session,
-               core::models::BuildRule *rule) const override;
+  void Compile(
+      core::models::Session *session,
+      const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+      core::models::BuildRule *rule) const override;
 
  protected:
   virtual void generate_flag_file(core::models::Session *session,
@@ -28,9 +30,11 @@ struct CCLibraryCompiler : core::interfaces::Compiler {
       core::models::Session *session,
       const common::AbsolutePath &working_folder, rules::CCLibrary *rule) const;
 
-  virtual void generate_build_file(core::models::Session *session,
-                                   const common::AbsolutePath &working_folder,
-                                   rules::CCLibrary *rule) const;
+  virtual void generate_build_file(
+      core::models::Session *session,
+      const common::AbsolutePath &working_folder,
+      const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+      rules::CCLibrary *rule) const;
 
   virtual void end_of_generate_build_file(
       core::generators::Makefile *makefile, core::models::Session *session,
@@ -42,8 +46,27 @@ struct CCLibraryCompiler : core::interfaces::Compiler {
     (void)rule;
   }
 
+  std::vector<std::string> lint_headers(
+      core::models::Session *session,
+      const common::AbsolutePath &working_folder, rules::CCLibrary *rule,
+      core::generators::Makefile *makefile) const;
+
+  core::generators::Makefile new_makefile_with_common_commands(
+      core::models::Session *session,
+      const common::AbsolutePath &working_folder, rules::CCLibrary *rule) const;
+
+  std::vector<std::string> add_source_files_commands(
+      core::models::Session *session,
+      const common::AbsolutePath &working_folder, rules::CCLibrary *rule,
+      core::generators::Makefile *makefile,
+      std::vector<std::string> *lint_header_targets,
+      std::string_view build_type) const;
+
  private:
-  void DoCompile(core::models::Session *session, rules::CCLibrary *rule) const;
+  void DoCompile(
+      core::models::Session *session,
+      const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+      rules::CCLibrary *rule) const;
 };
 
 }  // namespace jk::impls::compilers::makefile
