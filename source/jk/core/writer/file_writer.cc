@@ -16,27 +16,33 @@ namespace jk::core::writer {
 
 static auto logger = utils::Logger("file_writer");
 
-FileWriter::FileWriter(const std::string &path) : path_(path) {
-  fs::path p{path};
-  common::AssumeFolder(p.parent_path());
+FileWriter::FileWriter() {
 }
 
-Writer *FileWriter::WriteLine(const std::string &str) {
-  oss_ << str << std::endl;
+auto FileWriter::open(const common::AbsolutePath &p) -> void {
+  path_ = p.Stringify();
+}
+
+auto FileWriter::write_line(std::string_view s) -> Writer * {
+  ofs_ << s << "\n";
   return this;
 }
 
-Writer *FileWriter::NewLine() {
-  oss_ << std::endl;
+auto FileWriter::write_line() -> Writer * {
+  ofs_ << "\n";
   return this;
 }
 
-Writer *FileWriter::Write(const std::string &str) {
-  oss_ << str;
+auto FileWriter::write(std::string_view s) -> Writer * {
+  ofs_ << s;
   return this;
 }
 
-Writer *FileWriter::Flush() {
+FileWriter::~FileWriter() {
+  flush();
+}
+
+auto FileWriter::flush() -> void {
   auto content = oss_.str();
 
   {
@@ -54,7 +60,7 @@ Writer *FileWriter::Flush() {
         logger->debug(
             "Because of content not change, write to file \"{}\" omitted.",
             path_);
-        return this;
+        return;
       }
     }
   }
@@ -64,16 +70,6 @@ Writer *FileWriter::Flush() {
   ofs_ = std::ofstream(path_);
   ofs_ << content;
   ofs_.flush();
-  return this;
-}
-
-Writer *FileWriter::WriterJSON(const nlohmann::json &j) {
-  oss_ << j;
-  return this;
-}
-
-std::unique_ptr<Writer> FileWriterFactory::Build(const std::string &key) {
-  return std::unique_ptr<Writer>{new FileWriter{key}};
 }
 
 }  // namespace jk::core::writer

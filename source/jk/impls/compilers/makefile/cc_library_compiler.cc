@@ -17,6 +17,7 @@
 #include "jk/core/generators/makefile.hh"
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/session.hh"
+#include "jk/impls/compilers/makefile/common.hh"
 #include "jk/impls/models/cc/source_file.hh"
 #include "jk/impls/rules/cc_library.hh"
 #include "range/v3/algorithm/contains.hpp"
@@ -86,7 +87,8 @@ void CCLibraryCompiler::generate_flag_file(
   static auto git_desc =
       R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
 
-  core::generators::Makefile makefile(working_folder.Sub("flags.make"));
+  core::generators::Makefile makefile(working_folder.Sub("flags.make"),
+                                      {session->Writer.get()});
 
   auto compile_flags = session->Config->compile_flags;
   compile_flags.push_back(
@@ -169,14 +171,13 @@ void CCLibraryCompiler::generate_flag_file(
     }
   };
   dfs(rule, dfs);
-
-  makefile.flush(session->Writer.get());
 }
 
 void CCLibraryCompiler::generate_toolchain_file(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule) const {
-  core::generators::Makefile makefile(working_folder.Sub("toolchain.make"));
+  core::generators::Makefile makefile(working_folder.Sub("toolchain.make"),
+                                      {session->Writer.get()});
 
   makefile.Env("CXX",
                fmt::format("{} {}", absl::StrJoin(session->Config->cxx, " "),
@@ -202,8 +203,6 @@ void CCLibraryCompiler::generate_toolchain_file(
   makefile.Env("CPPLINT", session->Config->cpplint_path);
 
   makefile.Env("MKDIR", "mkdir -p");
-
-  makefile.flush(session->Writer.get());
 }
 
 uint32_t add_source_files_lint_commands(
@@ -312,61 +311,6 @@ void add_source_file_commands(core::models::Session *session,
   }
 }
 
-core::generators::Makefile CCLibraryCompiler::new_makefile_with_common_commands(
-    core::models::Session *session, const common::AbsolutePath &working_folder,
-    rules::CCLibrary *rule) const {
-  core::generators::Makefile makefile(working_folder.Sub("build.make"));
-
-  makefile.Env("SHELL", "/bin/bash",
-               "The shell in which to execute make rules.");
-
-  makefile.Env("JK_COMMAND", session->JKPath, "The command Jk executable.");
-
-  makefile.Env("JK_SOURCE_DIR", session->Project->ProjectRoot.Stringify(),
-               "The top-level source directory on which Jk was run.");
-
-  makefile.Env("JK_BINARY_DIR", session->Project->BuildRoot.Stringify(),
-               "The top-level build directory on which Jk was run.");
-
-  makefile.Env("JK_BUNDLE_LIBRARY_PREFIX",
-               session->Project->ExternalInstalledPrefix.Stringify(),
-               "The bundled libraries prefix on which Jk was run.");
-
-  makefile.Env("EQUALS", "=", "Escaping for special characters.");
-
-  makefile.Env("PRINT", session->JKPath + " echo_color");
-
-  makefile.Env("JK_VERBOSE_FLAG", "V$(VERBOSE)");
-
-  if (session->Project->Platform == core::filesystem::TargetPlatform::k32) {
-    makefile.Env("PLATFORM", "32");
-  } else {
-    makefile.Env("PLATFORM", "64");
-  }
-
-  makefile.Target(core::generators::Makefile::DEFAULT_TARGET,
-                  ranges::views::empty<std::string>,
-                  ranges::views::empty<core::builder::CustomCommandLine>);
-
-  makefile.Include(working_folder.Sub("flags.make").Path.string(),
-                   "Include the compile flags for this rule's objectes.", true);
-  makefile.Include(working_folder.Sub("toolchain.make").Path.string(),
-                   "Include used toolchains for this rule's objects.", true);
-
-  makefile.Target("all", ranges::views::single("DEBUG"),
-                  ranges::views::empty<core::builder::CustomCommandLine>, "",
-                  true);
-  makefile.Target(
-      "all", ranges::views::single(core::generators::Makefile::DEFAULT_TARGET),
-      ranges::views::empty<core::builder::CustomCommandLine>);
-
-  makefile.Target("jk_force", ranges::views::empty<std::string>,
-                  ranges::views::empty<core::builder::CustomCommandLine>,
-                  "This target is always outdated.", true);
-
-  return makefile;
-}
-
 std::vector<std::string> CCLibraryCompiler::lint_headers(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule, core::generators::Makefile *makefile) const {
@@ -435,8 +379,7 @@ void CCLibraryCompiler::generate_build_file(
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     rules::CCLibrary *rule) const {
   (void)scc;
-  auto makefile =
-      new_makefile_with_common_commands(session, working_folder, rule);
+  auto makefile = new_makefile_with_common_commands(session, working_folder);
 
   core::builder::CustomCommandLines clean_statements;
 

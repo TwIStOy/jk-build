@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "jk/utils/lazy_eval.hh"
 #include "jk/utils/str.hh"
 
 namespace jk::core::models {

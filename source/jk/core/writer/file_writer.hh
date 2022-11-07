@@ -10,32 +10,29 @@
 #include <vector>
 
 #include "jk/common/path.hh"
-#include "jk/core/writer/writer.hh"
+#include "jk/core/interfaces/writer.hh"
 
 namespace jk::core::writer {
 
-class FileWriter : public Writer {
+class FileWriter : public interfaces::Writer {
  public:
-  explicit FileWriter(const std::string &path);
+  explicit FileWriter();
+  ~FileWriter();
 
-  Writer *WriteLine(const std::string &) override;
+  void open(const common::AbsolutePath &) override;
 
-  Writer *NewLine() override;
+  Writer *write_line(std::string_view) override;
 
-  Writer *Write(const std::string &) override;
+  Writer *write_line() override;
 
-  Writer *WriterJSON(const nlohmann::json &j) override;
+  Writer *write(std::string_view) override;
 
-  Writer *Flush() override;
+  void flush() override;
 
- private:
+ protected:
   std::string path_;
   std::ostringstream oss_;
   std::ofstream ofs_;
-};
-
-struct FileWriterFactory : public WriterFactory {
-  std::unique_ptr<Writer> Build(const std::string &key) override;
 };
 
 }  // namespace jk::core::writer

@@ -21,12 +21,12 @@ struct Writer {
 
   virtual Writer *write(std::string_view) = 0;
 
+  virtual void flush() = 0;
+
   template<typename F, typename... Args>
   Writer *write_fmt(F &&f, Args &&...args) {
     return write(fmt::format(std::forward<F>(f), std::forward<Args>(args)...));
   }
-
-  virtual void flush() = 0;
 };
 
 }  // namespace jk::core::interfaces

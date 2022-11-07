@@ -47,6 +47,8 @@ class BuildRule {
   //! build_type specifyed
   std::vector<std::string> Artifacts;
 
+  //! Returns the absolute paths of what will this build-rule generated with
+  //! build_type specifyed
   const std::vector<std::string> &ExportedFiles(Session *session,
                                                 std::string_view build_type);
 

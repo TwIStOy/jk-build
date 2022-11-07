@@ -7,26 +7,15 @@
 #include <string>
 #include <vector>
 
-#include "jk/core/writer/writer.hh"
+#include "jk/core/writer/file_writer.hh"
 
 namespace jk::core::writer {
 
-class BufferWriter : public Writer {
+class BufferWriter : public FileWriter {
  public:
-  Writer *WriteLine(const std::string &) override;
-
-  Writer *NewLine() override;
-
-  Writer *Write(const std::string &) override;
-
-  Writer *Flush() override;
-
-  Writer *WriterJSON(const nlohmann::json &j) override;
-
   std::string Buffer() const;
 
- private:
-  std::ostringstream buffer_;
+  void flush() override;
 };
 
 }  // namespace jk::core::writer

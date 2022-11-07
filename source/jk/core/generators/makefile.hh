@@ -32,8 +32,8 @@ struct Makefile {
   template<ranges::range R, ranges::range U>
     requires std::convertible_to<ranges::range_value_t<U>,
                                  builder::CustomCommandLine>
-  Makefile &Target(std::string_view name, R deps,
-                   U cmds = ranges::views::empty<builder::CustomCommandLine>,
+  Makefile &Target(std::string_view name, R &&deps,
+                   U &&cmds = ranges::views::empty<builder::CustomCommandLine>,
                    std::string_view comment = "", bool phony = false) {
     print_comment(comment);
     print(name, ": ");

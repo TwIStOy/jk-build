@@ -13,7 +13,7 @@
 
 namespace jk::impls::compilers::makefile {
 
-struct CCLibraryCompiler : core::interfaces::Compiler {
+struct CCLibraryCompiler : public core::interfaces::Compiler {
   std::string_view Name() const override;
 
   void Compile(
@@ -50,10 +50,6 @@ struct CCLibraryCompiler : core::interfaces::Compiler {
       core::models::Session *session,
       const common::AbsolutePath &working_folder, rules::CCLibrary *rule,
       core::generators::Makefile *makefile) const;
-
-  core::generators::Makefile new_makefile_with_common_commands(
-      core::models::Session *session,
-      const common::AbsolutePath &working_folder, rules::CCLibrary *rule) const;
 
   std::vector<std::string> add_source_files_commands(
       core::models::Session *session,
