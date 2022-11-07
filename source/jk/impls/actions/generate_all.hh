@@ -20,6 +20,7 @@
 #include "range/v3/range/conversion.hpp"
 #include "range/v3/range/traits.hpp"
 #include "range/v3/view/all.hpp"
+#include "range/v3/view/any_view.hpp"
 #include "range/v3/view/empty.hpp"
 #include "range/v3/view/for_each.hpp"
 #include "range/v3/view/single.hpp"
@@ -41,7 +42,7 @@ static auto release_git_version_file_content = R"(
 auto generate_all(core::models::Session *session, auto generator_names,
                   impls::compilers::CompilerFactory *compiler_factory,
                   core::models::BuildPackageFactory *package_factory,
-                  core::models::BuildRuleFactory *rule_factory, auto rg)
+                  core::models::BuildRuleFactory *rule_factory, auto &&rg)
   requires ranges::range<decltype(rg)> &&
            std::same_as<ranges::range_value_t<decltype(rg)>,
                         core::models::BuildRuleId>
@@ -56,26 +57,30 @@ auto generate_all(core::models::Session *session, auto generator_names,
 
   PrepareRules(session, core::models::IterAllRules(package_factory));
 
-  auto arg_rules =
-      rg | ranges::views::transform([&](core::models::BuildRuleId &id) {
-        auto [pkg, new_pkg] = package_factory->PackageUnsafe(*id.PackageName);
-        assert(!new_pkg);
+  auto arg_rules = rg |
+                   ranges::views::transform(
+                       [&](core::models::BuildRuleId &id)
+                           -> ranges::any_view<core::models::BuildRule *> {
+                         auto [pkg, new_pkg] =
+                             package_factory->PackageUnsafe(*id.PackageName);
+                         assert(!new_pkg);
 
-        if (id.RuleName == "...") {
-          // "..." means all rules
-          return pkg->IterRules();
-        } else {
-          auto rule = pkg->RulesMap[id.RuleName].get();
-          if (!rule) {
-            JK_THROW(core::JKBuildError("No rule named '{}' in package '{}'",
-                                        id.RuleName, id.PackageName.value()));
-          }
-          return ranges::views::single(rule);
-        }
-      }) |
-      ranges::views::join | ranges::to_vector;
+                         if (id.RuleName == "...") {
+                           // "..." means all rules
+                           return pkg->IterRules();
+                         } else {
+                           auto rule = pkg->RulesMap[id.RuleName].get();
+                           if (!rule) {
+                             JK_THROW(core::JKBuildError(
+                                 "No rule named '{}' in package '{}'",
+                                 id.RuleName, id.PackageName.value()));
+                           }
+                           return ranges::views::single(rule);
+                         }
+                       }) |
+                   ranges::views::join | ranges::to_vector;
 
-  core::algorithms::Tarjan(session, ranges::views::all(arg_rules));
+  auto scc = core::algorithms::Tarjan(session, ranges::views::all(arg_rules));
 
   std::vector<bool> visited(core::models::__CurrentObjectId(), false);
   std::vector<core::models::BuildRule *> all_rules;
@@ -91,14 +96,14 @@ auto generate_all(core::models::Session *session, auto generator_names,
 
   std::vector<std::future<void>> futures;
   for (auto generator_name : generator_names) {
-    auto f = CompileRules(session, generator_name, compiler_factory,
+    auto f = CompileRules(session, generator_name, scc, compiler_factory,
                           ranges::views::all(all_rules));
     futures.insert(futures.end(), std::begin(f), std::end(f));
   }
 
-  futures | ranges::views::for_each([](auto &f) {
+  for (auto &f : futures) {
     f.wait();
-  });
+  }
 
   // generate progress.mark
   {
@@ -122,6 +127,8 @@ auto generate_all(core::models::Session *session, auto generator_names,
     ofs << release_git_version_file_content;
     ofs.flush();
   }
+
+  return scc;
 }
 
 }  // namespace jk::impls::actions

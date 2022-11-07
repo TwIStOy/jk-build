@@ -16,8 +16,7 @@
 #include "jk/utils/str.hh"
 #include "pybind11/pytypes.h"
 
-namespace jk {
-namespace utils {
+namespace jk::utils {
 
 class __JK_HIDDEN Kwargs final : public Stringifiable {
  public:
@@ -65,5 +64,4 @@ class __JK_HIDDEN Kwargs final : public Stringifiable {
   absl::flat_hash_map<std::string, pybind11::object> value_;
 };
 
-}  // namespace utils
-}  // namespace jk
+}  // namespace jk::utils

@@ -33,9 +33,10 @@
 
 namespace jk::impls {
 
-auto CompileRules(core::models::Session *session,
-                  std::string_view generator_name,
-                  impls::compilers::CompilerFactory *factory, auto rg)
+auto CompileRules(
+    core::models::Session *session, std::string_view generator_name,
+    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+    impls::compilers::CompilerFactory *factory, auto rg)
   requires ranges::range<decltype(rg)> &&
            std::same_as<ranges::range_value_t<decltype(rg)>,
                         core::models::BuildRule *>
@@ -46,7 +47,7 @@ auto CompileRules(core::models::Session *session,
       core::interfaces::Compiler *c =
           factory->Find(generator_name, rule->Base->TypeName);
       if (c != nullptr) {
-        c->Compile(session, rule);
+        c->Compile(session, scc, rule);
       }
     }));
   }

@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "args.hxx"
-#include "jk/common/flags.hh"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
 #include "jk/utils/bytes.hh"
@@ -57,8 +56,8 @@ static std::string HashFile(const common::AbsolutePath &file,
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     const int bufSize = 32768;
-    uint8_t *buffer = static_cast<uint8_t *>(malloc(bufSize));
-    int bytesRead = 0;
+    uint8_t *buffer   = static_cast<uint8_t *>(malloc(bufSize));
+    int bytesRead     = 0;
     if (!buffer) {
       JK_THROW(core::JKBuildError("Not enough memory"));
     }
@@ -88,7 +87,7 @@ class CURLEasyGuard {
     }
   }
 
-  CURLEasyGuard(const CURLEasyGuard &) = delete;
+  CURLEasyGuard(const CURLEasyGuard &)            = delete;
   CURLEasyGuard &operator=(const CURLEasyGuard &) = delete;
 
   void release() {
@@ -111,9 +110,9 @@ static void CheckCurlResult(::CURLcode result, const std::string &msg) {
 
 static size_t WriteToFileCallback(void *ptr, size_t size, size_t nmemb,
                                   void *data) {
-  int realsize = static_cast<int>(size * nmemb);
+  int realsize        = static_cast<int>(size * nmemb);
   std::ofstream *fout = static_cast<std::ofstream *>(data);
-  const char *chPtr = static_cast<char *>(ptr);
+  const char *chPtr   = static_cast<char *>(ptr);
   fout->write(chPtr, realsize);
   return realsize;
 }
@@ -150,7 +149,7 @@ static int FileDownloadProgressCallback(void *clientp, curl_off_t dltotal,
   static_cast<void>(ultotal);
   static_cast<void>(ulnow);
 
-  auto ts = std::chrono::high_resolution_clock::now();
+  auto ts    = std::chrono::high_resolution_clock::now();
   auto delta = dlnow - previous_dl;
   if (delta == 0) {
     return 0;
@@ -173,7 +172,7 @@ static int FileDownloadProgressCallback(void *clientp, curl_off_t dltotal,
 
 static void Download(const std::string &url, const common::AbsolutePath &output,
                      const std::string &sha256, bool verbose, int timeout,
-                     int inactivity_timeout) {
+                     int inactivity_timeout, uint32_t column_size) {
   if (fs::exists(output.Path) &&
       utils::EqualIgnoreCase(HashFile(output, "sha256"), sha256)) {
     std::cout << "File exists" << std::endl;
@@ -240,7 +239,7 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
     CheckCurlResult(res, "DOWNLOAD catnot set proxy value");
   }
 
-  utils::ProgressBar bar;
+  utils::ProgressBar bar(column_size);
 
   res = ::curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
   CheckCurlResult(res, "DOWNLOAD cannot set noprogress value");
@@ -254,7 +253,7 @@ static void Download(const std::string &url, const common::AbsolutePath &output,
   CheckCurlResult(res, "DOWNLOAD cannot set progress data");
 
   start_ts = std::chrono::high_resolution_clock::now();
-  res = ::curl_easy_perform(curl);
+  res      = ::curl_easy_perform(curl);
   guard.release();
   ::curl_easy_cleanup(curl);
 
@@ -280,10 +279,10 @@ void DownloadFile(args::Subparser &parser) {
     return;
   }
 
-  common::FLAGS_terminal_columns = std::atoi(args[3].c_str());
+  uint32_t column_size = std::atoi(args[3].c_str());
 
   Download(args[0], common::AbsolutePath(fs::path{args[1]}), args[2], false, 0,
-           0);
+           0, column_size);
 }
 
 }  // namespace jk::cli

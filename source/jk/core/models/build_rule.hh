@@ -12,6 +12,7 @@
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/models/build_rule_base.hh"
+#include "jk/utils/cpp_features.hh"
 #include "jk/utils/kwargs.hh"
 
 namespace jk::core::models {
@@ -19,7 +20,7 @@ namespace jk::core::models {
 class BuildPackage;
 class Session;
 
-class BuildRule {
+class __JK_HIDDEN BuildRule {
  public:
   BuildRule(BuildPackage *package, std::string type_name, RuleType type,
             std::string_view package_name, utils::Kwargs kwargs);

@@ -9,11 +9,12 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "jk/core/models/build_rule.hh"
+#include "jk/utils/cpp_features.hh"
 #include "jk/utils/kwargs.hh"
 
 namespace jk::core::models {
 
-struct BuildRuleFactory {
+struct __JK_HIDDEN BuildRuleFactory {
   using create_func_t = std::function<std::unique_ptr<BuildRule>(
       const std::string &TypeName, const utils::Kwargs &kwargs)>;
 

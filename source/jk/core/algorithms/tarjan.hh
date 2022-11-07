@@ -31,7 +31,7 @@ inline auto Tarjan(models::Session *session, auto rg) {
       dfn(models::__CurrentObjectId(), 0);
   std::vector<bool> in_stack(models::__CurrentObjectId(), false);
 
-  auto dfs = [&](models::BuildRule *rule, auto &&dfs) {
+  auto dfs = [&](models::BuildRule *rule, auto &&dfs) -> void {
     low[rule->Base->ObjectId] = dfn[rule->Base->ObjectId] = ++dfncnt;
     stack.push(rule);
     in_stack[rule->Base->ObjectId] = true;
@@ -67,20 +67,21 @@ inline auto Tarjan(models::Session *session, auto rg) {
     }
   };
 
-  rg | ranges::views::for_each([&](auto x) {
+  for (auto x : rg) {
     dfs(x, dfs);
-  });
+  }
 
-  rg | ranges::views::for_each([&](models::BuildRule *x) {
+  for (auto x : rg) {
     for (auto n : x->Dependencies) {
       if (x->_scc_id != n->_scc_id) {
         sccs[x->_scc_id].Deps.push_back(n->_scc_id);
       }
     }
-  });
+  }
 
   for (auto &scc : sccs) {
-    scc.Deps = scc.Deps | ranges::views::unique | ranges::to_vector;
+    scc.Deps = scc.Deps | ranges::to<absl::flat_hash_set<uint32_t>> |
+               ranges::to_vector;
   }
 
   return sccs;

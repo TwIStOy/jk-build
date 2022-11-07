@@ -10,7 +10,6 @@
 #include <sstream>
 #include <string>
 
-#include "jk/common/flags.hh"
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
 
@@ -18,12 +17,9 @@ namespace jk::utils {
 
 class ProgressBar {
  public:
-  inline explicit ProgressBar(uint32_t bar_width = 0, char base = '=',
+  inline explicit ProgressBar(uint32_t bar_width, char base = '=',
                               bool arrow = true)
       : base_(base), arrow_(arrow) {
-    if (bar_width == 0) {
-      bar_width_ = common::FLAGS_terminal_columns - 7;
-    }
   }
 
   inline void Print(std::ostream &out, uint64_t now, uint64_t total,
@@ -36,7 +32,7 @@ class ProgressBar {
     width -= msg.length() + 1;
 
     int32_t place_numbers = width * percent;
-    place_numbers = std::min<int32_t>(place_numbers, width);
+    place_numbers         = std::min<int32_t>(place_numbers, width);
 
     std::ostringstream oss;
 

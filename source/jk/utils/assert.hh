@@ -21,8 +21,9 @@ namespace __assert_impl {
   return std::forward<decltype(failed_fn)>(failed_fn);
 }
 
-inline void report_error_and_terminate(const char *prefix, const char *msg,
-                                       std::source_location where) {
+static inline void report_error_and_terminate(const char *prefix,
+                                              const char *msg,
+                                              std::source_location where) {
   std::cerr << "<" << prefix << "> " << where.file_name() << ":" << where.line()
             << "] " << where.function_name() << ": " << msg << std::endl;
   std::terminate();
@@ -31,10 +32,10 @@ inline void report_error_and_terminate(const char *prefix, const char *msg,
 struct runtime_assertion {
   using handler_t = void (*)(const char *msg, std::source_location loc);
 
-  constexpr explicit runtime_assertion(handler_t handler) : handler_(handler) {
+  explicit runtime_assertion(handler_t handler) : handler_(handler) {
   }
 
-  constexpr inline auto set_handler(
+  inline auto set_handler(
       handler_t handler,
       std::source_location where = std::source_location::current()) {
     report_error_and_terminate("_", "Expect handler not null", where);
@@ -44,10 +45,9 @@ struct runtime_assertion {
     return old;
   }
 
-  constexpr inline auto expect(
-      bool cond, const char *msg = "",
-      std::source_location where =
-          std::source_location::current()) const noexcept {
+  inline auto expect(bool cond, const char *msg = "",
+                     std::source_location where =
+                         std::source_location::current()) const noexcept {
     if (!cond) [[unlikely]] {
       handler_(msg, where);
     }
@@ -61,12 +61,12 @@ struct runtime_assertion {
 
 namespace assertion {
 
-constexpr auto inline bound = __assert_impl::runtime_assertion(
+inline auto bound = __assert_impl::runtime_assertion(
     [](const char *msg, std::source_location loc) {
       __assert_impl::report_error_and_terminate("Bound", msg, loc);
     });
 
-constexpr auto inline boolean = __assert_impl::runtime_assertion(
+inline auto boolean = __assert_impl::runtime_assertion(
     [](const char *msg, std::source_location loc) {
       __assert_impl::report_error_and_terminate("Boolean", msg, loc);
     });

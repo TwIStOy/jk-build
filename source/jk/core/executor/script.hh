@@ -15,7 +15,7 @@
 
 namespace jk::core::executor {
 
-class ScriptInterpreter {
+class __JK_HIDDEN ScriptInterpreter {
  public:
   struct EvalResult {
     std::string FuncName;
