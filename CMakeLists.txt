@@ -9,8 +9,9 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -fPIC -g2 -static")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3 -fPIC -g2 -static")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -fPIC -g2 -static -Wno-attributes")
+set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -msse3 -fPIC -g2 -static -Wno-attributes")
 set(CMAKE_CXX_FLAGS_DEBUG
     "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
 set(CMAKE_LINKER_FLAGS_DEBUG

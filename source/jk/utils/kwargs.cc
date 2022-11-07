@@ -21,26 +21,16 @@ namespace utils {
 Kwargs::Kwargs() {
 }
 
-const std::string &Kwargs::Stringify() const {
-  if (_cached_to_string.has_func()) {
-    _cached_to_string = [this] {
-      std::ostringstream oss;
-
-      oss << "Kwargs {";
-
-      oss << JoinString(", ", value_.begin(), value_.end(),
-                        [](const auto &pr) -> std::string {
-                          return "{}: {}"_format(
-                              pr.first,
-                              pybind11::str(pr.second).cast<std::string>());
-                        });
-
-      oss << "}";
-
-      return oss.str();
-    };
-  }
-  return *_cached_to_string;
+std::string Kwargs::gen_stringify_cache() const {
+  std::ostringstream oss;
+  oss << "Kwargs {";
+  oss << JoinString(
+      ", ", value_.begin(), value_.end(), [](const auto &pr) -> std::string {
+        return "{}: {}"_format(pr.first,
+                               pybind11::str(pr.second).cast<std::string>());
+      });
+  oss << "}";
+  return oss.str();
 }
 
 Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {

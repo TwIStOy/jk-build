@@ -29,12 +29,14 @@ namespace utils {
 
 struct Stringifiable {
   //! Returns the result of stringify current object
-  virtual const std::string &Stringify() const = 0;
+  virtual const std::string &Stringify() const;
+
+  virtual std::string gen_stringify_cache() const = 0;
 
   virtual ~Stringifiable() = default;
 
  protected:
-  mutable common::LazyProperty<std::string> _cached_to_string;
+  mutable std::optional<std::string> _cached_to_string;
 };
 
 /**

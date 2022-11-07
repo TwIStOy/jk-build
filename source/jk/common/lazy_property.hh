@@ -25,6 +25,7 @@ class LazyProperty {
       return value_.value();
     }
     value_.emplace(func_());
+    return value_.value();
   }
 
   T &Value() & {
@@ -32,6 +33,7 @@ class LazyProperty {
       return value_.value();
     }
     value_.emplace(func_());
+    return value_.value();
   }
 
   const T &operator*() const & {
@@ -43,25 +45,30 @@ class LazyProperty {
   }
 
   T const *operator->() const & {
-    return &value_.value();
+    return &Value();
   }
 
   T *operator->() & {
-    return &value_.value();
+    return &Value();
   }
 
   bool has_func() const {
     return func_ != nullptr;
   }
 
+  LazyProperty &operator=(const LazyProperty &rhs) = delete;
+  LazyProperty &operator=(LazyProperty &&rhs)      = delete;
+
   template<typename F>
   LazyProperty &operator=(F &&f) {
     Reset(std::forward<F>(f));
+    return *this;
   }
 
-  void Reset(func_t func) {
+  template<typename F>
+  void Reset(F &&func) {
     value_.reset();
-    func_ = std::move(func);
+    func_ = std::forward<F>(func);
   }
 
   void ForceReload() {

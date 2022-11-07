@@ -12,12 +12,13 @@
 #include "jk/core/executor/script.hh"
 #include "jk/core/models/build_rule.hh"
 #include "jk/core/models/build_rule_factory.hh"
+#include "jk/utils/cpp_features.hh"
 #include "range/v3/view/map.hpp"
 #include "range/v3/view/transform.hpp"
 
 namespace jk::core::models {
 
-class BuildPackage {
+class __JK_HIDDEN BuildPackage {
  public:
   std::string Name;
   common::ProjectRelativePath Path;

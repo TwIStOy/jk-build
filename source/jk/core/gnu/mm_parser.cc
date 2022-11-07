@@ -28,9 +28,12 @@
 
 namespace jk::core::gnu {
 
-std::string MM::Stringify() const {
-  return fmt::format("MM(target: '{}', deps: {})", Target,
-                     utils::JoinString(", ", Dependencies));
+const std::string &MM::Stringify() const {
+  _cached_to_string = [this]() {
+    fmt::format("MM(target: '{}', deps: {})", Target,
+                utils::JoinString(", ", Dependencies));
+  };
+  return *_cached_to_string;
 }
 
 static auto not_empty = parser::MakeCharPredict([](char ch) {

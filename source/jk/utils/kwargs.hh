@@ -41,7 +41,7 @@ class __JK_HIDDEN Kwargs final : public Stringifiable {
   bool BooleanOptional(const std::string &name,
                        std::optional<bool> default_value) const;
 
-  const std::string &Stringify() const final;
+  std::string gen_stringify_cache() const final;
 
   template<typename T>
   auto Find(T &&key) const {

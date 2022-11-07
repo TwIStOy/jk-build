@@ -25,12 +25,9 @@
 
 namespace jk::core::models {
 
-const std::string &BuildRuleId::Stringify() const {
-  _cached_to_string = [this] {
-    return "BuildRuleId(Id = \"{}:{}\", Position: {}, VerReq: {})"_format(
-        PackageName, RuleName, Position, VersionReq);
-  };
-  return *_cached_to_string;
+std::string BuildRuleId::gen_stringify_cache() const {
+  return "BuildRuleId(Id = \"{}:{}\", Position: {}, VerReq: {})"_format(
+      PackageName, RuleName, Position, VersionReq);
 }
 
 static auto position_prefix =

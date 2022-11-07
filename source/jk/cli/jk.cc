@@ -13,7 +13,6 @@
 #include "jk/cli/gen.hh"
 #include "jk/cli/progress.hh"
 #include "jk/cli/rm.hh"
-#include "jk/common/flags.hh"
 #include "jk/version.h"
 
 namespace jk::cli {
@@ -56,7 +55,8 @@ int Cli::Run(int argc, const char *argv[]) {
       vg.Notify();
 
       if (verbose_.Value) {
-        common::FLAGS_verbose = verbose_.Value.value();
+        // FIXME(hawtian): fix
+        // common::FLAGS_verbose = verbose_.Value.value();
       }
     });
   }

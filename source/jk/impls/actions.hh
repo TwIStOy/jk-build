@@ -43,13 +43,14 @@ auto CompileRules(
 {
   std::vector<std::future<void>> futures;
   for (auto rule : rg) {
-    futures.push_back(session->Workers.Push([=]() {
-      core::interfaces::Compiler *c =
-          factory->Find(generator_name, rule->Base->TypeName);
-      if (c != nullptr) {
-        c->Compile(session, scc, rule);
-      }
-    }));
+    futures.push_back(
+        session->Workers.Push([&scc, generator_name, factory, rule, session]() {
+          core::interfaces::Compiler *c =
+              factory->Find(generator_name, rule->Base->TypeName);
+          if (c != nullptr) {
+            c->Compile(session, scc, rule);
+          }
+        }));
   }
   return futures;
 }
@@ -104,13 +105,17 @@ void PrepareDependencies(core::models::Session *session,
     }
   };
 
-  rules | ranges::views::transform([session, &make_dep_str_to_rule](auto r) {
-    return session->Workers.Push([&make_dep_str_to_rule, r]() {
-      make_dep_str_to_rule(r);
-    });
-  }) | ranges::views::for_each([](auto &f) {
+  auto futures =
+      rules |
+      ranges::views::transform([session, &make_dep_str_to_rule](auto r) {
+        return session->Workers.Push([&make_dep_str_to_rule, r]() {
+          make_dep_str_to_rule(r);
+        });
+      }) |
+      ranges::to_vector;
+  for (auto &f : futures) {
     f.wait();
-  });
+  }
 }
 
 inline auto LoadBuildFile(core::models::Session *session,
@@ -152,6 +157,25 @@ inline auto LoadBuildFile(core::models::Session *session,
   return std::move(next_files);
 }
 
+inline void load_file_impl(std::atomic_uint_fast32_t *pending_jobs,
+                           core::models::Session *session,
+                           core::models::BuildPackageFactory *package_factory,
+                           core::models::BuildRuleFactory *rule_factory,
+                           std::string filename) {
+  pending_jobs->fetch_add(1);
+  session->Workers.Push([pending_jobs, filename, session, package_factory,
+                         rule_factory]() mutable {
+    auto deps = LoadBuildFile(session, filename, package_factory, rule_factory);
+
+    for (auto &&dep : deps) {
+      load_file_impl(pending_jobs, session, package_factory, rule_factory,
+                     std::move(dep));
+    }
+
+    pending_jobs->fetch_sub(1);
+  });
+}
+
 template<ranges::range R>
   requires std::convertible_to<ranges::range_value_t<R>, std::string>
 void LoadBuildFiles(core::models::Session *session,
@@ -159,25 +183,9 @@ void LoadBuildFiles(core::models::Session *session,
                     core::models::BuildRuleFactory *rule_factory, R files) {
   std::atomic_uint_fast32_t pending_jobs = 0;
 
-  auto load_file_impl = [&pending_jobs, session, package_factory, rule_factory](
-                            std::string filename,
-                            auto &&load_file_impl) mutable {
-    pending_jobs++;
-    session->Workers.Push([&pending_jobs, filename, session, package_factory,
-                           rule_factory, load_file_impl]() mutable {
-      auto deps =
-          LoadBuildFile(session, filename, package_factory, rule_factory);
-
-      for (auto &&dep : deps) {
-        load_file_impl(std::move(dep), load_file_impl);
-      }
-
-      pending_jobs--;
-    });
-  };
-
   for (const auto &filename : files) {
-    load_file_impl(filename, load_file_impl);
+    load_file_impl(&pending_jobs, session, package_factory, rule_factory,
+                   filename);
   }
 
   while (pending_jobs > 0) {

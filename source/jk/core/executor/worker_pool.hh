@@ -57,9 +57,9 @@ class WorkerPool {
   std::future<void> Push(F &&f) {
     std::unique_lock lk(mutex_);
 
-    std::promise<void> p;
-    std::future<void> fur = p.get_future();
-    queue_.emplace([f = std::forward<F>(f), p = std::move(p)]() mutable {
+    std::promise<void> _p;
+    std::future<void> fur = _p.get_future();
+    queue_.emplace([f = std::forward<F>(f), p = std::move(_p)]() mutable {
       f();
       p.set_value();
     });

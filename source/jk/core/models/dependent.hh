@@ -30,7 +30,7 @@ struct BuildRuleId : utils::Stringifiable {
   RuleRelativePosition Position;
   std::optional<semver::version> VersionReq;
 
-  const std::string &Stringify() const final;
+  std::string gen_stringify_cache() const final;
 };
 
 BuildRuleId ParseIdString(std::string_view str);

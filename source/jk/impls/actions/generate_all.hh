@@ -96,9 +96,11 @@ auto generate_all(core::models::Session *session, auto generator_names,
 
   std::vector<std::future<void>> futures;
   for (auto generator_name : generator_names) {
-    auto f = CompileRules(session, generator_name, scc, compiler_factory,
-                          ranges::views::all(all_rules));
-    futures.insert(futures.end(), std::begin(f), std::end(f));
+    auto res = CompileRules(session, generator_name, scc, compiler_factory,
+                            ranges::views::all(all_rules));
+    for (auto &&f : res) {
+      futures.insert(std::move(f));
+    }
   }
 
   for (auto &f : futures) {

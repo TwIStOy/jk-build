@@ -97,31 +97,26 @@ void Generate(args::Subparser &parser) {
   if (args::get(old_style)) {
     session.ProjectMarker = "BLADE_ROOT";
 
-    rules_id =
-        rules_name | ranges::views::transform([](const std::string &str) {
-          if (!utils::StringEndsWith(str, "BUILD")) {
-            JK_THROW(
-                core::JKBuildError("Only support rule file named 'BUILD'."));
-          }
+    for (const auto &str : rules_name) {
+      if (!utils::StringEndsWith(str, "BUILD")) {
+        JK_THROW(core::JKBuildError("Only support rule file named 'BUILD'."));
+      }
 
-          auto id = core::models::ParseIdString("//{}:..."_format(str));
-          utils::assertion::boolean.expect(
-              id.Position == core::models::RuleRelativePosition::kAbsolute,
-              "Only absolute rule is allowed in command-line.");
-          assert(id.Position == core::models::RuleRelativePosition::kAbsolute);
-          return id;
-        }) |
-        ranges::to_vector;
+      auto id = core::models::ParseIdString("//{}:..."_format(str));
+      utils::assertion::boolean.expect(
+          id.Position == core::models::RuleRelativePosition::kAbsolute,
+          "Only absolute rule is allowed in command-line.");
+      assert(id.Position == core::models::RuleRelativePosition::kAbsolute);
+      rules_id.push_back(std::move(id));
+    }
   } else {
-    rules_id =
-        rules_name | ranges::views::transform([](const std::string &str) {
-          auto id = core::models::ParseIdString(str);
-          utils::assertion::boolean.expect(
-              id.Position == core::models::RuleRelativePosition::kAbsolute,
-              "Only absolute rule is allowed in command-line.");
-          return id;
-        }) |
-        ranges::to_vector;
+    for (const auto &str : rules_name) {
+      auto id = core::models::ParseIdString(str);
+      utils::assertion::boolean.expect(
+          id.Position == core::models::RuleRelativePosition::kAbsolute,
+          "Only absolute rule is allowed in command-line.");
+      rules_id.push_back(std::move(id));
+    }
   }
 
   core::models::BuildPackageFactory package_factory;

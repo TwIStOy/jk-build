@@ -11,6 +11,13 @@
 
 namespace jk::utils {
 
+auto Stringifiable::Stringify() const -> const std::string & {
+  if (!_cached_to_string.has_value()) [[unlikely]] {
+    _cached_to_string = gen_stringify_cache();
+  }
+  return *_cached_to_string;
+}
+
 bool StringEndsWith(std::string_view full_string,  // {{{
                     std::string_view ending) {
   if (full_string.length() >= ending.length()) {
@@ -143,9 +150,9 @@ std::string Base64Encode(uint8_t *str, uint32_t len) {  // {{{
 
 std::vector<uint8_t> Base64Decode(std::string_view str) {  // {{{
   auto in_len = str.size();
-  int i = 0;
-  int j = 0;
-  int in_ = 0;
+  int i       = 0;
+  int j       = 0;
+  int in_     = 0;
   unsigned char char_array_4[4], char_array_3[3];
   std::vector<uint8_t> ret;
 

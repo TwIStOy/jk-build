@@ -21,7 +21,7 @@ struct MM : public utils::Stringifiable {
       : Target(std::move(target)), Dependencies(std::move(deps)) {
   }
 
-  std::string Stringify() const final;
+  const std::string& Stringify() const final;
 
   static std::optional<MM> Parse(std::string_view text);
 };

@@ -29,7 +29,7 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
       StrProperty(this),
       StrListProperty(this),
       _kwargs(std::move(kwargs)) {
-  Name = [this]() {
+  Name = [this] {
     return _kwargs.StringRequired("name");
   };
 
