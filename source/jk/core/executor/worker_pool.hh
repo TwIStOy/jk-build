@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <stop_token>
@@ -57,11 +58,12 @@ class WorkerPool {
   std::future<void> Push(F &&f) {
     std::unique_lock lk(mutex_);
 
-    std::promise<void> _p;
-    std::future<void> fur = _p.get_future();
-    queue_.emplace([f = std::forward<F>(f), p = std::move(_p)]() mutable {
+    auto p = std::make_shared<std::promise<void>>();
+
+    std::future<void> fur = p->get_future();
+    queue_.emplace([f = std::forward<F>(f), p]() mutable {
       f();
-      p.set_value();
+      p->set_value();
     });
     cond_.notify_one();
 

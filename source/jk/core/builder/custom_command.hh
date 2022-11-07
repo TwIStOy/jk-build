@@ -28,7 +28,7 @@ struct CustomArgument : public utils::Stringifiable {
       : Argument(rhs.Argument), Raw(rhs.Raw) {
   }
 
-  const std::string &Stringify() const final;
+  std::string gen_stringify_cache() const final;
 
   std::string Argument;
   bool Raw;
@@ -42,7 +42,7 @@ struct CustomCommandLine final : public std::vector<CustomArgument>,
 
   static CustomCommandLine FromVec(std::vector<std::string> ilist);
 
-  const std::string &Stringify() const final;
+  std::string gen_stringify_cache() const final;
 };
 
 struct CustomCommandLines final : public std::vector<CustomCommandLine>,
@@ -61,7 +61,7 @@ struct CustomCommandLines final : public std::vector<CustomCommandLine>,
     return res;
   }
 
-  const std::string &Stringify() const final;
+  std::string gen_stringify_cache() const final;
 };
 
 __JK_ALWAYS_INLINE CustomArgument operator""_c_raw(const char *s, size_t) {

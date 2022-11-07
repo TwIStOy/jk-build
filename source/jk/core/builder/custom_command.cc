@@ -12,7 +12,7 @@
 
 namespace jk::core::builder {
 
-const std::string &CustomArgument::Stringify() const {
+std::string CustomArgument::gen_stringify_cache() const {
   return Argument;
 }
 
@@ -33,21 +33,14 @@ CustomCommandLine CustomCommandLine::FromVec(std::vector<std::string> ilist) {
   return res;
 }
 
-const std::string &CustomCommandLine::Stringify() const {
-  if (!_cached_to_string.has_func()) {
-    _cached_to_string = [this] {
-      return utils::JoinString(
-          " ", begin(), end(), [](const CustomArgument &s) {
-            if (s.Raw) {
-              return s.Argument;
-            } else {
-              return utils::EscapeForShellStyle(s.Argument);
-            }
-          });
-    };
-  }
-
-  return *_cached_to_string;
+std::string CustomCommandLine::gen_stringify_cache() const {
+  return utils::JoinString(" ", begin(), end(), [](const CustomArgument &s) {
+    if (s.Raw) {
+      return s.Argument;
+    } else {
+      return utils::EscapeForShellStyle(s.Argument);
+    }
+  });
 }
 
 CustomCommandLines CustomCommandLines::Single(
@@ -57,15 +50,10 @@ CustomCommandLines CustomCommandLines::Single(
   return res;
 }
 
-const std::string &CustomCommandLines::Stringify() const {
-  if (!_cached_to_string.has_func()) {
-    _cached_to_string = [this] {
-      return utils::JoinString("\n", begin(), end(), [](const auto &s) {
-        return s.Stringify();
-      });
-    };
-  }
-  return *_cached_to_string;
+std::string CustomCommandLines::gen_stringify_cache() const {
+  return utils::JoinString("\n", begin(), end(), [](const auto &s) {
+    return s.Stringify();
+  });
 }
 
 }  // namespace jk::core::builder

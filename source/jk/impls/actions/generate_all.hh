@@ -99,7 +99,7 @@ auto generate_all(core::models::Session *session, auto generator_names,
     auto res = CompileRules(session, generator_name, scc, compiler_factory,
                             ranges::views::all(all_rules));
     for (auto &&f : res) {
-      futures.insert(std::move(f));
+      futures.push_back(std::move(f));
     }
   }
 
