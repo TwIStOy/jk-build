@@ -28,7 +28,8 @@ inline std::string ToString(TargetPlatform plt) {
 
 struct JKProject {
   //! Returns the project from current working directory
-  static JKProject ResolveFrom(const common::AbsolutePath &cwd);
+  static std::unique_ptr<JKProject> ResolveFrom(
+      const common::AbsolutePath &cwd);
 
   explicit JKProject(common::AbsolutePath ProjectRoot,
                      TargetPlatform Platform = TargetPlatform::k64,

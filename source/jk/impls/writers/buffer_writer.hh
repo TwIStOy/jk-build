@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "jk/core/writer/file_writer.hh"
+#include "jk/impls/writers/file_writer.hh"
 
-namespace jk::core::writer {
+namespace jk::impls::writers {
 
 class BufferWriter : public FileWriter {
  public:
@@ -18,6 +18,6 @@ class BufferWriter : public FileWriter {
   void flush() override;
 };
 
-}  // namespace jk::core::writer
+}  // namespace jk::impls::writers
 
 // vim: fdm=marker

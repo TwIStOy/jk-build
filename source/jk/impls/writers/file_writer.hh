@@ -12,9 +12,9 @@
 #include "jk/common/path.hh"
 #include "jk/core/interfaces/writer.hh"
 
-namespace jk::core::writer {
+namespace jk::impls::writers {
 
-class FileWriter : public interfaces::Writer {
+class FileWriter : public core::interfaces::Writer {
  public:
   explicit FileWriter();
   ~FileWriter();
@@ -35,6 +35,10 @@ class FileWriter : public interfaces::Writer {
   std::ofstream ofs_;
 };
 
-}  // namespace jk::core::writer
+class FileWriterFactory : public core::interfaces::WriterFactory {
+  std::unique_ptr<core::interfaces::Writer> Create();
+};
+
+}  // namespace jk::impls::writers
 
 // vim: fdm=marker

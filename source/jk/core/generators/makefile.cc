@@ -6,7 +6,10 @@
 #include <vector>
 
 #include "absl/strings/ascii.h"
+#include "jk/core/interfaces/writer.hh"
 #include "jk/version.h"
+#include "range/v3/range/conversion.hpp"
+#include "range/v3/view/transform.hpp"
 
 namespace jk::core::generators {
 
@@ -18,14 +21,18 @@ static const char *Separator =
     "====";
 
 Makefile::Makefile(common::AbsolutePath path,
-                   std::vector<interfaces::Writer *> writers)
-    : path_(std::move(path)), writers_(std::move(writers)) {
-  for (auto w : writers_) {
+                   std::vector<interfaces::WriterFactory *> writers)
+    : path_(std::move(path)),
+      writers_(writers | ranges::views::transform([](auto wf) {
+                 return wf->Create();
+               }) |
+               ranges::to_vector) {
+  for (auto &w : writers_) {
     w->open(path_);
   }
 
   for (const auto &line : CommonHeader) {
-    for (auto w : writers_) {
+    for (auto &w : writers_) {
       w->write_line(line);
     }
   }

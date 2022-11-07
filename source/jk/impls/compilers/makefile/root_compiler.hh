@@ -13,7 +13,8 @@ struct RootCompiler {
   void Compile(
       core::models::Session *session,
       const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-      std::vector<core::models::BuildRule *> rule) const;
+      std::vector<core::models::BuildRule *> rule,
+      const std::vector<std::string> &cli_arguments) const;
 };
 
 }  // namespace jk::impls::compilers::makefile

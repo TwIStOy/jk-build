@@ -4,6 +4,7 @@
 #pragma once  // NOLINT(build/header_guard)
 
 #include <concepts>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -24,7 +25,7 @@ struct Makefile {
   static constexpr auto DEFAULT_TARGET = "JK_DRFAULT_TARGET";
 
   explicit Makefile(common::AbsolutePath path,
-                    std::vector<interfaces::Writer *> writers);
+                    std::vector<interfaces::WriterFactory *> writers);
 
   Makefile &Env(std::string_view key, std::string_view value,
                 std::string_view comment = "");
@@ -60,7 +61,7 @@ struct Makefile {
 
   template<typename... Args>
   void print_line_impl(std::string_view first, Args &&...parts) {
-    for (auto w : writers_) {
+    for (auto &w : writers_) {
       w->write(first);
     }
     print_line(std::forward<Args>(parts)...);
@@ -71,7 +72,7 @@ struct Makefile {
     if constexpr (sizeof...(parts) > 1) {
       print_line_impl(std::forward<Args>(parts)...);
     } else {
-      for (auto w : writers_) {
+      for (auto &w : writers_) {
         w->write_line(std::forward<Args>(parts)...);
       }
     }
@@ -79,7 +80,7 @@ struct Makefile {
 
   template<typename... Args>
   void print_impl(std::string_view first, Args &&...args) {
-    for (auto w : writers_) {
+    for (auto &w : writers_) {
       w->write(first);
     }
     print(std::forward<Args>(args)...);
@@ -90,7 +91,7 @@ struct Makefile {
     if constexpr (sizeof...(args) > 1) {
       print_impl(std::forward<Args>(args)...);
     } else {
-      for (auto w : writers_) {
+      for (auto &w : writers_) {
         w->write(std::forward<Args>(args)...);
       }
     }
@@ -109,7 +110,7 @@ struct Makefile {
 
  private:
   common::AbsolutePath path_;
-  std::vector<interfaces::Writer *> writers_;
+  std::vector<std::unique_ptr<interfaces::Writer>> writers_;
 };
 
 }  // namespace jk::core::generators

@@ -1,9 +1,10 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
-#include "jk/core/writer/file_writer.hh"
+#include "jk/impls/writers/file_writer.hh"
 
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -12,7 +13,7 @@
 #include "jk/core/error.h"
 #include "jk/utils/logging.hh"
 
-namespace jk::core::writer {
+namespace jk::impls::writers {
 
 static auto logger = utils::Logger("file_writer");
 
@@ -39,7 +40,9 @@ auto FileWriter::write(std::string_view s) -> Writer * {
 }
 
 FileWriter::~FileWriter() {
-  flush();
+  if (!path_.empty()) {
+    flush();
+  }
 }
 
 auto FileWriter::flush() -> void {
@@ -72,6 +75,10 @@ auto FileWriter::flush() -> void {
   ofs_.flush();
 }
 
-}  // namespace jk::core::writer
+auto FileWriterFactory::Create() -> std::unique_ptr<core::interfaces::Writer> {
+  return std::make_unique<FileWriter>();
+}
+
+}  // namespace jk::impls::writers
 
 // vim: fdm=marker

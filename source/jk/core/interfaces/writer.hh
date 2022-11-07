@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <memory>
 #include <string_view>
 
 #include "fmt/format.h"
@@ -27,6 +28,12 @@ struct Writer {
   Writer *write_fmt(F &&f, Args &&...args) {
     return write(fmt::format(std::forward<F>(f), std::forward<Args>(args)...));
   }
+};
+
+struct WriterFactory {
+  virtual ~WriterFactory() = default;
+
+  virtual std::unique_ptr<Writer> Create() = 0;
 };
 
 }  // namespace jk::core::interfaces

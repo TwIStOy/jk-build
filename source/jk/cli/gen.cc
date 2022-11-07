@@ -17,12 +17,14 @@
 #include "jk/core/compile/makefile_global_compiler.hh"
 #include "jk/core/error.h"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/models/session.hh"
 #include "jk/core/rules/build_rule.hh"
 #include "jk/core/rules/dependent.hh"
 #include "jk/core/rules/package.hh"
 #include "jk/core/script/script.hh"
 #include "jk/core/writer/file_writer.hh"
 #include "jk/core/writer/json_merge_writer.hh"
+#include "jk/impls/writers/file_writer.hh"
 #include "jk/rules/cc/compiler/cc_library.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
@@ -61,31 +63,26 @@ void Generate(args::Subparser &parser) {
 
   parser.Parse();
 
-  auto project = core::filesystem::JKProject::ResolveFrom(
+  core::models::Session session;
+
+  session.Project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
-  core::writer::FileWriterFactory writer_factory;
+  session.WriterFactory.reset(new impls::writers::FileWriterFactory());
 
   if (defines) {
     for (const auto &str : args::get(defines)) {
       std::vector<std::string> parts;
       utils::SplitString(str, std::back_inserter(parts), '=');
       if (parts.size() == 1) {
-        core::script::GlobalVariables[parts[0]] = "";
+        session.GlobalVariables[parts[0]] = "";
       } else {
-        core::script::GlobalVariables[parts[0]] = parts[1];
+        session.GlobalVariables[parts[0]] = parts[1];
       }
     }
   }
 
   if (extra_flags) {
-    rules::cc::GlobalDefines = args::get(extra_flags);
-  }
-
-  // check if python39.zip exists
-  if (fs::exists(project.BuildRoot.Sub(".jk_req")
-                     .Sub("lib")
-                     .Sub("python39.zip")
-                     .Path)) {
+    session.ExtraFlags = args::get(extra_flags);
   }
 
   // generate global compile_commands.json
@@ -160,7 +157,7 @@ void Generate(args::Subparser &parser) {
     }
     compiled.insert(rule->FullQualifiedName());
     logger->info("compile_rule: {}, now: [{}]", rule->FullQualifiedName(),
-        utils::JoinString(", ", compiled));
+                 utils::JoinString(", ", compiled));
 
     {
       // output_format
