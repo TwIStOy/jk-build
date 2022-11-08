@@ -42,6 +42,9 @@ struct AbsolutePath final : public utils::Stringifiable {
 
   fs::path Path;
 
+  explicit AbsolutePath() : Path() {
+  }
+
   explicit AbsolutePath(fs::path p) : Path(std::move(p)) {
   }
 

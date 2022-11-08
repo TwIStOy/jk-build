@@ -20,8 +20,10 @@ namespace jk::core::models {
 class BuildPackage;
 class Session;
 
-class __JK_HIDDEN BuildRule {
+class BuildRule {
  public:
+  virtual ~BuildRule() = default;
+
   BuildRule(BuildPackage *package, std::string type_name, RuleType type,
             std::string_view package_name, utils::Kwargs kwargs);
 
@@ -30,8 +32,6 @@ class __JK_HIDDEN BuildRule {
 
   //! Basic fields parsed from kwargs
   std::unique_ptr<BuildRuleBase> Base;
-
-  std::future<void> StartDependenciesConstruct();
 
   std::future<void> Prepare(core::models::Session *session);
 
@@ -50,8 +50,8 @@ class __JK_HIDDEN BuildRule {
 
   //! Returns the absolute paths of what will this build-rule generated with
   //! build_type specifyed
-  const std::vector<std::string> &ExportedFiles(Session *session,
-                                                std::string_view build_type);
+  virtual const std::vector<std::string> &ExportedFiles(
+      Session *session, std::string_view build_type);
 
   common::AbsolutePath WorkingFolder;
 
