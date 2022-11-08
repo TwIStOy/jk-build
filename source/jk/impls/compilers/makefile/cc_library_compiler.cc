@@ -84,7 +84,7 @@ auto CCLibraryCompiler::DoCompile(
 void CCLibraryCompiler::generate_flag_file(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule) const {
-  static auto git_desc =
+  static constexpr auto git_desc =
       R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
 
   core::generators::Makefile makefile(working_folder.Sub("flags.make"),

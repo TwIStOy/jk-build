@@ -20,6 +20,10 @@ auto ScriptInterpreter::ThreadInstance() -> ScriptInterpreter * {
   return &interp;
 }
 
+auto ScriptInterpreter::AddFunc(const std::string &name) -> void {
+  func_names_.insert(name);
+}
+
 ScriptInterpreter::ScriptInterpreter() {
   Py_NoSiteFlag            = 1;
   Py_IgnoreEnvironmentFlag = 1;

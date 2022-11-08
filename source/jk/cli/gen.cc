@@ -14,6 +14,7 @@
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
+#include "jk/core/executor/script.hh"
 #include "jk/core/executor/worker_pool.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/models/build_package.hh"
@@ -131,14 +132,20 @@ void Generate(args::Subparser &parser) {
   core::models::BuildRuleFactory rule_factory;
   impls::compilers::CompilerFactory compiler_factory;
 
+  core::executor::ScriptInterpreter::AddFunc("cc_library");
+  core::executor::ScriptInterpreter::AddFunc("cc_binary");
+  core::executor::ScriptInterpreter::AddFunc("cc_test");
+  core::executor::ScriptInterpreter::AddFunc("proto_library");
+  core::executor::ScriptInterpreter::AddFunc("shell_sript");
+
   compiler_factory.Register<impls::compilers::makefile::CCLibraryCompiler>(
-      "make_file", "cc_library");
+      "makefile", "cc_library");
   compiler_factory.Register<impls::compilers::makefile::CCBinaryCompiler>(
-      "make_file", "cc_binary");
+      "makefile", "cc_binary");
   compiler_factory.Register<impls::compilers::makefile::CCTestCompiler>(
-      "make_file", "cc_test");
+      "makefile", "cc_test");
   compiler_factory.Register<impls::compilers::makefile::ShellScriptCompiler>(
-      "make_file", "shell_script");
+      "makefile", "shell_script");
 
   // FIXME(hawtian): impl `proto_library` compiler
   compiler_factory.Register<impls::compilers::NopCompiler>("make_file",

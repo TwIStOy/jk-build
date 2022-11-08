@@ -6,6 +6,8 @@
 #include <string>
 
 #include "jk/core/models/session.hh"
+#include "pybind11/stl.h"
+#include "pybind11/stl_bind.h"
 #include "range/v3/algorithm/for_each.hpp"
 #include "range/v3/algorithm/transform.hpp"
 #include "range/v3/range/conversion.hpp"
