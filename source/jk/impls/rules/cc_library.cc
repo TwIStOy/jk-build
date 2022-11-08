@@ -55,7 +55,7 @@ auto CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) -> void {
 
 auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
   // super prepare
-  core::models::BuildRule::Prepare(session);
+  core::models::BuildRule::DoPrepare(session);
 
   package_root_ = session->Project->Resolve(Package->Path.Path);
 
