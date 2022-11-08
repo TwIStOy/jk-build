@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "jk/core/models/build_package.hh"
 #include "jk/core/models/session.hh"
 #include "pybind11/stl.h"
 #include "pybind11/stl_bind.h"
@@ -14,6 +15,13 @@
 #include "range/v3/view/transform.hpp"
 
 namespace jk::impls::rules {
+
+ShellScript::ShellScript(core::models::BuildPackage *package,
+                         utils::Kwargs kwargs, std::string type_name,
+                         core::models::RuleType type)
+    : BuildRule(package, std::move(type_name), type, package->Path.Stringify(),
+                std::move(kwargs)) {
+}
 
 auto ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs)
     -> void {

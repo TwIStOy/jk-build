@@ -209,10 +209,10 @@ auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
         ResolvedIncludes.insert(fmt::format("-I{}", s));
       }
     } else {
-      for (const auto &s : rule->Base->StrListProperty(
-               "includes", []() -> std::vector<std::string> {
-                 return {};
-               })) {
+      static std::vector<std::string> empty;
+
+      for (const auto &s :
+           rule->Base->_kwargs.ListOptional("includes", empty)) {
         ResolvedIncludes.insert(fmt::format("-I{}", s));
       }
     }
@@ -240,10 +240,8 @@ auto CCLibrary::prepare_define_flags(core::models::Session *) -> void {
         ResolvedDefines.insert(fmt::format("-D{}", s));
       }
     } else {
-      for (const auto &s : rule->Base->StrListProperty(
-               "defines", []() -> std::vector<std::string> {
-                 return {};
-               })) {
+      static std::vector<std::string> empty;
+      for (const auto &s : rule->Base->_kwargs.ListOptional("defines", empty)) {
         ResolvedDefines.insert(fmt::format("-D{}", s));
       }
     }

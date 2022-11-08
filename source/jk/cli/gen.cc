@@ -31,6 +31,10 @@
 #include "jk/impls/compilers/makefile/root_compiler.hh"
 #include "jk/impls/compilers/makefile/shell_script_compiler.hh"
 #include "jk/impls/compilers/nop_compiler.hh"
+#include "jk/impls/rules/cc_binary.hh"
+#include "jk/impls/rules/cc_library.hh"
+#include "jk/impls/rules/cc_test.hh"
+#include "jk/impls/rules/shell_script.hh"
 #include "jk/impls/writers/file_writer.hh"
 #include "jk/utils/assert.hh"
 #include "jk/utils/logging.hh"
@@ -131,6 +135,11 @@ void Generate(args::Subparser &parser) {
   core::models::BuildPackageFactory package_factory;
   core::models::BuildRuleFactory rule_factory;
   impls::compilers::CompilerFactory compiler_factory;
+
+  rule_factory.AddSimpleCreator<impls::rules::CCLibrary>("cc_library");
+  rule_factory.AddSimpleCreator<impls::rules::CCBinary>("cc_binary");
+  rule_factory.AddSimpleCreator<impls::rules::CCTest>("cc_test");
+  rule_factory.AddSimpleCreator<impls::rules::ShellScript>("shell_script");
 
   core::executor::ScriptInterpreter::AddFunc("cc_library");
   core::executor::ScriptInterpreter::AddFunc("cc_binary");

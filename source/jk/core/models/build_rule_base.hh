@@ -44,53 +44,6 @@ struct __JK_HIDDEN BuildRuleBase {
   // [[rule-function]]
   RuleType Type;
 
-  template<typename T>
-  struct PropretyProxy {
-    PropretyProxy(BuildRuleBase *base) : Base(base) {
-    }
-
-    T &operator[](const std::string &key) {
-      if (auto it = properties.find(key); it != properties.end()) {
-        return it->second;
-      }
-      if (auto it = Base->_kwargs.Find(key); it != Base->_kwargs.End()) {
-        auto value       = it->second.cast<T>();
-        auto [it2, succ] = properties.emplace(key, std::move(value));
-        assert(succ);
-        return it2->second;
-      }
-      JK_THROW(core::JKBuildError("expect field '{}' but not found", key));
-    }
-
-    template<typename F>
-      requires std::constructible_from<T, std::invoke_result_t<F>>
-    T &operator()(const std::string &key, F &&f) {
-      if (auto it = properties.find(key); it != properties.end()) {
-        return it->second;
-      }
-      if (auto it = Base->_kwargs.Find(key); it != Base->_kwargs.End()) {
-        auto value       = it->second.cast<T>();
-        auto [it2, succ] = properties.emplace(key, std::move(value));
-        assert(succ);
-        return it2->second;
-      } else {
-        auto [it2, succ] = properties.emplace(key, f());
-        assert(succ);
-        return it2->second;
-      }
-      JK_THROW(core::JKBuildError("expect field '{}' but not found", key));
-    }
-
-   private:
-    BuildRuleBase *Base;
-
-    absl::flat_hash_map<std::string, T> properties;
-  };
-
-  PropretyProxy<std::string> StrProperty;
-
-  PropretyProxy<std::vector<std::string>> StrListProperty;
-
   //! The rule's name. Name must be unique in a package.
   // [[arg: `name`]]
   common::LazyProperty<std::string> Name;
@@ -123,7 +76,6 @@ struct __JK_HIDDEN BuildRuleBase {
   //! '@@'.
   common::LazyProperty<std::string> FullQuotedQualifiedNameWithoutVersion;
 
- private:
   utils::Kwargs _kwargs;
 };
 

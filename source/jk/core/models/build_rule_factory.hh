@@ -9,6 +9,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "jk/core/models/build_rule.hh"
+#include "jk/utils/assert.hh"
 #include "jk/utils/cpp_features.hh"
 #include "jk/utils/kwargs.hh"
 
@@ -16,19 +17,28 @@ namespace jk::core::models {
 
 struct __JK_HIDDEN BuildRuleFactory {
   using create_func_t = std::function<std::unique_ptr<BuildRule>(
-      const std::string &TypeName, const utils::Kwargs &kwargs)>;
+      BuildPackage *, utils::Kwargs kwargs)>;
 
   inline std::unique_ptr<BuildRule> Create(const std::string &TypeName,
+                                           BuildPackage *pkg,
                                            utils::Kwargs kwargs) {
     if (auto it = creators_.find(TypeName); it != creators_.end()) {
-      return (it->second)(TypeName, std::move(kwargs));
+      return (it->second)(pkg, std::move(kwargs));
     } else {
+      utils::assertion::boolean.expect(false, "No creator");
       return nullptr;
     }
   }
 
   inline void AddCreator(const std::string &TypeName, create_func_t f) {
     creators_.emplace(TypeName, std::move(f));
+  }
+
+  template<typename R>
+  inline void AddSimpleCreator(const std::string &TypeName) {
+    creators_.emplace(TypeName, [](BuildPackage *pkg, utils::Kwargs kwargs) {
+      return std::make_unique<R>(pkg, std::move(kwargs));
+    });
   }
 
  private:

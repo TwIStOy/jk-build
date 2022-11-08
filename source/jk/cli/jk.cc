@@ -13,6 +13,7 @@
 #include "jk/cli/gen.hh"
 #include "jk/cli/progress.hh"
 #include "jk/cli/rm.hh"
+#include "jk/cli/_parse.hh"
 #include "jk/version.h"
 
 namespace jk::cli {
@@ -32,6 +33,7 @@ Cli::Cli() {
   NewSubCommand("start_progress", "Start progres...", &StartProgress);
   NewSubCommand("download", "Download file...", &DownloadFile);
   NewSubCommand("delete_file", "Delete files...", &RmFiles);
+  NewSubCommand("_parse", "Internal parse file", &_Parse);
   // Add commands
 }
 

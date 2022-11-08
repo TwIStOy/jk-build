@@ -34,15 +34,9 @@ ScriptInterpreter::ScriptInterpreter() {
   for (const auto &func : func_names_) {
     locals_[func.c_str()] =
         pybind11::cpp_function([this, func](const pybind11::kwargs &_args) {
-          utils::Kwargs args;
-          for (const auto &it : _args) {
-            auto key = it.first.cast<std::string>();
-            args.value()[key] =
-                pybind11::reinterpret_borrow<pybind11::object>(it.second);
-          }
           results_.push_back(EvalResult{
               .FuncName = func,
-              .Args     = std::move(args),
+              .Args     = utils::Kwargs(_args),
           });
         });
   }

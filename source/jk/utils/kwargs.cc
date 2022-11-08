@@ -15,20 +15,27 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
-namespace jk {
-namespace utils {
+namespace jk::utils {
 
-Kwargs::Kwargs() {
+Kwargs::Kwargs(const pybind11::kwargs &args) {
+  for (auto &it : args) {
+    auto key = it.first.cast<std::string>();
+    args.value_.emplace(
+        key, std::make_shared<KwargsValue>(
+                 pybind11::reinterpret_borrow<pybind11::object>(it.second)));
+  }
 }
 
 std::string Kwargs::gen_stringify_cache() const {
   std::ostringstream oss;
   oss << "Kwargs {";
-  oss << JoinString(
-      ", ", value_.begin(), value_.end(), [](const auto &pr) -> std::string {
-        return fmt::format("{}: {}", pr.first,
-                           pybind11::str(pr.second).cast<std::string>());
-      });
+  /*
+   * oss << JoinString(
+   *     ", ", value_.begin(), value_.end(), [](const auto &pr) -> std::string {
+   *       return fmt::format("{}: {}", pr.first,
+   *                          pybind11::str(pr.second).cast<std::string>());
+   *     });
+   */
   oss << "}";
   return oss.str();
 }
@@ -39,27 +46,31 @@ Kwargs::StringType Kwargs::StringRequired(const std::string &name) const {
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!pybind11::isinstance<pybind11::str>(it->second)) {
+  if (it->second.value.index() != 0) {
     JK_THROW(core::JKBuildError("field '{}' expect type str", name));
   }
 
-  return it->second.cast<std::string>();
+  return std::get<0>(it->second.value);
 }
 
-Kwargs::ListType Kwargs::ListRequired(const std::string &name) const {
+std::vector<std::string> Kwargs::ListRequired(const std::string &name) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!pybind11::isinstance<pybind11::list>(it->second)) {
+  if (it->second.value.index() != 1) {
     JK_THROW(core::JKBuildError("field '{}' expect type list", name));
   }
+  std::vector<std::string> res;
+  for (const auto &x : std::get<1>(it->second.value)) {
+    res.push_back(std::get<0>(x.value));
+  }
 
-  return it->second.cast<ListType>();
+  return res;
 }
 
-Kwargs::ListType Kwargs::ListOptional(
+std::vector<std::string> Kwargs::ListOptional(
     const std::string &name, std::optional<ListType> default_value) const {
   auto it = value_.find(name);
   if (it == value_.end()) {
@@ -69,11 +80,15 @@ Kwargs::ListType Kwargs::ListOptional(
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!pybind11::isinstance<pybind11::list>(it->second)) {
+  if (it->second.value.index() != 1) {
     JK_THROW(core::JKBuildError("field '{}' expect type list", name));
   }
+  std::vector<std::string> res;
+  for (const auto &x : std::get<1>(it->second.value)) {
+    res.push_back(std::get<0>(x.value));
+  }
 
-  return it->second.cast<ListType>();
+  return res;
 }
 
 Kwargs::StringType Kwargs::StringOptional(
@@ -86,11 +101,11 @@ Kwargs::StringType Kwargs::StringOptional(
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!pybind11::isinstance<pybind11::str>(it->second)) {
+  if (it->second.value.index() != 1) {
     JK_THROW(core::JKBuildError("field '{}' expect type str", name));
   }
 
-  return it->second.cast<std::string>();
+  return *it->second;
 }
 
 bool Kwargs::BooleanRequired(const std::string &name) const {
@@ -99,11 +114,11 @@ bool Kwargs::BooleanRequired(const std::string &name) const {
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!pybind11::isinstance<pybind11::bool_>(it->second)) {
+  if (it->second.value.index() != 3) {
     JK_THROW(core::JKBuildError("field '{}' expect type boolean", name));
   }
 
-  return it->second.cast<bool>();
+  return std::get<3>(it->second.value);
 }
 
 bool Kwargs::BooleanOptional(const std::string &name,
@@ -116,12 +131,11 @@ bool Kwargs::BooleanOptional(const std::string &name,
     JK_THROW(core::JKBuildError("expect field '{}' but not found", name));
   }
 
-  if (!pybind11::isinstance<pybind11::bool_>(it->second)) {
+  if (it->second.value.index() != 3) {
     JK_THROW(core::JKBuildError("field '{}' expect type boolean", name));
   }
 
-  return it->second.cast<bool>();
+  return std::get<3>(it->second.value);
 }
 
-}  // namespace utils
-}  // namespace jk
+}  // namespace jk::utils

@@ -11,7 +11,7 @@ void BuildPackage::ConstructRules(
     std::vector<core::executor::ScriptInterpreter::EvalResult> raw_eval_results,
     core::models::BuildRuleFactory *factory) {
   for (auto &&r : raw_eval_results) {
-    auto rule = factory->Create(r.FuncName, std::move(r.Args));
+    auto rule     = factory->Create(r.FuncName, this, std::move(r.Args));
     rule->Package = this;
     RulesMap.emplace(*rule->Base->Name, std::move(rule));
   }
