@@ -128,10 +128,9 @@ inline auto LoadBuildFile(core::models::Session *session,
     return {};
   }
 
-  pkg->Name = filename;
-  pkg->Path = common::ProjectRelativePath{pkg->Name};
   pkg->ConstructRules(
-      core::executor::ScriptInterpreter::ThreadInstance()->EvalFile(filename),
+      core::executor::ScriptInterpreter::ThreadInstance()->EvalFile(
+          session->Project->Resolve(filename, "BUILD").Stringify()),
       rule_factory);
 
   std::vector<std::string> next_files;

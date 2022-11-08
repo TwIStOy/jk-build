@@ -17,7 +17,9 @@ namespace jk::core::executor {
 
 class WorkerPool {
  public:
-  explicit WorkerPool(uint32_t number = std::thread::hardware_concurrency());
+  explicit WorkerPool(uint32_t number = std::thread::hardware_concurrency())
+      : number_(number) {
+  }
 
   void Stop() {
     stop_.request_stop();

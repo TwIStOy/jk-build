@@ -5,11 +5,8 @@
 
 namespace jk::impls::compilers {
 
-NopCompiler::NopCompiler(std::string_view str) : str_(str) {
-}
-
 auto NopCompiler::Name() const -> std::string_view {
-  return str_;
+  return "nop";
 }
 
 auto NopCompiler::Compile(

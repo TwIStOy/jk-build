@@ -14,6 +14,7 @@
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
 #include "jk/core/error.h"
+#include "jk/core/executor/worker_pool.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/build_package_factory.hh"
@@ -23,7 +24,12 @@
 #include "jk/core/models/session.hh"
 #include "jk/impls/actions/generate_all.hh"
 #include "jk/impls/compilers/compiler_factory.hh"
+#include "jk/impls/compilers/makefile/cc_binary_compiler.hh"
+#include "jk/impls/compilers/makefile/cc_library_compiler.hh"
+#include "jk/impls/compilers/makefile/cc_test_compiler.hh"
 #include "jk/impls/compilers/makefile/root_compiler.hh"
+#include "jk/impls/compilers/makefile/shell_script_compiler.hh"
+#include "jk/impls/compilers/nop_compiler.hh"
 #include "jk/impls/writers/file_writer.hh"
 #include "jk/utils/assert.hh"
 #include "jk/utils/logging.hh"
@@ -71,6 +77,8 @@ void Generate(args::Subparser &parser) {
   session.Project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
   session.WriterFactory.reset(new impls::writers::FileWriterFactory());
+  session.Executor.reset(new core::executor::WorkerPool());
+  session.Executor->Start();
 
   if (defines) {
     for (const auto &str : args::get(defines)) {
@@ -123,7 +131,18 @@ void Generate(args::Subparser &parser) {
   core::models::BuildRuleFactory rule_factory;
   impls::compilers::CompilerFactory compiler_factory;
 
-  // TODO(hawtian): add compilers
+  compiler_factory.Register<impls::compilers::makefile::CCLibraryCompiler>(
+      "make_file", "cc_library");
+  compiler_factory.Register<impls::compilers::makefile::CCBinaryCompiler>(
+      "make_file", "cc_binary");
+  compiler_factory.Register<impls::compilers::makefile::CCTestCompiler>(
+      "make_file", "cc_test");
+  compiler_factory.Register<impls::compilers::makefile::ShellScriptCompiler>(
+      "make_file", "shell_script");
+
+  // FIXME(hawtian): impl `proto_library` compiler
+  compiler_factory.Register<impls::compilers::NopCompiler>("make_file",
+                                                           "proto_library");
 
   auto scc = impls::actions::generate_all(
       &session, ranges::views::single(output_format), &compiler_factory,

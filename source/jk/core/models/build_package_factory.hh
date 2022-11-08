@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
+#include "jk/common/path.hh"
 #include "jk/core/models/build_package.hh"
 #include "range/v3/view/map.hpp"
 #include "range/v3/view/transform.hpp"
@@ -31,7 +32,8 @@ class BuildPackageFactory {
       return {it->second.get(), false};
     } else {
       // TODO(hawtian): construct package
-      std::unique_ptr<BuildPackage> new_package;
+      auto new_package = std::make_unique<BuildPackage>(
+          std::string{name}, common::ProjectRelativePath{fs::path(name)});
       auto ptr = new_package.get();
       packages_.emplace(name, std::move(new_package));
       return {ptr, true};

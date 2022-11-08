@@ -22,10 +22,10 @@ class Session;
 
 class BuildRule {
  public:
-  virtual ~BuildRule() = default;
+  virtual ~BuildRule();
 
-  BuildRule(BuildPackage *package, std::string type_name, RuleType type,
-            std::string_view package_name, utils::Kwargs kwargs);
+  BuildRule(const BuildRule &) = delete;
+  BuildRule(BuildRule &&)      = delete;
 
   //! Which package this build-rule inside
   BuildPackage *Package;
@@ -62,18 +62,16 @@ class BuildRule {
   uint32_t _scc_id;
 
  protected:
+  BuildRule(BuildPackage *package, std::string type_name, RuleType type,
+            std::string_view package_name, utils::Kwargs kwargs);
+
   //! Extract and parse fields from rule-function's arguments. Every derived
   //! types should invoke its base-class' `ExtractFieldFromArguments`.
-  virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs) {
-  }
+  virtual void ExtractFieldFromArguments(const utils::Kwargs &kwargs);
 
   virtual void DoPrepare(core::models::Session *session);
 
   bool prepared_{false};
 };
-
-inline bool BuildRule::Prepared() const {
-  return prepared_;
-}
 
 }  // namespace jk::core::models

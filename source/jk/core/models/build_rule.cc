@@ -19,8 +19,12 @@ BuildRule::BuildRule(BuildPackage *package, std::string type_name,
                                            std::move(kwargs))) {
 }
 
+bool BuildRule::Prepared() const {
+  return prepared_;
+}
+
 auto BuildRule::Prepare(core::models::Session *session) -> std::future<void> {
-  return session->Executor->Push([this, session]() mutable {
+  return session->Executor->Push([this, session]() {
     DoPrepare(session);
     prepared_ = true;
   });
@@ -31,12 +35,18 @@ void BuildRule::DoPrepare(core::models::Session *session) {
       session->Project->BuildRoot.Sub(*Base->FullQuotedQualifiedName);
 }
 
-const std::vector<std::string> &ExportedFiles(Session *session,
-                                              std::string_view build_type) {
+const std::vector<std::string> &BuildRule::ExportedFiles(
+    Session *session, std::string_view build_type) {
   (void)session;
   (void)build_type;
   static std::vector<std::string> tmp;
   return tmp;
+}
+
+auto BuildRule::ExtractFieldFromArguments(const utils::Kwargs &kwargs) -> void {
+}
+
+BuildRule::~BuildRule() {
 }
 
 }  // namespace jk::core::models
