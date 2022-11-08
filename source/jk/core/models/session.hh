@@ -23,7 +23,7 @@ struct Session {
 
   std::vector<std::string> BuildTypes = {"DEBUG", "RELEASE", "PROFILING"};
 
-  std::string JKPath;
+  std::string JKPath = std::filesystem::read_symlink("/proc/self/exe");
 
   std::string ProjectMarker = "JK_ROOT";
 

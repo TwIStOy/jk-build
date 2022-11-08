@@ -193,22 +193,16 @@ target_link_libraries(
   PUBLIC absl_algorithm
          absl_base
          absl_cleanup
-         absl_container
-         absl_copts
          absl_debugging
          absl_flags
-         absl_functional
          absl_hash
          absl_memory
          absl_meta
          absl_numeric
-         absl_profiling
-         absl_random
          absl_status
          absl_strings
          absl_synchronization
          absl_time
-         absl_types
          absl_utility)
 
 add_subdirectory(third-party/range-v3)
