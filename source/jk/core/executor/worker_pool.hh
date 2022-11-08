@@ -23,6 +23,7 @@ class WorkerPool {
 
   void Stop() {
     stop_.request_stop();
+    cond_.notify_all();
   }
 
   void Start() {

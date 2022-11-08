@@ -67,7 +67,6 @@ auto generate_all(core::models::Session *session,
               -> ranges::any_view<core::models::BuildRule *> {
             auto [pkg, new_pkg] =
                 package_factory->PackageUnsafe(*id.PackageName);
-            fmt::print("unsafe: {}\n", *id.PackageName);
             utils::assertion::boolean.expect(!new_pkg, id.PackageName->c_str());
 
             if (id.RuleName == "...") {
@@ -93,11 +92,17 @@ auto generate_all(core::models::Session *session,
     if (visited[r->Base->ObjectId]) {
       return;
     }
+    visited[r->Base->ObjectId] = true;
     all_rules.push_back(r);
+
     for (auto n : r->Dependencies) {
       dfs(n, dfs);
     }
   };
+
+  for (auto r : arg_rules) {
+    dfs(r, dfs);
+  }
 
   std::vector<std::future<void>> futures;
   for (auto generator_name : generator_names) {

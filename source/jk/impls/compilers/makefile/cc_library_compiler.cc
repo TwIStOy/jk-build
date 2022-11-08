@@ -65,6 +65,8 @@ auto CCLibraryCompiler::DoCompile(
   auto working_folder =
       session->Project->BuildRoot.Sub(*(rule->Base->FullQuotedQualifiedName));
 
+  logger->info("compile rule: {}:{}", rule->Package->Name, *rule->Base->Name);
+
   generate_flag_file(session, working_folder, rule);
 
   generate_toolchain_file(session, working_folder, rule);
@@ -90,7 +92,7 @@ void CCLibraryCompiler::generate_flag_file(
   core::generators::Makefile makefile(working_folder.Sub("flags.make"),
                                       {session->WriterFactory.get()});
 
-  auto compile_flags = session->Config->compile_flags;
+  auto compile_flags = session->Project->Config().compile_flags;
   compile_flags.push_back(
       fmt::format(git_desc, rule->Package->Path.Stringify()));
 
@@ -120,42 +122,48 @@ void CCLibraryCompiler::generate_flag_file(
 
   makefile.Env(
       "DEBUG" CFLAGS_SUFFIX,
+      absl::StrJoin(
+          ranges::views::concat(
+              compile_flags, session->Project->Config().cflags,
+              session->Project->Config().debug_cflags_extra, cppincludes),
+          " "));
+  makefile.Env(
+      "DEBUG" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
-                        compile_flags, session->Config->cflags,
-                        session->Config->debug_cflags_extra, cppincludes),
+                        compile_flags, session->Project->Config().cxxflags,
+                        session->Project->Config().debug_cxxflags_extra,
+                        cppincludes, cxxincludes),
                     " "));
-  makefile.Env("DEBUG" CXXFLAGS_SUFFIX,
-               absl::StrJoin(ranges::views::concat(
-                                 compile_flags, session->Config->cxxflags,
-                                 session->Config->debug_cxxflags_extra,
-                                 cppincludes, cxxincludes),
-                             " "));
 
   makefile.Env(
       "RELEASE" CFLAGS_SUFFIX,
+      absl::StrJoin(
+          ranges::views::concat(
+              compile_flags, session->Project->Config().cflags,
+              session->Project->Config().release_cflags_extra, cppincludes),
+          " "));
+  makefile.Env(
+      "RELEASE" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
-                        compile_flags, session->Config->cflags,
-                        session->Config->release_cflags_extra, cppincludes),
+                        compile_flags, session->Project->Config().cxxflags,
+                        session->Project->Config().release_cxxflags_extra,
+                        cppincludes, cxxincludes),
                     " "));
-  makefile.Env("RELEASE" CXXFLAGS_SUFFIX,
-               absl::StrJoin(ranges::views::concat(
-                                 compile_flags, session->Config->cxxflags,
-                                 session->Config->release_cxxflags_extra,
-                                 cppincludes, cxxincludes),
-                             " "));
 
   makefile.Env(
       "PROFILING" CFLAGS_SUFFIX,
+      absl::StrJoin(
+          ranges::views::concat(
+              compile_flags, session->Project->Config().cflags,
+              session->Project->Config().profiling_cflags_extra, cppincludes),
+          " "));
+  makefile.Env(
+      "PROFILING" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
-                        compile_flags, session->Config->cflags,
-                        session->Config->profiling_cflags_extra, cppincludes),
+                        compile_flags, session->Project->Config().cxxflags,
+                        session->Project->Config().profiling_cxxflags_extra,
+                        cppincludes, cxxincludes),
                     " "));
-  makefile.Env("PROFILING" CXXFLAGS_SUFFIX,
-               absl::StrJoin(ranges::views::concat(
-                                 compile_flags, session->Config->cxxflags,
-                                 session->Config->profiling_cxxflags_extra,
-                                 cppincludes, cxxincludes),
-                             " "));
 
   makefile.Env(CPP_DEFINES, absl::StrJoin(rule->ResolvedDefines, " "));
 
@@ -179,19 +187,21 @@ void CCLibraryCompiler::generate_toolchain_file(
   core::generators::Makefile makefile(working_folder.Sub("toolchain.make"),
                                       {session->WriterFactory.get()});
 
-  makefile.Env("CXX",
-               fmt::format("{} {}", absl::StrJoin(session->Config->cxx, " "),
-                           session->Project->Platform ==
-                                   core::filesystem::TargetPlatform::k64
-                               ? "-m64"
-                               : "-m32"));
+  makefile.Env(
+      "CXX",
+      fmt::format(
+          "{} {}", absl::StrJoin(session->Project->Config().cxx, " "),
+          session->Project->Platform == core::filesystem::TargetPlatform::k64
+              ? "-m64"
+              : "-m32"));
 
-  makefile.Env("CC",
-               fmt::format("{} {}", absl::StrJoin(session->Config->cc, " "),
-                           session->Project->Platform ==
-                                   core::filesystem::TargetPlatform::k64
-                               ? "-m64"
-                               : "-m32"));
+  makefile.Env(
+      "CC",
+      fmt::format(
+          "{} {}", absl::StrJoin(session->Project->Config().cc, " "),
+          session->Project->Platform == core::filesystem::TargetPlatform::k64
+              ? "-m64"
+              : "-m32"));
 
   makefile.Env("LINKER", "g++");
 
@@ -200,7 +210,7 @@ void CCLibraryCompiler::generate_toolchain_file(
   makefile.Env("RM", "$(JK_COMMAND) delete_file",
                "The command to remove a file.");
 
-  makefile.Env("CPPLINT", session->Config->cpplint_path);
+  makefile.Env("CPPLINT", session->Project->Config().cpplint_path);
 
   makefile.Env("MKDIR", "mkdir -p");
 }

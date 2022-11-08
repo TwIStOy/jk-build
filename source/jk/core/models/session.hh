@@ -35,8 +35,6 @@ struct Session {
 
   std::unique_ptr<interfaces::WriterFactory> WriterFactory;
 
-  std::unique_ptr<filesystem::Configuration> Config;
-
   absl::flat_hash_map<std::string, std::string> GlobalVariables;
 
   std::vector<std::string> ExtraFlags;

@@ -131,8 +131,6 @@ inline auto LoadBuildFile(core::models::Session *session,
     return {};
   }
 
-  fmt::print("safe: {}\n", name);
-
   pkg->ConstructRules(
       interp->EvalFile(session->Project->Resolve(name, "BUILD").Stringify()),
       rule_factory);
