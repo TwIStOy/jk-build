@@ -8,6 +8,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_join.h"
 #include "jk/core/algorithms/topological_sort.hh"
+#include "jk/impls/compilers/makefile/common.hh"
 #include "range/v3/numeric/iota.hpp"
 #include "range/v3/range/conversion.hpp"
 #include "range/v3/range/primitives.hpp"
@@ -40,8 +41,7 @@ void CCBinaryCompiler::generate_build_file(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     rules::CCLibrary *rule) const {
-  auto makefile =
-      new_makefile_with_common_commands(session, working_folder, rule);
+  auto makefile = new_makefile_with_common_commands(session, working_folder);
 
   makefile.Env(
       "DEBUG_LDFLAGS",
@@ -80,7 +80,7 @@ void CCBinaryCompiler::generate_build_file(
     auto all_objects =
         add_source_files_commands(session, working_folder, rule, &makefile,
                                   &lint_header_targets, build_type);
-    auto binary_file = working_folder.Sub(build_type, rule->Base->Name);
+    auto binary_file = working_folder.Sub(build_type, *rule->Base->Name);
     // deps:
     //   all_objects
     //   lint_header_targets
@@ -101,7 +101,8 @@ void CCBinaryCompiler::generate_build_file(
                 return ranges::views::concat(
                     r->ExportedFiles(session, build_type),
                     r->ExportedLinkFlags);
-              }),
+              }) |
+              ranges::views::join,
           ranges::views::single("-Wl,--end-group"));
     };
 
@@ -117,14 +118,14 @@ void CCBinaryCompiler::generate_build_file(
     auto dependencies_artifact = sorted | ranges::views::filter([&](auto id) {
                                    return visited.contains(id);
                                  }) |
-                                 ranges::views::for_each([&](auto id) {
+                                 ranges::views::transform([&](auto id) {
                                    return visit_scc(id);
                                  });
 
     auto deps_and_flags = sorted | ranges::views::filter([&](auto id) {
                             return visited.contains(id);
                           }) |
-                          ranges::views::for_each([&](auto id) {
+                          ranges::views::transform([&](auto id) {
                             return visit_scc_group(id);
                           }) |
                           ranges::views::join;
@@ -146,7 +147,7 @@ void CCBinaryCompiler::generate_build_file(
     auto link_stmt = core::builder::CustomCommandLine::FromVec(
         ranges::views::concat(ranges::views::single("@$(LINKER)"), all_objects,
                               deps_and_flags) |
-        ranges::views::to_vector);
+        ranges::to_vector);
     link_stmt.push_back("-g");
     link_stmt.push_back("${}{}_LDFLAGS{}"_format("{", build_type, "}"));
     link_stmt.push_back("-o");

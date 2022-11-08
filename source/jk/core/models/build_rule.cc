@@ -11,14 +11,10 @@
 namespace jk::core::models {
 
 auto BuildRule::Prepare(core::models::Session *session) -> std::future<void> {
-  std::promise<void> f;
-  auto future = f.get_future();
-  session->Executor->Push([this, session, f = std::move(f)]() mutable {
+  return session->Executor->Push([this, session]() mutable {
     DoPrepare(session);
     prepared_ = true;
-    f.set_value();
   });
-  return future;
 }
 
 void BuildRule::DoPrepare(core::models::Session *session) {

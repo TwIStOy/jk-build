@@ -42,15 +42,15 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
   };
 
   FullQualifiedName = [this]() {
-    return fmt::format("{}/{}@{}", PackageName, Name, Version);
+    return fmt::format("{}/{}@{}", PackageName, *Name, *Version);
   };
 
   FullQualifiedNameWithoutVersion = [this]() -> std::string {
-    return fmt::format("{}/{}", PackageName, Name);
+    return fmt::format("{}/{}", PackageName, *Name);
   };
 
   StringifyValue = [this]() -> std::string {
-    return fmt::format(R"(<Rule:{} "{}:{}">)", TypeName, PackageName, Name);
+    return fmt::format(R"(<Rule:{} "{}:{}">)", TypeName, PackageName, *Name);
   };
 
   FullQuotedQualifiedName = [this]() -> std::string {

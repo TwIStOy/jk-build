@@ -47,6 +47,7 @@ struct Makefile {
       print_line(".PHONY: ", name);
     }
     print_line();
+    return *this;
   }
 
   Makefile &Include(std::string_view filename, std::string_view comment = "",
