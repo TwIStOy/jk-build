@@ -3,8 +3,6 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-#include <fmt/format.h>
-
 #include <algorithm>
 #include <cctype>
 #include <iterator>
@@ -17,6 +15,7 @@
 #include <vector>
 
 #include "boost/optional.hpp"
+#include "fmt/format.h"
 #include "jk/common/lazy_property.hh"
 #include "jk/utils/cpp_features.hh"
 #include "range/v3/range/concepts.hpp"
@@ -24,8 +23,6 @@
 #include "semver.hpp"
 
 namespace jk {
-
-using fmt::operator"" _format;
 
 namespace utils {
 

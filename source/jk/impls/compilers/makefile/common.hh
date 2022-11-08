@@ -29,14 +29,14 @@ inline auto PrintStatement(core::filesystem::JKProject *project,
                                       out->append(std::to_string(i));
                                     })),
          fmt::format("--progress-dir={}", project->BuildRoot.Stringify()),
-         fmt::format(__JK_FWD(fmt_str), __JK_FWD(args)...)});
+         fmt::format(fmt::runtime(__JK_FWD(fmt_str)), __JK_FWD(args)...)});
   } else {
     return core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)",
          color.size() ? fmt::format("--{}", color) : "", bold ? "--bold" : "",
          fmt::format("--progress-num={}", __JK_FWD(numbers)),
          fmt::format("--progress-dir={}", project->BuildRoot.Stringify()),
-         fmt::format(__JK_FWD(fmt_str), __JK_FWD(args)...)});
+         fmt::format(fmt::runtime(__JK_FWD(fmt_str)), __JK_FWD(args)...)});
   }
 }
 

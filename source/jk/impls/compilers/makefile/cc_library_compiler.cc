@@ -221,10 +221,11 @@ uint32_t add_source_files_lint_commands(
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
-       "--progress-num={}"_format(progress_num),
-       "--progress-dir={}"_format(session->Project->BuildRoot.Stringify()),
-       "Linting {} file {}"_format(file_type,
-                                   full_qualified_path.Stringify())});
+       fmt::format("--progress-num={}", progress_num),
+       fmt::format("--progress-dir={}",
+                   session->Project->BuildRoot.Stringify()),
+       fmt::format("Linting {} file {}", file_type,
+                   full_qualified_path.Stringify())});
 
   using core::builder::operator""_c_raw;
   auto lint_stmt = core::builder::CustomCommandLine::Make(
@@ -273,10 +274,12 @@ void add_source_file_commands(core::models::Session *session,
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
-       "--progress-num={}"_format(
+       fmt::format(
+           "--progress-num={}",
            rule->Steps.Step(source_file->FullQualifiedPath->Stringify())),
-       "--progress-dir={}"_format(session->Project->BuildRoot.Stringify()),
-       "Building CXX object {}"_format(object_file.Stringify())});
+       fmt::format("--progress-dir={}",
+                   session->Project->BuildRoot.Stringify()),
+       fmt::format("Building CXX object {}", object_file.Stringify())});
 
   auto source_filename =
       session->Project->Resolve(*source_file->FullQualifiedPath).Stringify();
@@ -290,7 +293,7 @@ void add_source_file_commands(core::models::Session *session,
   if (*source_file->IsCppSourceFile) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
-         "$(CXXFLAGS)", "$({}_CXXFLAGS)"_format(build_type), "-o",
+         "$(CXXFLAGS)", fmt::format("$({}_CXXFLAGS)", build_type), "-o",
          object_file.Stringify(), "-c", source_filename});
 
     makefile->Target(object_file.Stringify(), dep,
@@ -299,7 +302,7 @@ void add_source_file_commands(core::models::Session *session,
   } else if (*source_file->IsCSourceFile) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CC)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
-         "$(CFLAGS)", "$({}_CFLAGS)"_format(build_type), "-o",
+         "$(CFLAGS)", fmt::format("$({}_CFLAGS)", build_type), "-o",
          object_file.Stringify(), "-c", source_filename});
 
     makefile->Target(object_file.Stringify(), dep,
@@ -412,9 +415,12 @@ void CCLibraryCompiler::generate_build_file(
 
     auto print_stmt = core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
-         "--progress-num={}"_format(absl::StrJoin(rule->Steps.Steps(), ",")),
-         "--progress-dir={}"_format(session->Project->BuildRoot.Stringify()),
-         "Linking CXX static library {}"_format(library_file.Stringify())});
+         fmt::format("--progress-num={}",
+                     absl::StrJoin(rule->Steps.Steps(), ",")),
+         fmt::format("--progress-dir={}",
+                     session->Project->BuildRoot.Stringify()),
+         fmt::format("Linking CXX static library {}",
+                     library_file.Stringify())});
 
     makefile.Target(
         library_file.Stringify(),

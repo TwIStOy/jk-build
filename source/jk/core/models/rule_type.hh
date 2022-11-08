@@ -72,8 +72,8 @@ inline std::string RuleType::gen_stringify_cache() const {
   if (value_ & static_cast<uint8_t>(RuleTypeEnum::kCC)) {
     flags.push_back("cc");
   }
-  return "RuleType [{}]"_format(
-      utils::JoinString(" | ", flags.begin(), flags.end()));
+  return fmt::format("RuleType [{}]",
+                     utils::JoinString(" | ", flags.begin(), flags.end()));
 }
 
 #undef TYPE_SET_GETTER

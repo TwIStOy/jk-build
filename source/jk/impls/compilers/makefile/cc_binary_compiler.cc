@@ -140,16 +140,17 @@ void CCBinaryCompiler::generate_build_file(
 
     auto print_stmt = core::builder::CustomCommandLine::Make(
         {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold",
-         "--progress-num={}"_format(absl::StrJoin(rule->Steps.Steps(), ",")),
-         "--progress-dir={}"_format(session->Project->BuildRoot),
-         "Linking binary {}"_format(binary_file.Stringify())});
+         fmt::format("--progress-num={}",
+                     absl::StrJoin(rule->Steps.Steps(), ",")),
+         fmt::format("--progress-dir={}", session->Project->BuildRoot),
+         fmt::format("Linking binary {}", binary_file.Stringify())});
 
     auto link_stmt = core::builder::CustomCommandLine::FromVec(
         ranges::views::concat(ranges::views::single("@$(LINKER)"), all_objects,
                               deps_and_flags) |
         ranges::to_vector);
     link_stmt.push_back("-g");
-    link_stmt.push_back("${}{}_LDFLAGS{}"_format("{", build_type, "}"));
+    link_stmt.push_back(fmt::format("${{{}_LDFLAGS}}", build_type));
     link_stmt.push_back("-o");
     link_stmt.push_back(binary_file.Stringify());
 

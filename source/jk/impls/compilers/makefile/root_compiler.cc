@@ -167,11 +167,11 @@ auto RootCompiler::Compile(
       core::builder::CustomCommandLines::Multiple(
           core::builder::CustomCommandLine::Make(
               {"@$(JK_COMMAND)", "start_progress",
-               "--progress-mark={}"_format(
-                   session->Project->BuildRoot.Sub("progress.mark")
-                       .Stringify()),
-               "--progress-dir={}"_format(
-                   session->Project->BuildRoot.Stringify())}),
+               fmt::format("--progress-mark={}",
+                           session->Project->BuildRoot.Sub("progress.mark")
+                               .Stringify()),
+               fmt::format("--progress-dir={}",
+                           session->Project->BuildRoot.Stringify())}),
           // backward compatibility
           core::builder::CustomCommandLine::Make(
               {"mkdir", "-p",

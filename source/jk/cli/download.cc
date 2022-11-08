@@ -38,7 +38,7 @@ static std::string sha256_hash_string(
     unsigned char hash[SHA256_DIGEST_LENGTH]) {
   std::ostringstream oss;
   for (auto i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    oss << "{:02x}"_format(hash[i]);
+    oss << fmt::format("{:02x}", hash[i]);
   }
   return oss.str();
 }
@@ -129,7 +129,7 @@ static size_t FileCommandCurlDebugCallback(::CURL *, curl_infotype type,
     case CURLINFO_DATA_OUT:
     case CURLINFO_SSL_DATA_IN:
     case CURLINFO_SSL_DATA_OUT: {
-      std::cout << "[%{}bytes data]"_format(size) << std::endl;
+      std::cout << fmt::format("[%{}bytes data]", size) << std::endl;
     } break;
     default:
       break;
@@ -161,9 +161,8 @@ static int FileDownloadProgressCallback(void *clientp, curl_off_t dltotal,
 
   auto speed = dlnow / diff.count();
 
-  auto msg =
-      "{}/{} {}/s"_format(utils::BytesCount(dlnow), utils::BytesCount(dltotal),
-                          utils::BytesCount(speed));
+  auto msg = fmt::format("{}/{} {}/s", utils::BytesCount(dlnow),
+                         utils::BytesCount(dltotal), utils::BytesCount(speed));
 
   helper->Print(std::cout, dlnow, dltotal, msg);
 

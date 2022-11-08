@@ -26,8 +26,8 @@ std::string Kwargs::gen_stringify_cache() const {
   oss << "Kwargs {";
   oss << JoinString(
       ", ", value_.begin(), value_.end(), [](const auto &pr) -> std::string {
-        return "{}: {}"_format(pr.first,
-                               pybind11::str(pr.second).cast<std::string>());
+        return fmt::format("{}: {}", pr.first,
+                           pybind11::str(pr.second).cast<std::string>());
       });
   oss << "}";
   return oss.str();

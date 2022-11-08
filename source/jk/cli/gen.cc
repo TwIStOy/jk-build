@@ -110,7 +110,7 @@ void Generate(args::Subparser &parser) {
         JK_THROW(core::JKBuildError("Only support rule file named 'BUILD'."));
       }
 
-      auto id = core::models::ParseIdString("//{}:..."_format(str));
+      auto id = core::models::ParseIdString(fmt::format("//{}:...", str));
       utils::assertion::boolean.expect(
           id.Position == core::models::RuleRelativePosition::kAbsolute,
           "Only absolute rule is allowed in command-line.");

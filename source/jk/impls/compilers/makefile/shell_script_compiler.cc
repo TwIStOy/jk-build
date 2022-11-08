@@ -48,11 +48,11 @@ auto ShellScriptCompiler::Compile(
                           .Stringify()});
 
     auto run_stmt = core::builder::CustomCommandLine::Make(
-        {"@{}/{}"_format(session->Project->Resolve(rule->Package->Path),
+        {fmt::format("@{}/{}",session->Project->Resolve(rule->Package->Path),
                          rule->Script),
          ToString(session->Project->Platform)});
     auto touch_stmt = core::builder::CustomCommandLine::Make(
-        {"@touch", "{}"_format(script_target)});
+        {"@touch", script_target});
 
     makefile.Target(
         script_target,
