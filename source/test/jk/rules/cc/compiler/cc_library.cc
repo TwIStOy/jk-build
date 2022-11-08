@@ -1,7 +1,7 @@
-// Copyright (c) 2020 Hawtian Wang
+// Copyright (c) 2020 - present, Hawtian Wang (twistoy.wang@gmail.com)
 //
 
-#include "jk/rules/cc/rules/cc_library.hh"
+#include "jk/impls/rules/cc_library.hh"
 
 #include <memory>
 #include <sstream>
@@ -11,31 +11,35 @@
 
 #include "boost/dll.hpp"
 #include "catch.hpp"
-#include "jk/common/flags.hh"
 #include "jk/common/path.hh"
+#include "jk/core/executor/worker_pool.hh"
 #include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
-#include "jk/core/rules/build_rule.hh"
-#include "jk/core/rules/package.hh"
-#include "jk/core/writer/buffer_writer.hh"
-#include "jk/core/writer/writer.hh"
-#include "jk/rules/cc/compiler/cc_library.hh"
-#include "jk/rules/cc/source_file.hh"
+#include "jk/core/interfaces/writer.hh"
+#include "jk/core/models/build_package.hh"
+#include "jk/core/models/build_package_factory.hh"
+#include "jk/core/models/build_rule.hh"
+#include "jk/core/models/session.hh"
+#include "jk/impls/compilers/makefile/cc_library_compiler.hh"
+#include "jk/impls/rules/cc_library.hh"
+#include "jk/impls/writers/buffer_writer.hh"
 #include "jk/utils/array.hh"
+#include "jk/utils/kwargs.hh"
 #include "jk/utils/str.hh"
 #include "test/jk/core/compile/fake_buffer_writer.hh"
 #include "test/jk/core/compile/nop_expander.hh"
-#include "test/jk/rules/cc/compiler/utility.hh"
 
-namespace jk::rules::cc::test {
+namespace jk::impls::cc::test {
 
-static core::rules::BuildPackageFactory SimpleProject() {
-  SourceFile::ClearCache();
-  core::rules::BuildPackageFactory factory;
+static std::unique_ptr<core::models::BuildPackageFactory> SimpleProject() {
+  auto factory = std::make_unique<core::models::BuildPackageFactory>();
 
   {
-    auto package = factory.Package("library/base");
-    auto base = new CCLibrary(package, "base");
+    auto [package, new_package] = factory->Package("library/base");
+    utils::Kwargs kwargs;
+    kwargs.value()["name"] = pybind11::str("base");
+
+    auto base = new rules::CCLibrary(package, std::move(kwargs));
     base->Includes.push_back("base_inherit_include_directory");
     base->Defines.push_back("base_inherit_define_flag");
     base->Sources = {"base1.cpp", "base2.cpp", "base3.cpp"};
@@ -43,10 +47,14 @@ static core::rules::BuildPackageFactory SimpleProject() {
     base->Headers.push_back("base.h");
   }
   {
-    auto package = factory.Package("library/memory");
-    auto memory = new CCLibrary(package, "memory");
+    auto [package, new_package] = factory->Package("library/memory");
+    utils::Kwargs kwargs;
+    kwargs.value()["name"] = pybind11::str("memory");
+
+    auto memory = new rules::CCLibrary(package, std::move(kwargs));
+
     memory->Dependencies.push_back(
-        factory.Package("library/base")->Rules["base"].get());
+        factory->Package("library/base").first->RulesMap["base"].get());
     memory->Includes.push_back("memory_inherit_include_directory");
     memory->Defines.push_back("memory_inherit_define_flag");
     memory->Sources = {"memory1.cpp", "memory2.cpp", "memory3.cpp",
@@ -57,24 +65,24 @@ static core::rules::BuildPackageFactory SimpleProject() {
   return factory;
 }
 
-TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
+/*
+TEST_CASE("compiler.makefile.cc_library.simple_target",
           "[compiler][makefile][cc_library]") {
-  core::filesystem::JKProject project{
-      common::AbsolutePath{"~/Projects/test_project"},
-  };
+  auto compiler = std::make_unique<compilers::makefile::CCLibraryCompiler>();
 
-  ::jk::test::FakeBufferWriterFactory writer_factory;
-  auto compiler =
-      std::make_unique<::jk::rules::cc::MakefileCCLibraryCompiler>();
-  ::jk::test::NopExpander expander;
+  core::models::Session session;
+  session.Project = std::make_unique<core::filesystem::JKProject>(
+      common::AbsolutePath{"~/Projects/test_project"});
+  session.PatternExpander = std::make_unique< ::jk::test::NopExpander>();
+  session.WriterFactory =
+      std::make_unique< ::jk::test::FakeBufferWriterFactory>();
+  auto package_factory = SimpleProject();
 
-  auto simple_project = SimpleProject();
-  auto rule = simple_project.Package("library/base")
-                  ->Rules["base"]
-                  ->Downcast<CCLibrary>();
+  auto rule = dynamic_cast<rules::CCLibrary *>(
+      package_factory->Package("library/base").first->RulesMap["base"].get());
 
   SECTION("flags.make") {
-    auto w = writer_factory.Build("flags.make");
+    // auto w = writer_factory.Build("flags.make");
 
     auto makefile = compiler->GenerateFlags(&project, w.get(), rule);
 
@@ -125,7 +133,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
   }
 
   SECTION("build.make") {
-    auto w = writer_factory.Build("flags.make");
+    auto w              = writer_factory.Build("flags.make");
     auto working_folder = project.BuildRoot.Sub(
         utils::Replace(rule->FullQualifiedName(), '/', "@"));
 
@@ -187,7 +195,7 @@ TEST_CASE("compiler.makefile.cc_library.simple_target",  // {{{
     compiler->Compile(&project, &writer_factory, rule, &expander);
     writer_factory.DebugPrint(std::cout);
   }
-}  // }}}
+}
 
 TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
           "[compiler][makefile][cc_library]") {
@@ -200,7 +208,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
   ::jk::test::NopExpander expander;
 
   auto simple_project = SimpleProject();
-  auto rule = simple_project.Package("library/memory")
+  auto rule           = simple_project.Package("library/memory")
                   ->Rules["memory"]
                   ->Downcast<CCLibrary>();
 
@@ -257,7 +265,7 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
   }
 
   SECTION("build.make") {
-    auto w = writer_factory.Build("flags.make");
+    auto w              = writer_factory.Build("flags.make");
     auto working_folder = project.BuildRoot.Sub(
         utils::Replace(rule->FullQualifiedName(), '/', "@"));
 
@@ -325,6 +333,8 @@ TEST_CASE("compiler.makefile.cc_library.target_with_dep",  // {{{
   }
 }  // }}}
 
-}  // namespace jk::rules::cc::test
+*/
+
+}  // namespace jk::impls::cc::test
 
 // vim: fdm=marker

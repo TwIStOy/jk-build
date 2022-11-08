@@ -43,8 +43,8 @@ auto CompileRules(
 {
   std::vector<std::future<void>> futures;
   for (auto rule : rg) {
-    futures.push_back(
-        session->Workers.Push([&scc, generator_name, factory, rule, session]() {
+    futures.push_back(session->Executor->Push(
+        [&scc, generator_name, factory, rule, session]() {
           core::interfaces::Compiler *c =
               factory->Find(generator_name, rule->Base->TypeName);
           if (c != nullptr) {
@@ -108,7 +108,7 @@ void PrepareDependencies(core::models::Session *session,
   auto futures =
       rules |
       ranges::views::transform([session, &make_dep_str_to_rule](auto r) {
-        return session->Workers.Push([&make_dep_str_to_rule, r]() {
+        return session->Executor->Push([&make_dep_str_to_rule, r]() {
           make_dep_str_to_rule(r);
         });
       }) |
@@ -163,8 +163,8 @@ inline void load_file_impl(std::atomic_uint_fast32_t *pending_jobs,
                            core::models::BuildRuleFactory *rule_factory,
                            std::string filename) {
   pending_jobs->fetch_add(1);
-  session->Workers.Push([pending_jobs, filename, session, package_factory,
-                         rule_factory]() mutable {
+  session->Executor->Push([pending_jobs, filename, session, package_factory,
+                           rule_factory]() mutable {
     auto deps = LoadBuildFile(session, filename, package_factory, rule_factory);
 
     for (auto &&dep : deps) {

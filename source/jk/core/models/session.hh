@@ -40,8 +40,6 @@ struct Session {
   absl::flat_hash_map<std::string, std::string> GlobalVariables;
 
   std::vector<std::string> ExtraFlags;
-
-  executor::WorkerPool Workers;
 };
 
 }  // namespace jk::core::models

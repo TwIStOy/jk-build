@@ -1,6 +1,7 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
+/*
 #include "jk/rules/cc/compiler/cc_binary.hh"
 
 #include <boost/dll/runtime_symbol_info.hpp>
@@ -22,9 +23,11 @@
 #include "test/jk/core/compile/fake_buffer_writer.hh"
 #include "test/jk/core/compile/nop_expander.hh"
 #include "test/jk/rules/cc/compiler/utility.hh"
+*/
 
 namespace jk::rules::cc::test {
 
+/*
 static core::rules::BuildPackageFactory SimpleProject() {
   SourceFile::ClearCache();
   core::rules::BuildPackageFactory factory;
@@ -232,6 +235,7 @@ TEST_CASE("compiler.makefile.cc_binary.target_with_dep",
     writer_factory.DebugPrint(std::cout);
   }
 }
+*/
 
 }  // namespace jk::rules::cc::test
 

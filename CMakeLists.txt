@@ -9,14 +9,21 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -fPIC -g2 -static -Wno-attributes")
+option(JK_FULL_STATIC "Make all static for jk" ON)
+
+if (JK_FULL_STATIC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Os")
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -fPIC -g2 -Wno-attributes")
 set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -msse3 -fPIC -g2 -static -Wno-attributes")
+    "${CMAKE_CXX_FLAGS} -msse3 -fPIC -g2 -Wno-attributes")
 set(CMAKE_CXX_FLAGS_DEBUG
     "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
 set(CMAKE_LINKER_FLAGS_DEBUG
     "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -Os")
 
 if(CMAKE_BUILD_TYPE EQUAL "Debug")
   include(CodeCoverage)
@@ -46,7 +53,11 @@ if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   target_link_libraries(libjk PUBLIC stdc++fs)
 endif()
 
-target_link_options(libjk PUBLIC -static-libgcc -static-libstdc++)
+if (JK_FULL_STATIC)
+  target_link_options(libjk PUBLIC -static-libgcc -static-libstdc++)
+else()
+  target_link_options(libjk PUBLIC -static-libstdc++)
+endif()
 
 # third-party prepare
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH ON)
