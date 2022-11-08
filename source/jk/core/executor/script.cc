@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 
+#include "jk/core/models/session.hh"
 #include "jk/utils/logging.hh"
 
 namespace jk::core::executor {
@@ -15,16 +16,11 @@ static auto logger = utils::Logger("script");
 
 std::unordered_set<std::string> ScriptInterpreter::func_names_ = {};
 
-auto ScriptInterpreter::ThreadInstance() -> ScriptInterpreter * {
-  thread_local ScriptInterpreter interp;
-  return &interp;
-}
-
 auto ScriptInterpreter::AddFunc(const std::string &name) -> void {
   func_names_.insert(name);
 }
 
-ScriptInterpreter::ScriptInterpreter() {
+ScriptInterpreter::ScriptInterpreter(models::Session *session) {
   Py_NoSiteFlag            = 1;
   Py_IgnoreEnvironmentFlag = 1;
   Py_NoUserSiteDirectory   = 1;
@@ -41,22 +37,23 @@ ScriptInterpreter::ScriptInterpreter() {
         });
   }
 
+  if (session) {
+    if (session->Project->Platform == filesystem::TargetPlatform::k32) {
+      locals_["platform"] = 32;
+      locals_["PLATFORM"] = 32;
+    } else {
+      locals_["platform"] = 64;
+      locals_["PLATFORM"] = 64;
+    }
+
+    locals_["JK_SOURCE_DIR"] = session->Project->ProjectRoot.Stringify();
+    locals_["JK_BINARY_DIR"] = session->Project->BuildRoot.Stringify();
+    locals_["JK_BUNDLE_LIBRARY_PREFIX"] =
+        session->Project->ExternalInstalledPrefix.Stringify();
+    locals_["JK_CXX_STANDARD"] = session->Project->Config().cxx_standard;
+  }
+
   /*
-   * if (project->Platform == filesystem::TargetPlatform::k32) {
-   *   (*locals)["platform"] = 32;
-   *   (*locals)["PLATFORM"] = 32;
-   * } else {
-   *   (*locals)["platform"] = 64;
-   *   (*locals)["PLATFORM"] = 64;
-   * }
-   *
-   * if (project) {
-   *   (*locals)["JK_SOURCE_DIR"] = project->ProjectRoot.Stringify();
-   *   (*locals)["JK_BINARY_DIR"] = project->BuildRoot.Stringify();
-   *   (*locals)["JK_BUNDLE_LIBRARY_PREFIX"] =
-   *       project->ExternalInstalledPrefix.Stringify();
-   *   (*locals)["JK_CXX_STANDARD"] = project->Config().cxx_standard;
-   * }
    * (*locals)["e"] = pybind11::cpp_function(GetGlobalVariables);
    */
 }

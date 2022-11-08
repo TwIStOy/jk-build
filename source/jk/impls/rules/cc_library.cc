@@ -253,4 +253,11 @@ auto CCLibrary::prepare_define_flags(core::models::Session *) -> void {
   dfs(this, dfs);
 }
 
+const std::vector<std::string> &CCLibrary::ExportedFiles(
+    core::models::Session *session, std::string_view build_type) {
+  tmp_exported_files_ = {
+      WorkingFolder.Sub(build_type, LibraryFileName).Stringify()};
+  return tmp_exported_files_;
+}
+
 }  // namespace jk::impls::rules

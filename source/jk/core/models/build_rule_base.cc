@@ -26,8 +26,6 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
       TypeName(std::move(type_name)),
       Type(type),
       PackageName(package_name),
-      StrProperty(this),
-      StrListProperty(this),
       _kwargs(std::move(kwargs)) {
   Name = [this] {
     return _kwargs.StringRequired("name");
@@ -38,7 +36,7 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
   };
 
   Dependencies = [this] {
-    return _kwargs.ListOptional("deps", {});
+    return _kwargs.ListOptional("deps", {{}});
   };
 
   FullQualifiedName = [this]() {

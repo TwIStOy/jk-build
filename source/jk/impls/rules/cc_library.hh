@@ -37,6 +37,9 @@ class CCLibrary : public core::models::BuildRule {
   std::vector<std::string> Headers;
   std::vector<std::string> AlwaysCompile;
 
+  const std::vector<std::string> &ExportedFiles(
+      core::models::Session *session, std::string_view build_type) override;
+
  protected:
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 
@@ -51,6 +54,7 @@ class CCLibrary : public core::models::BuildRule {
 
   std::optional<common::AbsolutePath> package_root_;
   absl::flat_hash_set<std::string> excludes_;
+  std::vector<std::string> tmp_exported_files_;
 
  public:
   absl::flat_hash_set<std::string> NolintFiles;

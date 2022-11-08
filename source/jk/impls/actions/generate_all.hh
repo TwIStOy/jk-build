@@ -15,6 +15,7 @@
 #include "jk/core/models/helpers.hh"
 #include "jk/core/models/session.hh"
 #include "jk/impls/actions.hh"
+#include "jk/utils/assert.hh"
 #include "jk/version.h"
 #include "range/v3/range/concepts.hpp"
 #include "range/v3/range/conversion.hpp"
@@ -39,7 +40,9 @@ static auto release_git_version_file_content = R"(
 #endif
 )";
 
-auto generate_all(core::models::Session *session, auto generator_names,
+auto generate_all(core::models::Session *session,
+                  core::executor::ScriptInterpreter *interp,
+                  auto generator_names,
                   impls::compilers::CompilerFactory *compiler_factory,
                   core::models::BuildPackageFactory *package_factory,
                   core::models::BuildRuleFactory *rule_factory, auto &&rg)
@@ -47,7 +50,7 @@ auto generate_all(core::models::Session *session, auto generator_names,
            std::same_as<ranges::range_value_t<decltype(rg)>,
                         core::models::BuildRuleId>
 {
-  LoadBuildFiles(session, package_factory, rule_factory,
+  LoadBuildFiles(session, interp, package_factory, rule_factory,
                  rg | ranges::views::transform([](auto &id) -> decltype(auto) {
                    return *id.PackageName;
                  }));
@@ -57,28 +60,30 @@ auto generate_all(core::models::Session *session, auto generator_names,
 
   PrepareRules(session, core::models::IterAllRules(package_factory));
 
-  auto arg_rules = rg |
-                   ranges::views::transform(
-                       [&](core::models::BuildRuleId &id)
-                           -> ranges::any_view<core::models::BuildRule *> {
-                         auto [pkg, new_pkg] =
-                             package_factory->PackageUnsafe(*id.PackageName);
-                         assert(!new_pkg);
+  auto arg_rules =
+      rg |
+      ranges::views::transform(
+          [&](core::models::BuildRuleId &id)
+              -> ranges::any_view<core::models::BuildRule *> {
+            auto [pkg, new_pkg] =
+                package_factory->PackageUnsafe(*id.PackageName);
+            fmt::print("unsafe: {}\n", *id.PackageName);
+            utils::assertion::boolean.expect(!new_pkg, id.PackageName->c_str());
 
-                         if (id.RuleName == "...") {
-                           // "..." means all rules
-                           return pkg->IterRules();
-                         } else {
-                           auto rule = pkg->RulesMap[id.RuleName].get();
-                           if (!rule) {
-                             JK_THROW(core::JKBuildError(
-                                 "No rule named '{}' in package '{}'",
-                                 id.RuleName, id.PackageName.value()));
-                           }
-                           return ranges::views::single(rule);
-                         }
-                       }) |
-                   ranges::views::join | ranges::to_vector;
+            if (id.RuleName == "...") {
+              // "..." means all rules
+              return pkg->IterRules();
+            } else {
+              auto rule = pkg->RulesMap[id.RuleName].get();
+              if (!rule) {
+                JK_THROW(
+                    core::JKBuildError("No rule named '{}' in package '{}'",
+                                       id.RuleName, id.PackageName.value()));
+              }
+              return ranges::views::single(rule);
+            }
+          }) |
+      ranges::views::join | ranges::to_vector;
 
   auto scc = core::algorithms::Tarjan(session, ranges::views::all(arg_rules));
 

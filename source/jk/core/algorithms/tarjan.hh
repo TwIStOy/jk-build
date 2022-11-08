@@ -8,11 +8,14 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/strings/str_join.h"
 #include "jk/core/models/build_rule.hh"
 #include "jk/core/models/build_rule_base.hh"
 #include "jk/core/models/session.hh"
+#include "jk/utils/logging.hh"
 #include "range/v3/range/conversion.hpp"
 #include "range/v3/view/for_each.hpp"
+#include "range/v3/view/transform.hpp"
 #include "range/v3/view/unique.hpp"
 
 namespace jk::core::algorithms {
@@ -23,6 +26,8 @@ struct StronglyConnectedComponent {
 };
 
 inline auto Tarjan(models::Session *session, auto rg) {
+  static auto logger = utils::Logger("tarjan");
+
   uint32_t dfncnt = 0;
   std::stack<models::BuildRule *> stack;
   std::vector<StronglyConnectedComponent> sccs;
@@ -37,7 +42,7 @@ inline auto Tarjan(models::Session *session, auto rg) {
     in_stack[rule->Base->ObjectId] = true;
 
     for (auto n : rule->Dependencies) {
-      if (dfn[n->Base->ObjectId] > 0) {
+      if (dfn[n->Base->ObjectId] == 0) {
         dfs(n, dfs);
         low[n->Base->ObjectId] =
             std::min(low[rule->Base->ObjectId], low[n->Base->ObjectId]);
@@ -62,8 +67,8 @@ inline auto Tarjan(models::Session *session, auto rg) {
       in_stack[stack.top()->Base->ObjectId] = false;
       stack.pop();
 
-      sccs.push_back(
-          StronglyConnectedComponent{.Rules = std::move(current_scc)});
+      sccs.push_back(StronglyConnectedComponent{.Rules = std::move(current_scc),
+                                                .Deps  = {}});
     }
   };
 
@@ -83,6 +88,17 @@ inline auto Tarjan(models::Session *session, auto rg) {
     scc.Deps = scc.Deps | ranges::to<absl::flat_hash_set<uint32_t>> |
                ranges::to_vector;
   }
+
+  for (auto i = 0; i < sccs.size(); i++) {
+    logger->info(
+        "scc[{}], rules: [{}], deps: [{}]", i,
+        absl::StrJoin(sccs[i].Rules | ranges::views::transform([](auto x) {
+                        return x->Base->ObjectId;
+                      }),
+                      ","),
+        absl::StrJoin(sccs[i].Deps, ","));
+  }
+  logger->flush();
 
   return sccs;
 }

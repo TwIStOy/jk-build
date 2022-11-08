@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -16,6 +17,7 @@
 #include "jk/core/error.h"
 #include "jk/core/executor/script.hh"
 #include "jk/core/executor/worker_pool.hh"
+#include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/build_package_factory.hh"
@@ -34,6 +36,7 @@
 #include "jk/impls/rules/cc_binary.hh"
 #include "jk/impls/rules/cc_library.hh"
 #include "jk/impls/rules/cc_test.hh"
+#include "jk/impls/rules/proto_library.hh"
 #include "jk/impls/rules/shell_script.hh"
 #include "jk/impls/writers/file_writer.hh"
 #include "jk/utils/assert.hh"
@@ -41,6 +44,8 @@
 #include "jk/utils/str.hh"
 #include "jk/version.h"
 #include "range/v3/range/conversion.hpp"
+#include "range/v3/view/any_view.hpp"
+#include "range/v3/view/join.hpp"
 #include "range/v3/view/single.hpp"
 #include "range/v3/view/transform.hpp"
 
@@ -82,8 +87,10 @@ void Generate(args::Subparser &parser) {
   session.Project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
   session.WriterFactory.reset(new impls::writers::FileWriterFactory());
-  session.Executor.reset(new core::executor::WorkerPool());
+  session.Executor.reset(new core::executor::WorkerPool(4));
   session.Executor->Start();
+  session.PatternExpander =
+      std::make_unique<core::filesystem::DefaultPatternExpander>();
 
   if (defines) {
     for (const auto &str : args::get(defines)) {
@@ -140,12 +147,13 @@ void Generate(args::Subparser &parser) {
   rule_factory.AddSimpleCreator<impls::rules::CCBinary>("cc_binary");
   rule_factory.AddSimpleCreator<impls::rules::CCTest>("cc_test");
   rule_factory.AddSimpleCreator<impls::rules::ShellScript>("shell_script");
+  rule_factory.AddSimpleCreator<impls::rules::ProtoLibrary>("proto_library");
 
   core::executor::ScriptInterpreter::AddFunc("cc_library");
   core::executor::ScriptInterpreter::AddFunc("cc_binary");
   core::executor::ScriptInterpreter::AddFunc("cc_test");
   core::executor::ScriptInterpreter::AddFunc("proto_library");
-  core::executor::ScriptInterpreter::AddFunc("shell_sript");
+  core::executor::ScriptInterpreter::AddFunc("shell_script");
 
   compiler_factory.Register<impls::compilers::makefile::CCLibraryCompiler>(
       "makefile", "cc_library");
@@ -160,18 +168,36 @@ void Generate(args::Subparser &parser) {
   compiler_factory.Register<impls::compilers::NopCompiler>("make_file",
                                                            "proto_library");
 
-  auto scc = impls::actions::generate_all(
-      &session, ranges::views::single(output_format), &compiler_factory,
-      &package_factory, &rule_factory, rules_id);
+  auto interp = std::make_unique<core::executor::ScriptInterpreter>(&session);
+  auto scc    = impls::actions::generate_all(
+      &session, interp.get(), ranges::views::single(output_format),
+      &compiler_factory, &package_factory, &rule_factory, rules_id);
   auto all_rules =
       core::models::IterAllRules(&package_factory) | ranges::to_vector;
 
   impls::compilers::makefile::RootCompiler root_compiler;
 
+  auto arg_rules =
+      rules_id |
+      ranges::views::transform(
+          [&](const core::models::BuildRuleId &id)
+              -> ranges::any_view<core::models::BuildRule *> {
+            auto [pkg, new_pkg] =
+                package_factory.PackageUnsafe(*id.PackageName);
+            if (id.RuleName == "...") {
+              // all
+              return pkg->IterRules();
+            }
+            return ranges::views::single(pkg->RulesMap[id.RuleName].get());
+          }) |
+      ranges::views::join | ranges::to_vector;
+
   // TODO(hawtian): global compiler for different output formats
   // generate global makefile
-  root_compiler.Compile(&session, scc, all_rules,
+  root_compiler.Compile(&session, scc, arg_rules,
                         rules_name | ranges::to_vector);
+
+  session.Executor->Stop();
 }
 
 }  // namespace jk::cli

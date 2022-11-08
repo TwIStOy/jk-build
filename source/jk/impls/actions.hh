@@ -25,6 +25,7 @@
 #include "jk/core/models/dependent.hh"
 #include "jk/core/models/session.hh"
 #include "jk/impls/compilers/compiler_factory.hh"
+#include "jk/utils/assert.hh"
 #include "range/v3/algorithm/transform.hpp"
 #include "range/v3/range/concepts.hpp"
 #include "range/v3/range/traits.hpp"
@@ -81,7 +82,8 @@ void PrepareDependencies(core::models::Session *session,
       switch (dep.Position) {
         case core::models::RuleRelativePosition::kAbsolute: {
           auto pkg = package->PackageUnsafe(*dep.PackageName);
-          assert(pkg.second == false);
+          utils::assertion::boolean.expect(pkg.second == false,
+                                           dep.PackageName->c_str());
           auto it = pkg.first->RulesMap.find(dep.RuleName);
           rule->Dependencies.emplace_back(it->second.get());
         } break;
@@ -119,18 +121,20 @@ void PrepareDependencies(core::models::Session *session,
 }
 
 inline auto LoadBuildFile(core::models::Session *session,
-                          std::string_view filename,
+                          core::executor::ScriptInterpreter *interp,
+                          std::string_view name,
                           core::models::BuildPackageFactory *package_factory,
                           core::models::BuildRuleFactory *rule_factory)
     -> std::vector<std::string> {
-  auto [pkg, new_pkg] = package_factory->Package(filename);
+  auto [pkg, new_pkg] = package_factory->Package(name);
   if (!new_pkg) {
     return {};
   }
 
+  fmt::print("safe: {}\n", name);
+
   pkg->ConstructRules(
-      core::executor::ScriptInterpreter::ThreadInstance()->EvalFile(
-          session->Project->Resolve(filename, "BUILD").Stringify()),
+      interp->EvalFile(session->Project->Resolve(name, "BUILD").Stringify()),
       rule_factory);
 
   std::vector<std::string> next_files;
@@ -139,23 +143,25 @@ inline auto LoadBuildFile(core::models::Session *session,
       auto dep = core::models::ParseIdString(_dep);
       switch (dep.Position) {
         case core::models::RuleRelativePosition::kAbsolute:
-          next_files.push_back(*dep.PackageName + "/BUILD");
+          next_files.push_back(*dep.PackageName);
           break;
         case core::models::RuleRelativePosition::kBuiltin:
           assert(false);
           JK_THROW(core::JKBuildError("not supported"));
           break;
         case core::models::RuleRelativePosition::kRelative:
-          next_files.emplace_back(absl::StripSuffix(filename, "/BUILD"));
+          next_files.emplace_back(name);
           break;
         case core::models::RuleRelativePosition::kThis:
           break;
       }
     }
   }
+
   return std::move(next_files);
 }
 
+/*
 inline void load_file_impl(std::atomic_uint_fast32_t *pending_jobs,
                            core::models::Session *session,
                            core::models::BuildPackageFactory *package_factory,
@@ -174,21 +180,30 @@ inline void load_file_impl(std::atomic_uint_fast32_t *pending_jobs,
     pending_jobs->fetch_sub(1);
   });
 }
+*/
 
 template<ranges::range R>
   requires std::convertible_to<ranges::range_value_t<R>, std::string>
 void LoadBuildFiles(core::models::Session *session,
+                    core::executor::ScriptInterpreter *interp,
                     core::models::BuildPackageFactory *package_factory,
                     core::models::BuildRuleFactory *rule_factory, R files) {
-  std::atomic_uint_fast32_t pending_jobs = 0;
+  std::queue<std::string> Q;
 
   for (const auto &filename : files) {
-    load_file_impl(&pending_jobs, session, package_factory, rule_factory,
-                   filename);
+    Q.push(filename);
   }
 
-  while (pending_jobs > 0) {
-    usleep(10);
+  while (!Q.empty()) {
+    auto filename = std::move(Q.front());
+    Q.pop();
+
+    auto deps =
+        LoadBuildFile(session, interp, filename, package_factory, rule_factory);
+
+    for (auto &&dep : deps) {
+      Q.push(std::move(dep));
+    }
   }
 }
 

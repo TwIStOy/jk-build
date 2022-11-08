@@ -30,27 +30,12 @@ struct KwargsValue {
 
   KwargsValue(const KwargsValue &) = default;
   KwargsValue(KwargsValue &&)      = default;
-
-  KwargsValue(const pybind11::handle &object) {
-    if (pybind11::isinstance<pybind11::list>(object)) {
-      std::vector<Ptr> res;
-      for (const auto &v :
-           pybind11::reinterpret_borrow<pybind11::list>(object)) {
-        res.emplace_back(std::make_unique<KwargsValue>(v));
-      }
-      value = std::move(res);
-    } else if (pybind11::isinstance<pybind11::str>(object)) {
-      value = object.cast<std::string>();
-    } else if (pybind11::isinstance<pybind11::dict>(object)) {
-      for (const auto &it :
-           pybind11::reinterpret_borrow<pybind11::dict>(object)) {
-        auto key = it.first.cast<std::string>();
-        MapType res;
-        res.emplace(key, std::make_unique<KwargsValue>(it.second));
-        value = std::move(res);
-      }
-    }
+  KwargsValue(Ptr ptr) : value(ptr->value) {
   }
+
+  KwargsValue(const pybind11::handle &object);
+
+  std::string to_string() const;
 
   std::variant<std::string, ListType, MapType, bool> value;
 };

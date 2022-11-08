@@ -22,7 +22,7 @@ void _Parse(args::Subparser &parser) {
 
   for (const auto &filename : rules_name) {
     auto res =
-        core::executor::ScriptInterpreter::ThreadInstance()->EvalFile(filename);
+        (new core::executor::ScriptInterpreter(nullptr))->EvalFile(filename);
 
     fmt::print("========== {} ==========\n", filename);
     for (const auto &[tname, kwargs] : res) {

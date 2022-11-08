@@ -25,7 +25,7 @@ struct __JK_HIDDEN BuildRuleFactory {
     if (auto it = creators_.find(TypeName); it != creators_.end()) {
       return (it->second)(pkg, std::move(kwargs));
     } else {
-      utils::assertion::boolean.expect(false, "No creator");
+      utils::assertion::boolean.expect(false, TypeName.c_str());
       return nullptr;
     }
   }

@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "jk/core/models/session.hh"
 #include "jk/utils/kwargs.hh"
 
 namespace jk::core::executor {
@@ -22,15 +23,12 @@ class __JK_HIDDEN ScriptInterpreter {
     utils::Kwargs Args;
   };
 
-  static ScriptInterpreter *ThreadInstance();
+  ScriptInterpreter(models::Session *session);
 
   static void AddFunc(const std::string &name);
 
   std::vector<EvalResult> Eval(const std::string &str);
   std::vector<EvalResult> EvalFile(std::string_view filename);
-
- private:
-  ScriptInterpreter();
 
  private:
   static std::unordered_set<std::string> func_names_;

@@ -24,7 +24,7 @@ namespace jk::core::models {
 uint32_t __CurrentObjectId();
 
 // All threse fields can be load from BUILD.
-struct __JK_HIDDEN BuildRuleBase {
+struct BuildRuleBase {
   BuildRuleBase(std::string TypeName, RuleType type,
                 std::string_view PackageName, utils::Kwargs kwargs);
 
