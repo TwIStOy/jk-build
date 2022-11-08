@@ -47,7 +47,16 @@ struct AbsolutePath final : public utils::Stringifiable {
 
   template<typename... Ts>
   inline AbsolutePath Sub(const Ts &...rhs) const {
-    return AbsolutePath{(Path / ... / rhs)};
+    static auto to_str = [](auto &&arg) {
+      if constexpr (std::same_as<std::remove_cvref_t<decltype(arg)>,
+                                 common::ProjectRelativePath>) {
+        return arg.Stringify();
+      } else {
+        return std::forward<decltype(arg)>(arg);
+      }
+    };
+
+    return AbsolutePath{(Path / ... / to_str(rhs))};
   }
 
   // inherited from |utils::Stringifiable|

@@ -88,7 +88,7 @@ void CCLibraryCompiler::generate_flag_file(
       R"(-DGIT_DESC="\"`cd {} && git describe --tags --always`\"")";
 
   core::generators::Makefile makefile(working_folder.Sub("flags.make"),
-                                      {session->Writer.get()});
+                                      {session->WriterFactory.get()});
 
   auto compile_flags = session->Config->compile_flags;
   compile_flags.push_back(
@@ -177,7 +177,7 @@ void CCLibraryCompiler::generate_toolchain_file(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule) const {
   core::generators::Makefile makefile(working_folder.Sub("toolchain.make"),
-                                      {session->Writer.get()});
+                                      {session->WriterFactory.get()});
 
   makefile.Env("CXX",
                fmt::format("{} {}", absl::StrJoin(session->Config->cxx, " "),
@@ -257,8 +257,8 @@ void add_source_file_commands(core::models::Session *session,
                               working_folder.Sub("toolchain.make").Stringify()};
 
   // if not in nolint.txt, lint file
-  if (!rule->InNolint(
-          session->Project->Resolve(*source_file->FullQualifiedPath))) {
+  if (!rule->InNolint(session->Project->Resolve(*source_file->FullQualifiedPath)
+                          .Stringify())) {
     deps.push_back(
         source_file->ResolveFullQualifiedLintPath(working_folder).Stringify());
   }

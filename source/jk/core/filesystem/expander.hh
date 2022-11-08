@@ -7,18 +7,11 @@
 #include <string>
 
 #include "jk/common/path.hh"
+#include "jk/core/interfaces/expander.hh"
 
 namespace jk::core::filesystem {
 
-struct FileNamePatternExpander {
-  //! Returns all filename match `pattern` in given `path`.
-  virtual std::list<std::string> Expand(const std::string &pattern,
-                                        const common::AbsolutePath &path) = 0;
-
-  virtual ~FileNamePatternExpander() = default;
-};
-
-struct DefaultPatternExpander : public FileNamePatternExpander {
+struct DefaultPatternExpander : public interfaces::FileNamePatternExpander {
   std::list<std::string> Expand(const std::string &pattern,
                                 const common::AbsolutePath &path) override;
 };

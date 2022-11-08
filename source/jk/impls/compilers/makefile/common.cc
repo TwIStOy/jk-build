@@ -13,7 +13,7 @@ core::generators::Makefile new_makefile_with_common_commands(
     core::models::Session *session,
     const common::AbsolutePath &working_folder) {
   core::generators::Makefile makefile(working_folder.Sub("build.make"),
-                                      {session->Writer.get()});
+                                      {session->WriterFactory.get()});
 
   makefile.Env("SHELL", "/bin/bash",
                "The shell in which to execute make rules.");

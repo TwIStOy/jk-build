@@ -12,9 +12,12 @@ auto NopCompiler::Name() const -> std::string_view {
   return str_;
 }
 
-auto NopCompiler::Compile(core::models::Session *session,
-                          core::models::BuildRule *rule) const -> void {
+auto NopCompiler::Compile(
+    core::models::Session *session,
+    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+    core::models::BuildRule *rule) const -> void {
   (void)session;
+  (void)scc;
   (void)rule;
   // do nothing
 }

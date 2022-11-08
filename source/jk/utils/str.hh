@@ -19,6 +19,8 @@
 #include "boost/optional.hpp"
 #include "jk/common/lazy_property.hh"
 #include "jk/utils/cpp_features.hh"
+#include "range/v3/range/concepts.hpp"
+#include "range/v3/view/single.hpp"
 #include "semver.hpp"
 
 namespace jk {
@@ -31,11 +33,12 @@ struct Stringifiable {
   //! Returns the result of stringify current object
   virtual const std::string &Stringify() const;
 
-  virtual std::string gen_stringify_cache() const = 0;
-
   virtual ~Stringifiable() = default;
 
  protected:
+  virtual std::string gen_stringify_cache() const = 0;
+
+ private:
   mutable std::optional<std::string> _cached_to_string;
 };
 
@@ -76,6 +79,28 @@ template<typename InputIterator>
 typename InputIterator::value_type __DefaultUnary(
     const typename InputIterator::value_type &v) {
   return v;
+}
+
+std::string StrJoin(auto &&rg, std::string_view sep)
+  requires ranges::range<std::remove_cvref_t<decltype(rg)>>
+{
+  std::string output;
+  auto __end = ranges::end(rg);
+  for (auto it = ranges::begin(rg); it != __end; ++it) {
+    output.append(*it);
+  }
+  return output;
+}
+
+std::string StrJoin(auto &&rg, std::string_view sep, auto &&formatter)
+  requires ranges::range<std::remove_cvref_t<decltype(rg)>>
+{
+  std::string output;
+  auto __end = ranges::end(rg);
+  for (auto it = ranges::begin(rg); it != __end; ++it) {
+    formatter(&output, *it);
+  }
+  return output;
 }
 
 /**

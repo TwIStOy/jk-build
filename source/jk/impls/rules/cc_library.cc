@@ -59,7 +59,7 @@ auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
 
   package_root_ = session->Project->Resolve(Package->Path.Path);
 
-  LibraryFileName = fmt::format("lib{}.a", Base->Name);
+  LibraryFileName = fmt::format("lib{}.a", *Base->Name);
 
   // step 1. prepare nolint files
   prepare_nolint_files(session);
@@ -138,7 +138,7 @@ auto CCLibrary::prepare_source_files(core::models::Session *session) -> void {
   }
 
   std::sort(std::begin(ExpandedSourceFiles), std::end(ExpandedSourceFiles));
-  logger->debug("SourceFiles in {}: [{}]", Base->StringifyValue,
+  logger->debug("SourceFiles in {}: [{}]", *Base->StringifyValue,
                 absl::StrJoin(ExpandedSourceFiles, ", "));
 }
 
@@ -168,7 +168,7 @@ auto CCLibrary::prepare_header_files(core::models::Session *session) -> void {
   }
 
   std::sort(std::begin(ExpandedHeaderFiles), std::end(ExpandedHeaderFiles));
-  logger->debug("Headers in {}: [{}]", Base->StringifyValue,
+  logger->debug("Headers in {}: [{}]", *Base->StringifyValue,
                 absl::StrJoin(ExpandedHeaderFiles, ", "));
 }
 

@@ -5,18 +5,21 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
-#include "jk/core/writer/buffer_writer.hh"
-#include "jk/core/writer/writer.hh"
+#include "absl/container/flat_hash_map.h"
+#include "jk/core/interfaces/writer.hh"
+#include "jk/impls/writers/buffer_writer.hh"
 
 namespace jk::test {
 
 struct FakeBufferWriterFactory;
-struct FakeBufferWriter final : public core::writer::BufferWriter {
-  FakeBufferWriter(FakeBufferWriterFactory *factory, std::string key)
-      : Key(key), MyFactory(factory) {
+struct FakeBufferWriter final : public impls::writers::BufferWriter {
+  FakeBufferWriter(FakeBufferWriterFactory *factory) : MyFactory(factory) {
   }
+
+  void open(const common::AbsolutePath &) override;
 
   virtual ~FakeBufferWriter();
 
@@ -24,12 +27,12 @@ struct FakeBufferWriter final : public core::writer::BufferWriter {
   FakeBufferWriterFactory *MyFactory;
 };
 
-struct FakeBufferWriterFactory : public core::writer::WriterFactory {
-  std::unique_ptr<core::writer::Writer> Build(const std::string &key) final;
+struct FakeBufferWriterFactory : public core::interfaces::WriterFactory {
+  std::unique_ptr<core::interfaces::Writer> Create() final;
 
   void DebugPrint(std::ostream &oss) const;
 
-  std::unordered_map<std::string, std::string> Files;
+  absl::flat_hash_map<std::string, std::string> Files;
 };
 
 }  // namespace jk::test

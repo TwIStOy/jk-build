@@ -9,6 +9,8 @@ namespace jk::utils {
 
 #define __JK_HIDDEN __attribute__((visibility("hidden")))
 
+#define __JK_FWD(n) std::forward<decltype(n)>(n)
+
 template<typename... Ts>
 struct Overloaded : Ts... {
   using Ts::operator()...;

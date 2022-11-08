@@ -107,7 +107,7 @@ auto generate_targets(core::models::Session *session,
                rule->WorkingFolder.Sub("build.make").Stringify(), build_type}),
           PrintStatement(session->Project.get(), "", false, numbers,
                          "Built rule <cyan>{}:{}</cyan>, artifact: [{}]",
-                         rule->Package->Name, rule->Base->Name,
+                         rule->Package->Name, *rule->Base->Name,
                          absl::StrJoin(rule->ExportedFiles(session, build_type),
                                        ", ", [](std::string *out, auto &s) {
                                          out->append("<green>");
@@ -135,7 +135,7 @@ auto generate_targets(core::models::Session *session,
              rule->WorkingFolder.Sub("build.make").Stringify(), "build"}),
         PrintStatement(session->Project.get(), "", false, numbers,
                        "Built rule <cyan>{}:{}</cyan>", rule->Package->Name,
-                       rule->Base->Name));
+                       *rule->Base->Name));
 
     auto name = fmt::format("{}/build", *rule->Base->FullQualifiedName);
     makefile->Target(name, deps, cmds, "", true);

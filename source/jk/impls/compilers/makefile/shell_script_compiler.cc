@@ -57,7 +57,8 @@ auto ShellScriptCompiler::Compile(
     makefile.Target(
         script_target,
         ranges::views::single(
-            session->Project->Resolve(rule->Package->Path).Sub(rule->Script)),
+            session->Project->Resolve(rule->Package->Path, rule->Script)
+                .Stringify()),
         core::builder::CustomCommandLines::Multiple(print_stmt, mkdir_stmt,
                                                     run_stmt, touch_stmt));
   }

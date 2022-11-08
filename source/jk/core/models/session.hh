@@ -10,8 +10,8 @@
 #include "absl/container/flat_hash_map.h"
 #include "jk/core/executor/worker_pool.hh"
 #include "jk/core/filesystem/configuration.hh"
-#include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/interfaces/expander.hh"
 #include "jk/core/interfaces/writer.hh"
 
 namespace jk::core::models {
@@ -29,7 +29,7 @@ struct Session {
 
   std::unique_ptr<filesystem::JKProject> Project;
 
-  std::unique_ptr<filesystem::FileNamePatternExpander> PatternExpander;
+  std::unique_ptr<interfaces::FileNamePatternExpander> PatternExpander;
 
   std::unique_ptr<executor::WorkerPool> Executor;
 

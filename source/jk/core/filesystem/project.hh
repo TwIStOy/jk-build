@@ -3,9 +3,11 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <concepts>
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/configuration.hh"
@@ -49,7 +51,17 @@ struct JKProject {
   //! Resolve relative path to absolute from **ProjectRoot**
   template<typename... Args>
   common::AbsolutePath Resolve(Args &&...args) {
-    return (ProjectRoot.Path / ... / std::forward<Args>(args));
+    static auto to_str = [](auto &&arg) {
+      if constexpr (std::same_as<std::remove_cvref_t<decltype(arg)>,
+                                 common::ProjectRelativePath>) {
+        return arg.Stringify();
+      } else {
+        return std::forward<decltype(arg)>(arg);
+      }
+    };
+
+    return common::AbsolutePath{
+        (ProjectRoot.Path / ... / to_str(std::forward<Args>(args)))};
   }
 
   //! Resolve relative path to absolute from **BuildRoot**

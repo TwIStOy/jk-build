@@ -11,7 +11,7 @@
 
 namespace jk::test {
 
-struct NopExpander final : core::filesystem::FileNamePatternExpander {
+struct NopExpander final : core::interfaces::FileNamePatternExpander {
   std::list<std::string> Expand(const std::string &pattern,
                                 const common::AbsolutePath &path) final;
 };
