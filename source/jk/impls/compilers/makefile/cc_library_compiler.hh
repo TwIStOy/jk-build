@@ -9,6 +9,7 @@
 #include "jk/core/interfaces/compiler.hh"
 #include "jk/core/models/build_rule.hh"
 #include "jk/core/models/session.hh"
+#include "jk/impls/models/cc/source_file.hh"
 #include "jk/impls/rules/cc_library.hh"
 
 namespace jk::impls::compilers::makefile {
@@ -56,6 +57,7 @@ struct CCLibraryCompiler : public core::interfaces::Compiler {
       const common::AbsolutePath &working_folder, rules::CCLibrary *rule,
       core::generators::Makefile *makefile,
       std::vector<std::string> *lint_header_targets,
+      std::vector<std::unique_ptr<models::cc::SourceFile>>& source_files,
       std::string_view build_type) const;
 
  private:

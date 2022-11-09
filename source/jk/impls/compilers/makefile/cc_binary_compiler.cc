@@ -76,10 +76,18 @@ void CCBinaryCompiler::generate_build_file(
       lint_headers(session, working_folder, rule, &makefile);
 
   auto binary_progress_num = rule->Steps.Step(".binary");
+
+  auto source_files =
+      rule->ExpandedSourceFiles |
+      ranges::views::transform([rule](const auto &filename) {
+        return std::make_unique<models::cc::SourceFile>(filename, rule);
+      }) |
+      ranges::to_vector;
+
   for (const auto &build_type : session->BuildTypes) {
-    auto all_objects =
-        add_source_files_commands(session, working_folder, rule, &makefile,
-                                  &lint_header_targets, build_type);
+    auto all_objects = add_source_files_commands(
+        session, working_folder, rule, &makefile, &lint_header_targets,
+        source_files, build_type);
     auto binary_file = working_folder.Sub(build_type, rule->Base->Name);
     // deps:
     //   all_objects

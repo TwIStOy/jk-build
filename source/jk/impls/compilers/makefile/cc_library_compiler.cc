@@ -343,39 +343,39 @@ std::vector<std::string> CCLibraryCompiler::add_source_files_commands(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule, core::generators::Makefile *makefile,
     std::vector<std::string> *lint_header_targets,
+    std::vector<std::unique_ptr<models::cc::SourceFile>> &source_files,
     std::string_view build_type) const {
   std::vector<std::string> all_objects;
   all_objects.reserve(rule->ExpandedSourceFiles.size());
 
-  for (const auto &filename : rule->ExpandedSourceFiles) {
-    auto source_file = models::cc::SourceFile(filename, rule);
-
-    if (!source_file.lint) {
-      source_file.lint = true;
+  for (auto &source_file : source_files) {
+    if (!source_file->lint) {
+      source_file->lint = true;
       if (!rule->InNolint(
-              session->Project->Resolve(source_file.FullQualifiedPath)
+              session->Project->Resolve(source_file->FullQualifiedPath)
                   .Stringify())) {
         add_source_files_lint_commands(session, working_folder, rule, makefile,
-                                       &source_file);
+                                       source_file.get());
       }
     }
 
     add_source_file_commands(session, working_folder, rule, makefile,
-                             build_type, &source_file,
+                             build_type, source_file.get(),
                              ranges::views::all(*lint_header_targets));
 
     if (rule->ExpandedAlwaysCompileFiles.contains(
-            session->Project->Resolve(source_file.FullQualifiedPath)
+            session->Project->Resolve(source_file->FullQualifiedPath)
                 .Stringify())) {
       makefile->Target(
-          source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)
+          source_file
+              ->ResolveFullQualifiedObjectPath(working_folder, build_type)
               .Stringify(),
           ranges::views::single("jk_force"),
           ranges::views::empty<core::builder::CustomCommandLine>);
     }
 
     all_objects.push_back(
-        source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)
+        source_file->ResolveFullQualifiedObjectPath(working_folder, build_type)
             .Stringify());
   }
 
@@ -402,10 +402,17 @@ void CCLibraryCompiler::generate_build_file(
 
   auto library_progress_num = rule->Steps.Step(".library");
 
+  auto source_files =
+      rule->ExpandedSourceFiles |
+      ranges::views::transform([rule](const auto &filename) {
+        return std::make_unique<models::cc::SourceFile>(filename, rule);
+      }) |
+      ranges::to_vector;
+
   for (const auto &build_type : session->BuildTypes) {
-    auto all_objects =
-        add_source_files_commands(session, working_folder, rule, &makefile,
-                                  &lint_header_targets, build_type);
+    auto all_objects = add_source_files_commands(
+        session, working_folder, rule, &makefile, &lint_header_targets,
+        source_files, build_type);
 
     auto library_file = working_folder.Sub(build_type, rule->LibraryFileName);
     makefile.Target(library_file.Stringify(), ranges::views::empty<std::string>,

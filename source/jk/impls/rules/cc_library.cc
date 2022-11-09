@@ -226,6 +226,8 @@ auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
     }
   };
 
+  ResolvedIncludes.insert("-I.");
+
   dfs(this, dfs);
 }
 
