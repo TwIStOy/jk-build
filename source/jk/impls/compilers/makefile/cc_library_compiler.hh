@@ -58,7 +58,7 @@ struct CCLibraryCompiler : public core::interfaces::Compiler {
       core::generators::Makefile *makefile,
       std::vector<std::string> *lint_header_targets,
       std::vector<std::unique_ptr<models::cc::SourceFile>> &source_files,
-      std::string_view build_type) const;
+      std::string_view build_type, bool never_lint) const;
 
   void generate_build_file_impl(
       core::models::Session *session,

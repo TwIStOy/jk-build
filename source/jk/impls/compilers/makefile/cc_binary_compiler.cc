@@ -87,7 +87,7 @@ void CCBinaryCompiler::generate_build_file(
   for (const auto &build_type : session->BuildTypes) {
     auto all_objects = add_source_files_commands(
         session, working_folder, rule, &makefile, &lint_header_targets,
-        source_files, build_type);
+        source_files, build_type, false);
     auto binary_file = working_folder.Sub(build_type, rule->Base->Name);
     // deps:
     //   all_objects

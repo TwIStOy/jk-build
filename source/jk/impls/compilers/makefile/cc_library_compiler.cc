@@ -268,7 +268,8 @@ void add_source_file_commands(core::models::Session *session,
                               rules::CCLibrary *rule,
                               core::generators::Makefile *makefile,
                               std::string_view build_type,
-                              models::cc::SourceFile *source_file, R headers) {
+                              models::cc::SourceFile *source_file, R headers,
+                              bool never_lint) {
   std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
                               working_folder.Sub("toolchain.make").Stringify()};
 
@@ -277,7 +278,7 @@ void add_source_file_commands(core::models::Session *session,
       session->Project->Resolve(full_qualified_path).Stringify();
 
   // if not in nolint.txt, lint file
-  if (!rule->InNolint(source_filename)) {
+  if (!rule->InNolint(source_filename) && !never_lint) {
     deps.push_back(
         source_file->ResolveFullQualifiedLintPath(working_folder).Stringify());
   }
@@ -353,12 +354,12 @@ std::vector<std::string> CCLibraryCompiler::add_source_files_commands(
     rules::CCLibrary *rule, core::generators::Makefile *makefile,
     std::vector<std::string> *lint_header_targets,
     std::vector<std::unique_ptr<models::cc::SourceFile>> &source_files,
-    std::string_view build_type) const {
+    std::string_view build_type, bool never_lint) const {
   std::vector<std::string> all_objects;
   all_objects.reserve(rule->ExpandedSourceFiles.size());
 
   for (auto &source_file : source_files) {
-    if (!source_file->lint) {
+    if (!source_file->lint && !never_lint) {
       source_file->lint = true;
       if (!rule->InNolint(
               session->Project->Resolve(source_file->FullQualifiedPath)
@@ -368,9 +369,9 @@ std::vector<std::string> CCLibraryCompiler::add_source_files_commands(
       }
     }
 
-    add_source_file_commands(session, working_folder, rule, makefile,
-                             build_type, source_file.get(),
-                             ranges::views::all(*lint_header_targets));
+    add_source_file_commands(
+        session, working_folder, rule, makefile, build_type, source_file.get(),
+        ranges::views::all(*lint_header_targets), never_lint);
 
     if (rule->ExpandedAlwaysCompileFiles.contains(
             session->Project->Resolve(source_file->FullQualifiedPath)
@@ -434,9 +435,9 @@ void CCLibraryCompiler::generate_build_file_impl(
   }
 
   for (const auto &build_type : session->BuildTypes) {
-    auto all_objects = add_source_files_commands(session, working_folder, rule,
-                                                 makefile, lint_header_targets,
-                                                 source_files, build_type);
+    auto all_objects = add_source_files_commands(
+        session, working_folder, rule, makefile, lint_header_targets,
+        source_files, build_type, never_lint);
 
     auto library_file_file =
         working_folder.Sub(build_type, rule->LibraryFileName);

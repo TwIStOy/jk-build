@@ -19,9 +19,9 @@ namespace jk::impls::models::cc {
 
 struct SourceFile {
   explicit SourceFile(std::string FileName, core::models::BuildRule *Rule);
+  explicit SourceFile(const common::ProjectRelativePath &FileName,
+                      core::models::BuildRule *Rule);
 
-  //! Relative name
-  std::string FileName;
   core::models::BuildRule *Rule;
 
   bool lint{false};

@@ -24,6 +24,38 @@ static absl::flat_hash_set<std::string> CExtensions = {
 static absl::flat_hash_set<std::string> HeaderExtensions = {".h", ".hh", ".hxx",
                                                             ".hpp"};
 
+SourceFile::SourceFile(const common::ProjectRelativePath &filename,
+                       core::models::BuildRule *rule)
+    : Rule(rule),
+      FullQualifiedPath(filename),
+      FullQualifiedObjectPath([this]() {
+        auto p = FullQualifiedPath;
+        p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".o");
+        return p;
+      }()) {
+  IsCSourceFile = [this]() {
+    auto ext =
+        absl::AsciiStrToLower(FullQualifiedPath.Path.extension().string());
+    return CExtensions.contains(ext);
+  }();
+
+  IsCppSourceFile = [this]() {
+    auto ext =
+        absl::AsciiStrToLower(FullQualifiedPath.Path.extension().string());
+    return CppExtensions.contains(ext);
+  }();
+
+  IsSourceFile = [this]() {
+    return IsCSourceFile || IsCppSourceFile;
+  }();
+
+  IsHeaderFile = [this]() {
+    auto ext =
+        absl::AsciiStrToLower(FullQualifiedPath.Path.extension().string());
+    return HeaderExtensions.contains(ext);
+  }();
+}
+
 SourceFile::SourceFile(std::string filename, core::models::BuildRule *rule)
     : FileName(std::move(filename)),
       Rule(rule),
@@ -53,10 +85,6 @@ SourceFile::SourceFile(std::string filename, core::models::BuildRule *rule)
     fs::path p = FileName;
     auto ext   = absl::AsciiStrToLower(p.extension().string());
     return HeaderExtensions.contains(ext);
-  }();
-
-  FullQualifiedPath = [this]() {
-    return Rule->Package->Path.Sub(FileName);
   }();
 }
 
