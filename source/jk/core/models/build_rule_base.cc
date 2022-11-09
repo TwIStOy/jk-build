@@ -9,8 +9,6 @@
 #include <string_view>
 #include <vector>
 
-#include "jk/common/lazy_property.hh"
-
 namespace jk::core::models {
 
 static std::atomic_uint_fast32_t CurrentObjectId = 0;
@@ -27,33 +25,24 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
       Type(type),
       PackageName(package_name),
       _kwargs(std::move(kwargs)) {
-  Name = [this] {
-    return _kwargs.StringRequired("name");
-  };
+  Name = _kwargs.StringRequired("name");
 
-  Version = [this] {
-    return _kwargs.StringOptional("version", "DEFAULT");
-  };
+  Version = _kwargs.StringOptional("version", "DEFAULT");
 
   Dependencies = [this] {
     return _kwargs.ListOptional("deps", {{}});
-  };
+  }();
 
-  FullQualifiedName = [this]() {
-    return fmt::format("{}/{}@{}", PackageName, *Name, *Version);
-  };
+  FullQualifiedName = fmt::format("{}/{}@{}", PackageName, Name, Version);
 
-  FullQualifiedNameWithoutVersion = [this]() -> std::string {
-    return fmt::format("{}/{}", PackageName, *Name);
-  };
+  FullQualifiedNameWithoutVersion = fmt::format("{}/{}", PackageName, Name);
 
-  StringifyValue = [this]() -> std::string {
-    return fmt::format(R"(<Rule:{} "{}:{}">)", TypeName, PackageName, *Name);
-  };
+  StringifyValue =
+      fmt::format(R"(<Rule:{} "{}:{}">)", TypeName, PackageName, Name);
 
   FullQuotedQualifiedName = [this]() -> std::string {
     std::string res;
-    for (auto ch : *FullQualifiedName) {
+    for (auto ch : FullQualifiedName) {
       if (ch == '/') {
         res.push_back('_');
       } else {
@@ -61,11 +50,11 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
       }
     }
     return res;
-  };
+  }();
 
   FullQuotedQualifiedNameWithoutVersion = [this]() {
     std::string res;
-    for (auto ch : *FullQualifiedNameWithoutVersion) {
+    for (auto ch : FullQualifiedNameWithoutVersion) {
       if (ch == '/') {
         res.push_back('_');
       } else {
@@ -73,7 +62,7 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
       }
     }
     return res;
-  };
+  }();
 }
 
 }  // namespace jk::core::models

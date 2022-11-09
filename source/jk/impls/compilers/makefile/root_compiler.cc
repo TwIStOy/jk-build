@@ -81,23 +81,23 @@ auto generate_targets(core::models::Session *session,
     // cc target has build type
     for (const auto &build_type : session->BuildTypes) {
       auto deps = ranges::views::concat(
-          rule->Dependencies | ranges::views::transform([&build_type](
-                                                            auto rule) {
-            if (rule->Base->Type.IsCC()) {
-              return fmt::format("{}/{}", *rule->Base->FullQualifiedName,
-                                 build_type);
-            } else {
-              return fmt::format("{}/build", *rule->Base->FullQualifiedName);
-            }
-          }),
+          rule->Dependencies |
+              ranges::views::transform([&build_type](auto rule) {
+                if (rule->Base->Type.IsCC()) {
+                  return fmt::format("{}/{}", rule->Base->FullQualifiedName,
+                                     build_type);
+                } else {
+                  return fmt::format("{}/build", rule->Base->FullQualifiedName);
+                }
+              }),
           ranges::views::single("pre"));
 
       auto name = [&build_type, rule]() {
         if (rule->Base->Type.IsCC()) {
-          return fmt::format("{}/{}", *rule->Base->FullQualifiedName,
+          return fmt::format("{}/{}", rule->Base->FullQualifiedName,
                              build_type);
         } else {
-          return fmt::format("{}/build", *rule->Base->FullQualifiedName);
+          return fmt::format("{}/build", rule->Base->FullQualifiedName);
         }
       }();
 
@@ -107,7 +107,7 @@ auto generate_targets(core::models::Session *session,
                rule->WorkingFolder.Sub("build.make").Stringify(), build_type}),
           PrintStatement(session->Project.get(), "", false, numbers,
                          "Built rule <cyan>{}:{}</cyan>, artifact: [{}]",
-                         rule->Package->Name, *rule->Base->Name,
+                         rule->Package->Name, rule->Base->Name,
                          absl::StrJoin(rule->ExportedFiles(session, build_type),
                                        ", ", [](std::string *out, auto &s) {
                                          out->append("<green>");
@@ -125,7 +125,7 @@ auto generate_targets(core::models::Session *session,
             JK_THROW(core::JKBuildError(
                 "ExternalProject can only depend on another ExternalProject."));
           }
-          return fmt::format("{}/build", *rule->Base->FullQualifiedName);
+          return fmt::format("{}/build", rule->Base->FullQualifiedName);
         }),
         ranges::views::single("pre"));
 
@@ -135,9 +135,9 @@ auto generate_targets(core::models::Session *session,
              rule->WorkingFolder.Sub("build.make").Stringify(), "build"}),
         PrintStatement(session->Project.get(), "", false, numbers,
                        "Built rule <cyan>{}:{}</cyan>", rule->Package->Name,
-                       *rule->Base->Name));
+                       rule->Base->Name));
 
-    auto name = fmt::format("{}/build", *rule->Base->FullQualifiedName);
+    auto name = fmt::format("{}/build", rule->Base->FullQualifiedName);
     makefile->Target(name, deps, cmds, "", true);
     makefile->Target("external", ranges::views::single(name),
                      ranges::views::empty<core::builder::CustomCommandLine>);
@@ -245,7 +245,7 @@ auto RootCompiler::Compile(
   for (auto rule : rules) {
     for (const auto &build_type : session->BuildTypes) {
       auto tgt_name =
-          fmt::format("{}/{}", *rule->Base->FullQualifiedName, build_type);
+          fmt::format("{}/{}", rule->Base->FullQualifiedName, build_type);
       makefile.Target(absl::AsciiStrToLower(build_type),
                       ranges::views::concat(ranges::views::single(tgt_name),
                                             ranges::views::single("pre")),

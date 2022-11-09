@@ -74,8 +74,8 @@ set(CURL_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_bui
 set(CURL_SHA256 e56b3921eeb7a2951959c02db0912b5fcd5fdba5aca071da819e1accf338bbd7)
 include(BuildCurl)
 
-set(BOOST_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/boost_1_75_0.tar.gz)
-set(BOOST_SHA256 aeb26f80e80945e82ee93e5939baebdca47b9dee80a07d3144be1e1a6a66dd6a)
+set(BOOST_URL https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz)
+set(BOOST_SHA256 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847)
 include(BuildBoost)
 
 add_custom_target(third-party ALL

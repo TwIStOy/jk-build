@@ -20,10 +20,10 @@ auto CCTestCompiler::end_of_generate_build_file(
   const auto &build_type = session->BuildTypes[0];
   core::builder::CustomCommandLines test_statements;
   auto binary_file =
-      working_folder.Sub(build_type, *rule->Base->Name).Stringify();
+      working_folder.Sub(build_type, rule->Base->Name).Stringify();
   test_statements.push_back(core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green", "--bold", "--simple",
-       fmt::format("Running test, {}", *rule->Base->FullQualifiedName)}));
+       fmt::format("Running test, {}", rule->Base->FullQualifiedName)}));
   test_statements.push_back(
       core::builder::CustomCommandLine::Make({binary_file}));
 

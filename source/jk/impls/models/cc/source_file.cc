@@ -25,67 +25,68 @@ static absl::flat_hash_set<std::string> HeaderExtensions = {".h", ".hh", ".hxx",
                                                             ".hpp"};
 
 SourceFile::SourceFile(std::string filename, core::models::BuildRule *rule)
-    : FileName(std::move(filename)), Rule(rule) {
+    : FileName(std::move(filename)),
+      Rule(rule),
+      FullQualifiedPath(Rule->Package->Path.Sub(FileName)),
+      FullQualifiedObjectPath([this]() {
+        auto p = FullQualifiedPath;
+        p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".o");
+        return p;
+      }()) {
   IsCSourceFile = [this]() {
     fs::path p = FileName;
     auto ext   = absl::AsciiStrToLower(p.extension().string());
     return CExtensions.contains(ext);
-  };
+  }();
 
   IsCppSourceFile = [this]() {
     fs::path p = FileName;
     auto ext   = absl::AsciiStrToLower(p.extension().string());
     return CppExtensions.contains(ext);
-  };
+  }();
 
   IsSourceFile = [this]() {
-    return *IsCSourceFile || *IsCppSourceFile;
-  };
+    return IsCSourceFile || IsCppSourceFile;
+  }();
 
   IsHeaderFile = [this]() {
     fs::path p = FileName;
     auto ext   = absl::AsciiStrToLower(p.extension().string());
     return HeaderExtensions.contains(ext);
-  };
+  }();
 
   FullQualifiedPath = [this]() {
     return Rule->Package->Path.Sub(FileName);
-  };
-
-  FullQualifiedObjectPath = [this]() {
-    auto p = *FullQualifiedPath;
-    p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".o");
-    return p;
-  };
+  }();
 }
 
 auto SourceFile::ResolveFullQualifiedPath(
     const common::AbsolutePath &new_root) const -> common::AbsolutePath {
-  return new_root.Sub((*FullQualifiedPath).Path);
+  return new_root.Sub(FullQualifiedPath.Path);
 }
 
 common::AbsolutePath SourceFile::ResolveFullQualifiedObjectPath(
     const common::AbsolutePath &new_root, std::string_view build_type) const {
-  return new_root.Sub(build_type, *FullQualifiedObjectPath);
+  return new_root.Sub(build_type, FullQualifiedObjectPath);
 }
 
 auto SourceFile::ResolveFullQualifiedDotDPath(
     const common::AbsolutePath &new_root) const -> common::AbsolutePath {
-  auto p = *FullQualifiedPath;
+  auto p = FullQualifiedPath;
   p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".d");
   return new_root.Sub(p.Path);
 }
 
 auto SourceFile::ResolveFullQualifiedLintPath(
     const common::AbsolutePath &new_root) const -> common::AbsolutePath {
-  auto p = *FullQualifiedPath;
+  auto p = FullQualifiedPath;
   p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".lint");
   return new_root.Sub(p.Path);
 }
 
 auto SourceFile::ResolveFullQualifiedPbPath(
     const common::AbsolutePath &new_root) const -> common::AbsolutePath {
-  auto p        = *FullQualifiedPath;
+  auto p        = FullQualifiedPath;
   auto filename = p.Path.filename().string();
   filename      = filename.substr(0, filename.find_last_of('.'));
   p.Path        = p.Path.parent_path() / (filename + ".pb");

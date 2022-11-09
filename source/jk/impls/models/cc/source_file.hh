@@ -6,7 +6,6 @@
 #include <string>
 #include <string_view>
 
-#include "jk/common/lazy_property.hh"
 #include "jk/common/path.hh"
 
 namespace jk::core::models {
@@ -27,13 +26,13 @@ struct SourceFile {
 
   bool lint{false};
 
-  common::LazyProperty<bool> IsCSourceFile;
-  common::LazyProperty<bool> IsCppSourceFile;
-  common::LazyProperty<bool> IsSourceFile;
-  common::LazyProperty<bool> IsHeaderFile;
+  bool IsCSourceFile;
+  bool IsCppSourceFile;
+  bool IsSourceFile;
+  bool IsHeaderFile;
 
-  common::LazyProperty<common::ProjectRelativePath> FullQualifiedPath;
-  common::LazyProperty<common::ProjectRelativePath> FullQualifiedObjectPath;
+  common::ProjectRelativePath FullQualifiedPath;
+  common::ProjectRelativePath FullQualifiedObjectPath;
 
   common::AbsolutePath ResolveFullQualifiedPath(
       const common::AbsolutePath &new_root) const;

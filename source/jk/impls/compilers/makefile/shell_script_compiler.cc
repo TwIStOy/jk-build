@@ -41,7 +41,7 @@ auto ShellScriptCompiler::Compile(
     // script target
     auto print_stmt = PrintStatement(
         session->Project.get(), "green", true, rule->Steps.Step("execute"),
-        "Installing External Project {}", *rule->Base->FullQualifiedName);
+        "Installing External Project {}", rule->Base->FullQualifiedName);
 
     auto mkdir_stmt = core::builder::CustomCommandLine::Make(
         {"@$(MKDIR)", session->Project->ProjectRoot.Sub(ExternalInstalledPrefix)

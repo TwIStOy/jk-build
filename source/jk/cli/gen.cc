@@ -82,14 +82,14 @@ void Generate(args::Subparser &parser) {
 
   parser.Parse();
 
-  core::models::Session session;
+  auto session = std::make_unique<core::models::Session>();
 
-  session.Project = core::filesystem::JKProject::ResolveFrom(
+  session->Project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
-  session.WriterFactory.reset(new impls::writers::FileWriterFactory());
-  session.Executor.reset(new core::executor::WorkerPool(4));
-  session.Executor->Start();
-  session.PatternExpander =
+  session->WriterFactory.reset(new impls::writers::FileWriterFactory());
+  session->Executor.reset(new core::executor::WorkerPool(4));
+  session->Executor->Start();
+  session->PatternExpander =
       std::make_unique<core::filesystem::DefaultPatternExpander>();
 
   if (defines) {
@@ -97,15 +97,15 @@ void Generate(args::Subparser &parser) {
       std::vector<std::string> parts;
       utils::SplitString(str, std::back_inserter(parts), '=');
       if (parts.size() == 1) {
-        session.GlobalVariables[parts[0]] = "";
+        session->GlobalVariables[parts[0]] = "";
       } else {
-        session.GlobalVariables[parts[0]] = parts[1];
+        session->GlobalVariables[parts[0]] = parts[1];
       }
     }
   }
 
   if (extra_flags) {
-    session.ExtraFlags = args::get(extra_flags);
+    session->ExtraFlags = args::get(extra_flags);
   }
   auto output_format = args::get(format);
 
@@ -115,7 +115,7 @@ void Generate(args::Subparser &parser) {
 
   std::vector<core::models::BuildRuleId> rules_id;
   if (args::get(old_style)) {
-    session.ProjectMarker = "BLADE_ROOT";
+    session->ProjectMarker = "BLADE_ROOT";
 
     for (const auto &str : rules_name) {
       if (!utils::StringEndsWith(str, "BUILD")) {
@@ -139,15 +139,15 @@ void Generate(args::Subparser &parser) {
     }
   }
 
-  core::models::BuildPackageFactory package_factory;
-  core::models::BuildRuleFactory rule_factory;
-  impls::compilers::CompilerFactory compiler_factory;
+  auto package_factory  = std::make_unique<core::models::BuildPackageFactory>();
+  auto rule_factory     = std::make_unique<core::models::BuildRuleFactory>();
+  auto compiler_factory = std::make_unique<impls::compilers::CompilerFactory>();
 
-  rule_factory.AddSimpleCreator<impls::rules::CCLibrary>("cc_library");
-  rule_factory.AddSimpleCreator<impls::rules::CCBinary>("cc_binary");
-  rule_factory.AddSimpleCreator<impls::rules::CCTest>("cc_test");
-  rule_factory.AddSimpleCreator<impls::rules::ShellScript>("shell_script");
-  rule_factory.AddSimpleCreator<impls::rules::ProtoLibrary>("proto_library");
+  rule_factory->AddSimpleCreator<impls::rules::CCLibrary>("cc_library");
+  rule_factory->AddSimpleCreator<impls::rules::CCBinary>("cc_binary");
+  rule_factory->AddSimpleCreator<impls::rules::CCTest>("cc_test");
+  rule_factory->AddSimpleCreator<impls::rules::ShellScript>("shell_script");
+  rule_factory->AddSimpleCreator<impls::rules::ProtoLibrary>("proto_library");
 
   core::executor::ScriptInterpreter::AddFunc("cc_library");
   core::executor::ScriptInterpreter::AddFunc("cc_binary");
@@ -155,25 +155,29 @@ void Generate(args::Subparser &parser) {
   core::executor::ScriptInterpreter::AddFunc("proto_library");
   core::executor::ScriptInterpreter::AddFunc("shell_script");
 
-  compiler_factory.Register<impls::compilers::makefile::CCLibraryCompiler>(
+  compiler_factory->Register<impls::compilers::makefile::CCLibraryCompiler>(
       "makefile", "cc_library");
-  compiler_factory.Register<impls::compilers::makefile::CCBinaryCompiler>(
+  compiler_factory->Register<impls::compilers::makefile::CCBinaryCompiler>(
       "makefile", "cc_binary");
-  compiler_factory.Register<impls::compilers::makefile::CCTestCompiler>(
+  compiler_factory->Register<impls::compilers::makefile::CCTestCompiler>(
       "makefile", "cc_test");
-  compiler_factory.Register<impls::compilers::makefile::ShellScriptCompiler>(
+  compiler_factory->Register<impls::compilers::makefile::ShellScriptCompiler>(
       "makefile", "shell_script");
 
   // FIXME(hawtian): impl `proto_library` compiler
-  compiler_factory.Register<impls::compilers::NopCompiler>("make_file",
-                                                           "proto_library");
+  compiler_factory->Register<impls::compilers::NopCompiler>("make_file",
+                                                            "proto_library");
 
-  auto interp = std::make_unique<core::executor::ScriptInterpreter>(&session);
-  auto scc    = impls::actions::generate_all(
-      &session, interp.get(), ranges::views::single(output_format),
-      &compiler_factory, &package_factory, &rule_factory, rules_id);
+  auto interp =
+      std::make_unique<core::executor::ScriptInterpreter>(session.get());
+
+  auto generator_names = std::vector<std::string>{output_format};
+
+  auto scc = impls::actions::generate_all(
+      session.get(), interp.get(), generator_names, compiler_factory.get(),
+      package_factory.get(), rule_factory.get(), rules_id);
   auto all_rules =
-      core::models::IterAllRules(&package_factory) | ranges::to_vector;
+      core::models::IterAllRules(package_factory.get()) | ranges::to_vector;
 
   impls::compilers::makefile::RootCompiler root_compiler;
 
@@ -183,7 +187,7 @@ void Generate(args::Subparser &parser) {
           [&](const core::models::BuildRuleId &id)
               -> ranges::any_view<core::models::BuildRule *> {
             auto [pkg, new_pkg] =
-                package_factory.PackageUnsafe(*id.PackageName);
+                package_factory->PackageUnsafe(*id.PackageName);
             if (id.RuleName == "...") {
               // all
               return pkg->IterRules();
@@ -194,10 +198,10 @@ void Generate(args::Subparser &parser) {
 
   // TODO(hawtian): global compiler for different output formats
   // generate global makefile
-  root_compiler.Compile(&session, scc, arg_rules,
+  root_compiler.Compile(session.get(), scc, arg_rules,
                         rules_name | ranges::to_vector);
 
-  session.Executor->Stop();
+  session->Executor->Stop();
 }
 
 }  // namespace jk::cli

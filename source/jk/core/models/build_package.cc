@@ -13,7 +13,7 @@ void BuildPackage::ConstructRules(
   for (auto &&r : raw_eval_results) {
     auto rule     = factory->Create(r.FuncName, this, std::move(r.Args));
     rule->Package = this;
-    RulesMap.emplace(*rule->Base->Name, std::move(rule));
+    RulesMap.emplace(rule->Base->Name, std::move(rule));
   }
 }
 

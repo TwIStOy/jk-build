@@ -13,7 +13,6 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "fmt/format.h"
-#include "jk/common/lazy_property.hh"
 #include "jk/core/error.h"
 #include "jk/core/models/rule_type.hh"
 #include "jk/utils/kwargs.hh"
@@ -46,7 +45,7 @@ struct BuildRuleBase {
 
   //! The rule's name. Name must be unique in a package.
   // [[arg: `name`]]
-  common::LazyProperty<std::string> Name;
+  std::string Name;
 
   //! The rule's package's name.
   // [[rule-file-name]]
@@ -54,27 +53,27 @@ struct BuildRuleBase {
 
   //! The rule's version. For backward compatible, default is 'DEFAULT'.
   // [[arg: `version`]]
-  common::LazyProperty<std::string> Version;
+  std::string Version;
 
   // [[arg: `deps`]]
-  common::LazyProperty<std::vector<std::string>> Dependencies;
+  std::vector<std::string> Dependencies;
 
   //! The rule's full qualifed name. This named will automatically be
   //! converted into the rules folder name, just like cmake does.
-  common::LazyProperty<std::string> FullQualifiedName;
+  std::string FullQualifiedName;
 
   //! The rule's full qualifed name without version.
-  common::LazyProperty<std::string> FullQualifiedNameWithoutVersion;
+  std::string FullQualifiedNameWithoutVersion;
 
   //! Cached stringify result
-  common::LazyProperty<std::string> StringifyValue;
+  std::string StringifyValue;
 
   //! The rule's full quoted qualifed name. Replace all '/' to '@@'.
-  common::LazyProperty<std::string> FullQuotedQualifiedName;
+  std::string FullQuotedQualifiedName;
 
   //! The rule's full quoted qualifed name without version. Repalce all '/' to
   //! '@@'.
-  common::LazyProperty<std::string> FullQuotedQualifiedNameWithoutVersion;
+  std::string FullQuotedQualifiedNameWithoutVersion;
 
   utils::Kwargs _kwargs;
 };

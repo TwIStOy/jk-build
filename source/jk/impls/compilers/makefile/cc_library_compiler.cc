@@ -63,9 +63,9 @@ auto CCLibraryCompiler::DoCompile(
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     rules::CCLibrary *rule) const -> void {
   auto working_folder =
-      session->Project->BuildRoot.Sub(*(rule->Base->FullQuotedQualifiedName));
+      session->Project->BuildRoot.Sub(rule->Base->FullQuotedQualifiedName);
 
-  logger->info("compile rule: {}:{}", rule->Package->Name, *rule->Base->Name);
+  logger->info("compile rule: {}:{}", rule->Package->Name, rule->Base->Name);
 
   generate_flag_file(session, working_folder, rule);
 
@@ -174,7 +174,7 @@ void CCLibraryCompiler::generate_flag_file(
     for (const auto &[k, v] : rule->ExportedEnvironmentVars) {
       makefile.Env(
           fmt::format("{}_{}",
-                      *(rule->Base->FullQuotedQualifiedNameWithoutVersion), k),
+                      rule->Base->FullQuotedQualifiedNameWithoutVersion, k),
           v);
     }
   };
@@ -219,12 +219,12 @@ uint32_t add_source_files_lint_commands(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     rules::CCLibrary *rule, core::generators::Makefile *makefile,
     models::cc::SourceFile *source_file) {
-  auto progress_num =
-      rule->Steps.Step(source_file->FullQualifiedPath->Stringify() + "/lint");
-
-  auto file_type = source_file->IsHeaderFile.Value() ? "Header" : "CXX";
+  auto file_type = source_file->IsHeaderFile ? "Header" : "CXX";
   auto full_qualified_path =
-      session->Project->Resolve(*source_file->FullQualifiedPath);
+      session->Project->Resolve(source_file->FullQualifiedPath).Stringify();
+
+  auto progress_num = rule->Steps.Step(full_qualified_path);
+
   auto source_file_path = source_file->ResolveFullQualifiedPath(working_folder);
   auto lint_file_path =
       source_file->ResolveFullQualifiedLintPath(working_folder);
@@ -234,26 +234,25 @@ uint32_t add_source_files_lint_commands(
        fmt::format("--progress-num={}", progress_num),
        fmt::format("--progress-dir={}",
                    session->Project->BuildRoot.Stringify()),
-       fmt::format("Linting {} file {}", file_type,
-                   full_qualified_path.Stringify())});
+       fmt::format("Linting {} file {}", file_type, full_qualified_path)});
 
   using core::builder::operator""_c_raw;
   auto lint_stmt = core::builder::CustomCommandLine::Make(
-      {"@$(CPPLINT)", full_qualified_path.Stringify(), ">/dev/null"_c_raw});
+      {"@$(CPPLINT)", full_qualified_path, ">/dev/null"_c_raw});
   auto mkdir_stmt = core::builder::CustomCommandLine::Make(
       {"@$(MKDIR)", source_file_path.Path.parent_path().string()});
   auto touch_stmt = core::builder::CustomCommandLine::Make(
       {"@touch", lint_file_path.Stringify()});
 
   auto toolchain_file = working_folder.Sub("toolchain.make").Stringify();
-  makefile->Target(lint_file_path.Stringify(),
-                   ranges::views::concat(
-                       ranges::views::single(full_qualified_path.Stringify()),
-                       ranges::views::single(toolchain_file)),
-                   ranges::views::concat(ranges::views::single(print_stmt),
-                                         ranges::views::single(lint_stmt),
-                                         ranges::views::single(mkdir_stmt),
-                                         ranges::views::single(touch_stmt)));
+  makefile->Target(
+      lint_file_path.Stringify(),
+      ranges::views::concat(ranges::views::single(full_qualified_path),
+                            ranges::views::single(toolchain_file)),
+      ranges::views::concat(ranges::views::single(print_stmt),
+                            ranges::views::single(lint_stmt),
+                            ranges::views::single(mkdir_stmt),
+                            ranges::views::single(touch_stmt)));
   return progress_num;
 }
 
@@ -267,9 +266,12 @@ void add_source_file_commands(core::models::Session *session,
   std::list<std::string> deps{working_folder.Sub("flags.make").Stringify(),
                               working_folder.Sub("toolchain.make").Stringify()};
 
+  auto full_qualified_path = source_file->FullQualifiedPath.Stringify();
+  auto source_filename =
+      session->Project->Resolve(full_qualified_path).Stringify();
+
   // if not in nolint.txt, lint file
-  if (!rule->InNolint(session->Project->Resolve(*source_file->FullQualifiedPath)
-                          .Stringify())) {
+  if (!rule->InNolint(source_filename)) {
     deps.push_back(
         source_file->ResolveFullQualifiedLintPath(working_folder).Stringify());
   }
@@ -284,15 +286,10 @@ void add_source_file_commands(core::models::Session *session,
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
-       fmt::format(
-           "--progress-num={}",
-           rule->Steps.Step(source_file->FullQualifiedPath->Stringify())),
+       fmt::format("--progress-num={}", rule->Steps.Step(full_qualified_path)),
        fmt::format("--progress-dir={}",
                    session->Project->BuildRoot.Stringify()),
        fmt::format("Building CXX object {}", object_file.Stringify())});
-
-  auto source_filename =
-      session->Project->Resolve(*source_file->FullQualifiedPath).Stringify();
 
   auto dep =
       ranges::views::concat(headers, ranges::views::single(source_filename));
@@ -300,7 +297,7 @@ void add_source_file_commands(core::models::Session *session,
   auto mkdir_stmt = core::builder::CustomCommandLine::Make(
       {"@$(MKDIR)", object_file.Path.parent_path().string()});
 
-  if (*source_file->IsCppSourceFile) {
+  if (source_file->IsCppSourceFile) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
          "$(CXXFLAGS)", fmt::format("$({}_CXXFLAGS)", build_type), "-o",
@@ -309,7 +306,7 @@ void add_source_file_commands(core::models::Session *session,
     makefile->Target(object_file.Stringify(), dep,
                      core::builder::CustomCommandLines::Multiple(
                          print_stmt, mkdir_stmt, build_stmt));
-  } else if (*source_file->IsCSourceFile) {
+  } else if (source_file->IsCSourceFile) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CC)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
          "$(CFLAGS)", fmt::format("$({}_CFLAGS)", build_type), "-o",
@@ -319,8 +316,7 @@ void add_source_file_commands(core::models::Session *session,
                      core::builder::CustomCommandLines::Multiple(
                          print_stmt, mkdir_stmt, build_stmt));
   } else {
-    logger->info("unknown file extension: {}",
-                 source_file->FullQualifiedPath->Path.extension().string());
+    logger->info("unknown file extension: {}", full_qualified_path);
   }
 }
 
@@ -331,7 +327,7 @@ std::vector<std::string> CCLibraryCompiler::lint_headers(
   for (const auto &filename : rule->ExpandedHeaderFiles) {
     auto source_file = models::cc::SourceFile(filename, rule);
 
-    if (rule->InNolint(session->Project->Resolve(*source_file.FullQualifiedPath)
+    if (rule->InNolint(session->Project->Resolve(source_file.FullQualifiedPath)
                            .Stringify())) {
       continue;
     }
@@ -358,7 +354,7 @@ std::vector<std::string> CCLibraryCompiler::add_source_files_commands(
     if (!source_file.lint) {
       source_file.lint = true;
       if (!rule->InNolint(
-              session->Project->Resolve(*source_file.FullQualifiedPath)
+              session->Project->Resolve(source_file.FullQualifiedPath)
                   .Stringify())) {
         add_source_files_lint_commands(session, working_folder, rule, makefile,
                                        &source_file);
@@ -370,7 +366,7 @@ std::vector<std::string> CCLibraryCompiler::add_source_files_commands(
                              ranges::views::all(*lint_header_targets));
 
     if (rule->ExpandedAlwaysCompileFiles.contains(
-            session->Project->Resolve(*source_file.FullQualifiedPath)
+            session->Project->Resolve(source_file.FullQualifiedPath)
                 .Stringify())) {
       makefile->Target(
           source_file.ResolveFullQualifiedObjectPath(working_folder, build_type)

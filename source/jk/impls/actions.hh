@@ -77,7 +77,7 @@ void PrepareDependencies(core::models::Session *session,
                         core::models::BuildRule *>
 {
   auto make_dep_str_to_rule = [package](core::models::BuildRule *rule) {
-    for (const auto &_dep : *rule->Base->Dependencies) {
+    for (const auto &_dep : rule->Base->Dependencies) {
       auto dep = core::models::ParseIdString(_dep);
       switch (dep.Position) {
         case core::models::RuleRelativePosition::kAbsolute: {
@@ -137,7 +137,7 @@ inline auto LoadBuildFile(core::models::Session *session,
 
   std::vector<std::string> next_files;
   for (auto rule : pkg->IterRules()) {
-    for (const auto &_dep : *rule->Base->Dependencies) {
+    for (const auto &_dep : rule->Base->Dependencies) {
       auto dep = core::models::ParseIdString(_dep);
       switch (dep.Position) {
         case core::models::RuleRelativePosition::kAbsolute:

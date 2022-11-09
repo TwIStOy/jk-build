@@ -24,10 +24,10 @@ set(CMAKE_CXX_FLAGS_DEBUG
     "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
 set(CMAKE_LINKER_FLAGS_DEBUG
     "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
-# set(CMAKE_CXX_FLAGS_DEBUG
-#     "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2 -fsanitize=address")
-# set(CMAKE_LINKER_FLAGS_DEBUG
-#     "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -g2 -fsanitize=address")
+#set(CMAKE_CXX_FLAGS_DEBUG
+#    "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2 -fsanitize=address")
+#set(CMAKE_LINKER_FLAGS_DEBUG
+#    "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -g2 -fsanitize=address")
 
 if(CMAKE_BUILD_TYPE EQUAL "Debug")
   include(CodeCoverage)
@@ -211,6 +211,9 @@ target_link_libraries(
 
 add_subdirectory(third-party/range-v3)
 target_link_libraries(libjk PUBLIC range-v3)
+
+add_subdirectory(third-party/gperftools)
+# target_link_libraries(libjk PUBLIC tcmalloc_static)
 
 # --- source fies ---
 

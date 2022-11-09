@@ -33,7 +33,7 @@ auto BuildRule::Prepare(core::models::Session *session) -> std::future<void> {
 
 void BuildRule::DoPrepare(core::models::Session *session) {
   WorkingFolder =
-      session->Project->BuildRoot.Sub(*Base->FullQuotedQualifiedName);
+      session->Project->BuildRoot.Sub(Base->FullQuotedQualifiedName);
 }
 
 const std::vector<std::string> &BuildRule::ExportedFiles(
