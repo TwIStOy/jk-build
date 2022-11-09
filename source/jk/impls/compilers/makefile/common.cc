@@ -11,7 +11,7 @@ namespace jk::impls::compilers::makefile {
 
 core::generators::Makefile new_makefile_with_common_commands(
     core::models::Session *session, const common::AbsolutePath &working_folder,
-    std::string_view filename) {
+    std::string_view filename, bool no_include) {
   core::generators::Makefile makefile(working_folder.Sub(filename),
                                       {session->WriterFactory.get()});
 
@@ -46,7 +46,7 @@ core::generators::Makefile new_makefile_with_common_commands(
                   ranges::views::empty<std::string>,
                   ranges::views::empty<core::builder::CustomCommandLine>);
 
-  if (filename == "build.make") {
+  if (!no_include) {
     makefile.Include(working_folder.Sub("flags.make").Path.string(),
                      "Include the compile flags for this rule's objectes.",
                      true);

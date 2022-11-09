@@ -150,7 +150,7 @@ auto RootCompiler::Compile(
     std::vector<core::models::BuildRule *> rules,
     const std::vector<std::string> &cli_arguments) const -> void {
   auto makefile = new_makefile_with_common_commands(
-      session, session->Project->ProjectRoot, "Makefile");
+      session, session->Project->ProjectRoot, "Makefile", true);
 
   makefile.Target("all", ranges::views::single("debug"),
                   ranges::views::empty<core::builder::CustomCommandLine>);
@@ -242,16 +242,22 @@ auto RootCompiler::Compile(
     generate_targets(session, &makefile, &clean_targets, &test_targets, r);
   }
 
-  for (auto rule : rules) {
+  for (auto rule : all_rules) {
     for (const auto &build_type : session->BuildTypes) {
       auto tgt_name =
           fmt::format("{}/{}", rule->Base->FullQualifiedName, build_type);
-      makefile.Target(absl::AsciiStrToLower(build_type),
+      makefile.Target(build_type,
                       ranges::views::concat(ranges::views::single(tgt_name),
                                             ranges::views::single("pre")),
                       ranges::views::empty<core::builder::CustomCommandLine>,
                       "", true);
     }
+  }
+
+  for (const auto &build_type : session->BuildTypes) {
+    makefile.Target(
+        absl::AsciiStrToLower(build_type), ranges::views::single(build_type),
+        ranges::views::empty<core::builder::CustomCommandLine>, "simple usage");
   }
   makefile.Target("clean", clean_targets,
                   ranges::views::empty<core::builder::CustomCommandLine>, "",

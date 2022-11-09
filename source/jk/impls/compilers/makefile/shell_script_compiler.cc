@@ -24,11 +24,11 @@ auto ShellScriptCompiler::Compile(
     core::models::Session *session,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     core::models::BuildRule *_rule) const -> void {
-  auto rule = dynamic_cast<rules::ShellScript *>(_rule);
+  auto rule           = dynamic_cast<rules::ShellScript *>(_rule);
   auto working_folder = session->Project->BuildRoot;
 
-  auto makefile =
-      new_makefile_with_common_commands(session, rule->WorkingFolder);
+  auto makefile = new_makefile_with_common_commands(
+      session, rule->WorkingFolder, "build.make", true);
 
   makefile.Env("JK_COMMAND", "jk");
 
@@ -49,11 +49,11 @@ auto ShellScriptCompiler::Compile(
                           .Stringify()});
 
     auto run_stmt = core::builder::CustomCommandLine::Make(
-        {fmt::format("@{}/{}",session->Project->Resolve(rule->Package->Path),
-                         rule->Script),
+        {fmt::format("@{}/{}", session->Project->Resolve(rule->Package->Path),
+                     rule->Script),
          ToString(session->Project->Platform)});
-    auto touch_stmt = core::builder::CustomCommandLine::Make(
-        {"@touch", script_target});
+    auto touch_stmt =
+        core::builder::CustomCommandLine::Make({"@touch", script_target});
 
     makefile.Target(
         script_target,

@@ -17,7 +17,8 @@ namespace jk::impls::compilers::makefile {
 
 core::generators::Makefile new_makefile_with_common_commands(
     core::models::Session *session, const common::AbsolutePath &working_folder,
-    std::string_view filename = "build.make");
+    std::string_view filename = "build.make",
+    bool no_include = false);
 
 inline auto PrintStatement(core::filesystem::JKProject *project,
                            std::string_view color, bool bold, auto &&numbers,
