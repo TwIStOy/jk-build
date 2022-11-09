@@ -25,17 +25,17 @@ auto FileWriter::open(const common::AbsolutePath &p) -> void {
 }
 
 auto FileWriter::write_line(std::string_view s) -> Writer * {
-  ofs_ << s << "\n";
+  oss_ << s << "\n";
   return this;
 }
 
 auto FileWriter::write_line() -> Writer * {
-  ofs_ << "\n";
+  oss_ << "\n";
   return this;
 }
 
 auto FileWriter::write(std::string_view s) -> Writer * {
-  ofs_ << s;
+  oss_ << s;
   return this;
 }
 
@@ -49,7 +49,10 @@ auto FileWriter::flush() -> void {
   auto content = oss_.str();
 
   {
-    std::ifstream ifs(path_);
+    fs::path p(path_);
+    common::AssumeFolder(p.parent_path());
+
+    std::ifstream ifs(p);
     if (ifs) {
       std::string line;
       std::ostringstream oss;
@@ -70,9 +73,11 @@ auto FileWriter::flush() -> void {
 
   logger->info("Update file {}.", path_);
 
-  ofs_ = std::ofstream(path_);
-  ofs_ << content;
-  ofs_.flush();
+  {
+    std::ofstream ofs(path_);
+    ofs << content;
+    ofs.flush();
+  }
 }
 
 auto FileWriterFactory::Create() -> std::unique_ptr<core::interfaces::Writer> {

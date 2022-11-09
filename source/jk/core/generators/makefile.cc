@@ -38,18 +38,19 @@ Makefile::Makefile(common::AbsolutePath path,
   }
 
   print_sep();
+  print_line();
 
   print_comment("default target");
   print_line(DEFAULT_TARGET, ":");
 
-  print_sep();
+  print_line();
 
   print_comment("Delete rule output on recipe failure.");
   print_line(".DELETE_ON_ERROR:");
   print_sep();
+  print_line();
 
   print_comment("Special targets provided by jk.");
-  print_line();
 
   print_line(R"(
 # Disable implicit rules so canonical targets will work.

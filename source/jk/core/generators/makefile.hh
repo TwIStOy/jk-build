@@ -53,6 +53,12 @@ struct Makefile {
   Makefile &Include(std::string_view filename, std::string_view comment = "",
                     bool fatal = false);
 
+  template<typename... Args>
+  Makefile &Comment(Args &&...args) {
+    print_comment(std::forward<Args>(args)...);
+    return *this;
+  }
+
  private:
   void print_range(auto rg) {
     for (const auto &p : rg) {

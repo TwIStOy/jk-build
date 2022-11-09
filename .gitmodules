@@ -19,3 +19,6 @@
 [submodule "third-party/range-v3"]
 	path = third-party/range-v3
 	url = https://github.com/ericniebler/range-v3.git
+[submodule "third-party/gperftools"]
+	path = third-party/gperftools
+	url = https://github.com/gperftools/gperftools.git

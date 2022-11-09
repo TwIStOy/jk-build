@@ -31,7 +31,9 @@ CCLibrary::CCLibrary(core::models::BuildPackage *package, utils::Kwargs kwargs,
 auto CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) -> void {
   static auto empty_list = std::make_optional<std::vector<std::string>>({});
 
-  core::models::BuildRule::ExtractFieldFromArguments(kwargs);
+  BuildRule::ExtractFieldFromArguments(kwargs);
+
+  logger->debug("Extract fields, {}", *Base->FullQualifiedName);
 
   FILL_LIST_FIELD(CFlags, "cflags");
   FILL_LIST_FIELD(CppFlags, "cppflags");
@@ -55,7 +57,7 @@ auto CCLibrary::ExtractFieldFromArguments(const utils::Kwargs &kwargs) -> void {
 
 auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
   // super prepare
-  core::models::BuildRule::DoPrepare(session);
+  BuildRule::DoPrepare(session);
 
   package_root_ = session->Project->Resolve(Package->Path.Path);
 
@@ -138,7 +140,8 @@ auto CCLibrary::prepare_source_files(core::models::Session *session) -> void {
   }
 
   std::sort(std::begin(ExpandedSourceFiles), std::end(ExpandedSourceFiles));
-  logger->debug("SourceFiles in {}: [{}]", *Base->StringifyValue,
+  logger->debug("SourceFiles in {}, from [{}] to [{}]", *Base->StringifyValue,
+                absl::StrJoin(Sources, ", "),
                 absl::StrJoin(ExpandedSourceFiles, ", "));
 }
 

@@ -25,6 +25,7 @@ bool BuildRule::Prepared() const {
 
 auto BuildRule::Prepare(core::models::Session *session) -> std::future<void> {
   return session->Executor->Push([this, session]() {
+    ExtractFieldFromArguments(Base->_kwargs);
     DoPrepare(session);
     prepared_ = true;
   });

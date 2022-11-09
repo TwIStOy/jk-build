@@ -12,10 +12,17 @@
 namespace jk::utils {
 
 auto Stringifiable::Stringify() const -> const std::string & {
-  if (!_cached_to_string.has_value()) [[unlikely]] {
-    _cached_to_string = gen_stringify_cache();
-  }
+  // TODO(hawtian): fix performace issume
+
+  _cached_to_string = gen_stringify_cache();
   return *_cached_to_string;
+
+  /*
+   * if (!_cached_to_string.has_value()) [[unlikely]] {
+   *   _cached_to_string = gen_stringify_cache();
+   * }
+   * return *_cached_to_string;
+   */
 }
 
 bool StringEndsWith(std::string_view full_string,  // {{{

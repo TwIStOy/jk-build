@@ -32,7 +32,7 @@ BuildRuleBase::BuildRuleBase(std::string type_name, RuleType type,
   };
 
   Version = [this] {
-    return _kwargs.StringOptional("version", "");
+    return _kwargs.StringOptional("version", "DEFAULT");
   };
 
   Dependencies = [this] {

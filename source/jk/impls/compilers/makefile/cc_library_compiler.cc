@@ -394,6 +394,11 @@ void CCLibraryCompiler::generate_build_file(
   (void)scc;
   auto makefile = new_makefile_with_common_commands(session, working_folder);
 
+  makefile.Comment("Headers: ", absl::StrJoin(rule->ExpandedHeaderFiles, ", "));
+  makefile.Comment("Sources: ", absl::StrJoin(rule->ExpandedSourceFiles, ", "));
+  makefile.Comment("ACF: ",
+                   absl::StrJoin(rule->ExpandedAlwaysCompileFiles, ", "));
+
   core::builder::CustomCommandLines clean_statements;
 
   // lint headers

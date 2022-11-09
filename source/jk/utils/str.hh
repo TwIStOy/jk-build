@@ -35,6 +35,10 @@ struct Stringifiable {
  protected:
   virtual std::string gen_stringify_cache() const = 0;
 
+  inline void reset_stringify_cache() {
+    return _cached_to_string.reset();
+  }
+
  private:
   mutable std::optional<std::string> _cached_to_string;
 };
