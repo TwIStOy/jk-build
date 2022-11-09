@@ -66,8 +66,8 @@ set(PYTHON_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_b
 set(PYTHON_SHA256 da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814)
 include(BuildPython)
 
-set(OPENSSL_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/openssl-1.1.1i.tar.gz)
-set(OPENSSL_SHA256 e8be6a35fe41d10603c3cc635e93289ed00bf34b79671a3a4de64fcee00d5242)
+set(OPENSSL_URL https://www.openssl.org/source/openssl-1.1.1s.tar.gz)
+set(OPENSSL_SHA256 c5ac01e760ee6ff0dab61d6b2bbd30146724d063eb322180c6f18a6f74e4b6aa)
 include(BuildOpenssl)
 
 set(CURL_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/curl-7.74.0.tar.gz)
