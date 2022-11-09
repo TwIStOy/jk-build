@@ -19,20 +19,6 @@ auto ProtoLibraryCompiler::Name() const -> std::string_view {
   return "makefile.proto_library";
 }
 
-auto ProtoLibraryCompiler::Compile(
-    core::models::Session *session,
-    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-    core::models::BuildRule *_rule) const -> void {
-  auto rule           = dynamic_cast<rules::ProtoLibrary *>(_rule);
-  auto working_folder = rule->WorkingFolder;
-
-  generate_flag_file(session, working_folder, rule);
-
-  generate_toolchain_file(session, working_folder, rule);
-
-  // TODO(hawtian): impl
-}
-
 struct GeneratedPair {
   std::string Header;
   std::string Source;
@@ -66,6 +52,41 @@ GeneratedPair add_proto_file_commands(
                                          ranges::views::single(protoc)));
 
   return {gen_h_file, gen_cc_file};
+}
+
+void ProtoLibraryCompiler::generate_build_file(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+    rules::CCLibrary *_rule) {
+  (void)scc;
+  auto rule = dynamic_cast<rules::ProtoLibrary *>(_rule);
+
+  auto makefile = new_makefile_with_common_commands(session, working_folder);
+
+  makefile.Comment("Sources: ", absl::StrJoin(rule->ExpandedSourceFiles, ", "));
+
+  std::vector<std::string> generated_sources, generated_headers;
+  for (auto &filename : rule->ExpandedSourceFiles) {
+    auto [header, source] = add_proto_file_commands(session, working_folder,
+                                                    &makefile, rule, filename);
+    generated_sources.push_back(std::move(source));
+    generated_headers.push_back(std::move(header));
+  }
+  makefile.Comment("Gen-Headers: ", absl::StrJoin(generated_headers, ", "));
+  makefile.Comment("Gen-Sources: ", absl::StrJoin(generated_sources, ", "));
+
+  auto source_files =
+      generated_sources |
+      ranges::views::transform([rule](const auto &filename) {
+        return std::make_unique<models::cc::SourceFile>(filename, rule);
+      }) |
+      ranges::to_vector;
+
+  for (const auto &build_type : session->BuildTypes) {
+    auto all_objects = add_source_files_commands(
+        session, working_folder, rule, &makefile, &lint_header_targets,
+        source_files, build_type);
+  }
 }
 
 }  // namespace jk::impls::compilers::makefile

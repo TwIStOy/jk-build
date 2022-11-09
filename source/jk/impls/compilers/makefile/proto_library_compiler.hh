@@ -15,6 +15,12 @@ struct ProtoLibraryCompiler : public CCLibraryCompiler {
       core::models::Session *session,
       const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
       core::models::BuildRule *rule) const override;
+
+  void generate_build_file(
+      core::models::Session *session,
+      const common::AbsolutePath &working_folder,
+      const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
+      rules::CCLibrary *rule) override;
 };
 
 }  // namespace jk::impls::compilers::makefile
