@@ -279,10 +279,10 @@ void add_source_file_commands(core::models::Session *session,
   auto object_file =
       source_file->ResolveFullQualifiedObjectPath(working_folder, build_type);
 
-  makefile->Target(object_file.Stringify(), deps,
-                   ranges::views::empty<core::builder::CustomCommandLine>);
   makefile->Include(
       source_file->ResolveFullQualifiedDotDPath(working_folder).Stringify());
+  makefile->Target(object_file.Stringify(), deps,
+                   ranges::views::empty<core::builder::CustomCommandLine>);
 
   auto print_stmt = core::builder::CustomCommandLine::Make(
       {"@$(PRINT)", "--switch=$(COLOR)", "--green",
@@ -448,7 +448,7 @@ void CCLibraryCompiler::generate_build_file(
             ranges::views::single(ar_stmt)));
 
     auto gen_rm = [](const auto &str) {
-      return core::builder::CustomCommandLine::Make({"$(RM)", str});
+      return core::builder::CustomCommandLine::Make({"@$(RM)", str});
     };
 
     clean_statements.push_back(core::builder::CustomCommandLine::Make(

@@ -37,9 +37,10 @@ struct Makefile {
                    U &&cmds = ranges::views::empty<builder::CustomCommandLine>,
                    std::string_view comment = "", bool phony = false) {
     print_comment(comment);
-    print(name, ": ");
-    print_range(deps);
-    print_line();
+    for (auto&& dep : deps) {
+      print_line(name, ": ", dep);
+    }
+    print_line(name, ":");
     for (const auto &stmt : cmds) {
       print_line("\t", stmt.Stringify());
     }
