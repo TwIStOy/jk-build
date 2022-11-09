@@ -213,7 +213,9 @@ add_subdirectory(third-party/range-v3)
 target_link_libraries(libjk PUBLIC range-v3)
 
 add_subdirectory(third-party/gperftools)
-# target_link_libraries(libjk PUBLIC tcmalloc_static)
+if(CMAKE_BUILD_TYPE EQUAL "Release")
+  target_link_libraries(libjk PUBLIC tcmalloc_static)
+endif()
 
 # --- source fies ---
 
