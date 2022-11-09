@@ -44,6 +44,8 @@ class BuildRule {
 
   std::vector<std::pair<std::string, std::string>> ExportedEnvironmentVars;
 
+  std::vector<std::string> InherentFlags;
+
   //! Returns the absolute paths of what will this build-rule generated without
   //! build_type specifyed
   std::vector<std::string> Artifacts;

@@ -64,8 +64,6 @@ auto CCLibraryCompiler::DoCompile(
     rules::CCLibrary *rule) const -> void {
   auto working_folder = rule->WorkingFolder;
 
-  logger->info("compile rule: {}:{}", rule->Package->Name, rule->Base->Name);
-
   generate_flag_file(session, working_folder, rule);
 
   generate_toolchain_file(session, working_folder, rule);
@@ -102,11 +100,12 @@ void CCLibraryCompiler::generate_flag_file(
 
   makefile.Env(CPPFLAGS, absl::StrJoin(rule->ExpandedCFileFlags, " "));
 
-  makefile.Env(CXXFLAGS,
-               absl::StrJoin(ranges::views::concat(
-                                 ranges::views::all(rule->CxxFlags),
-                                 ranges::views::all(session->ExtraFlags)),
-                             " "));
+  makefile.Env(CXXFLAGS, absl::StrJoin(ranges::views::concat(
+                                           rule->CxxFlags, session->ExtraFlags),
+                                       " "));
+
+  makefile.Env("INHERENT_FLAGS",
+               absl::StrJoin(rule->ResolvedInherentFlags, " "));
 
   auto cppincludes = ranges::views::concat(
       ranges::views::single("-isystem"),
@@ -170,11 +169,19 @@ void CCLibraryCompiler::generate_flag_file(
 
   absl::flat_hash_set<uint32_t> visited;
   auto dfs = [&visited, &makefile](core::models::BuildRule *rule, auto &&dfs) {
+    if (visited.contains(rule->Base->ObjectId)) {
+      return;
+    }
+    visited.insert(rule->Base->ObjectId);
+
     for (const auto &[k, v] : rule->ExportedEnvironmentVars) {
       makefile.Env(
           fmt::format("{}_{}",
                       rule->Base->FullQuotedQualifiedNameWithoutVersion, k),
           v);
+    }
+    for (auto dep : rule->Dependencies) {
+      dfs(dep, dfs);
     }
   };
   dfs(rule, dfs);
@@ -299,8 +306,9 @@ void add_source_file_commands(core::models::Session *session,
   if (source_file->IsCppSourceFile) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CXX)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
-         "$(CXXFLAGS)", fmt::format("$({}_CXXFLAGS)", build_type), "-o",
-         object_file.Stringify(), "-c", source_filename});
+         "$(CXXFLAGS)", fmt::format("$({}_CXXFLAGS)", build_type),
+         "$(INHERENT_FLAGS)", "-o", object_file.Stringify(), "-c",
+         source_filename});
 
     makefile->Target(object_file.Stringify(), dep,
                      core::builder::CustomCommandLines::Multiple(
@@ -308,8 +316,9 @@ void add_source_file_commands(core::models::Session *session,
   } else if (source_file->IsCSourceFile) {
     auto build_stmt = core::builder::CustomCommandLine::Make(
         {"@$(CC)", "$(CPP_DEFINES)", "$(CPP_INCLUDES)", "$(CPPFLAGS)",
-         "$(CFLAGS)", fmt::format("$({}_CFLAGS)", build_type), "-o",
-         object_file.Stringify(), "-c", source_filename});
+         "$(CFLAGS)", fmt::format("$({}_CFLAGS)", build_type),
+         "$(INHERENT_FLAGS)", "-o", object_file.Stringify(), "-c",
+         source_filename});
 
     makefile->Target(object_file.Stringify(), dep,
                      core::builder::CustomCommandLines::Multiple(

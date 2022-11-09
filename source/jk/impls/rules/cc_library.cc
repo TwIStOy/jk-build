@@ -101,6 +101,7 @@ auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
   // step 8. construct include and define flags
   prepare_include_flags(session);
   prepare_define_flags(session);
+  prepare_inherent_flags(session);
 }
 
 auto CCLibrary::prepare_nolint_files(core::models::Session *session) -> void {
@@ -219,7 +220,6 @@ auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
         ResolvedIncludes.insert(fmt::format("-I{}", s));
       }
     }
-    // TODO(hawtian): ExtraIncludes
 
     for (auto dep : rule->Dependencies) {
       dfs(dep, dfs);
@@ -250,6 +250,23 @@ auto CCLibrary::prepare_define_flags(core::models::Session *) -> void {
         ResolvedDefines.insert(fmt::format("-D{}", s));
       }
     }
+    for (auto dep : rule->Dependencies) {
+      dfs(dep, dfs);
+    }
+  };
+
+  dfs(this, dfs);
+}
+
+auto CCLibrary::prepare_inherent_flags(core::models::Session *) -> void {
+  absl::flat_hash_set<uint32_t> visisted;
+  auto dfs = [this, &visisted](core::models::BuildRule *rule, auto &&dfs) {
+    if (visisted.contains(rule->Base->ObjectId)) {
+      return;
+    }
+    visisted.insert(rule->Base->ObjectId);
+    ResolvedInherentFlags.insert(std::begin(rule->InherentFlags),
+                                 std::end(rule->InherentFlags));
     for (auto dep : rule->Dependencies) {
       dfs(dep, dfs);
     }

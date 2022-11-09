@@ -37,6 +37,8 @@ class CCLibrary : public core::models::BuildRule {
   std::vector<std::string> Headers;
   std::vector<std::string> AlwaysCompile;
 
+  std::vector<std::string> InherentFlags;
+
   const std::vector<std::string> &ExportedFiles(
       core::models::Session *session, std::string_view build_type) override;
 
@@ -51,6 +53,7 @@ class CCLibrary : public core::models::BuildRule {
   void prepare_always_compile_files(core::models::Session *session);
   void prepare_include_flags(core::models::Session *session);
   void prepare_define_flags(core::models::Session *session);
+  void prepare_inherent_flags(core::models::Session *session);
 
   std::optional<common::AbsolutePath> package_root_;
   absl::flat_hash_set<std::string> excludes_;
@@ -66,6 +69,7 @@ class CCLibrary : public core::models::BuildRule {
   std::vector<std::string> ExpandedCppFileFlags;
   absl::flat_hash_set<std::string> ResolvedIncludes;
   absl::flat_hash_set<std::string> ResolvedDefines;
+  absl::flat_hash_set<std::string> ResolvedInherentFlags;
 
   template<typename T>
   bool InNolint(T &&name) const;
