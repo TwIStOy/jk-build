@@ -7,6 +7,7 @@
 #include <concepts>
 #include <string_view>
 
+#include "absl/strings/str_join.h"
 #include "jk/core/algorithms/tarjan.hh"
 #include "jk/core/models/build_package_factory.hh"
 #include "jk/core/models/build_rule_base.hh"
@@ -16,6 +17,7 @@
 #include "jk/core/models/session.hh"
 #include "jk/impls/actions.hh"
 #include "jk/utils/assert.hh"
+#include "jk/utils/logging.hh"
 #include "jk/version.h"
 #include "range/v3/range/concepts.hpp"
 #include "range/v3/range/conversion.hpp"
@@ -50,6 +52,8 @@ auto generate_all(core::models::Session *session,
            std::same_as<ranges::range_value_t<decltype(rg)>,
                         core::models::BuildRuleId>
 {
+  static auto logger = utils::Logger("generate_all");
+
   LoadBuildFiles(session, interp, package_factory, rule_factory,
                  rg | ranges::views::transform([](auto &id) -> decltype(auto) {
                    return *id.PackageName;

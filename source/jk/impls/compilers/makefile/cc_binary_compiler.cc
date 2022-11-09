@@ -26,7 +26,7 @@
 
 namespace jk::impls::compilers::makefile {
 
-static auto logger = utils::Logger("compiler.makefile.cc_library");
+static auto logger = utils::Logger("compiler.makefile.cc_binary");
 
 auto CCBinaryCompiler::Name() const -> std::string_view {
   return "makefile.cc_binary";
@@ -113,6 +113,11 @@ void CCBinaryCompiler::generate_build_file(
         dfs(n, dfs);
       }
     };
+    dfs(rule->_scc_id, dfs);
+
+    logger->debug("visited {}: [{}]", rule->Base->StringifyValue,
+                  absl::StrJoin(visited, ", "));
+
     auto sorted = core::algorithms::topological_sort(scc);
 
     auto dependencies_artifact = sorted | ranges::views::filter([&](auto id) {

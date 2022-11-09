@@ -59,7 +59,7 @@ class BuildRule {
   //! generator.
   common::CountableSteps Steps;
 
-  uint32_t _scc_id;
+  int32_t _scc_id = -1;
 
  protected:
   BuildRule(BuildPackage *package, std::string type_name, RuleType type,

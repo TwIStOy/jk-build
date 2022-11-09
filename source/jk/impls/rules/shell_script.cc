@@ -42,9 +42,8 @@ auto ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs)
     if (it->second.value.index() == 1) {
       Exports.clear();
 
-      std::vector<std::string> res;
       for (const auto &x : std::get<1>(it->second.value)) {
-        res.push_back(std::get<0>(x->value));
+        Exports.push_back(std::get<0>(x->value));
       }
       break;
     }
@@ -71,9 +70,10 @@ auto ShellScript::ExtractFieldFromArguments(const utils::Kwargs &kwargs)
 }
 
 auto ShellScript::DoPrepare(core::models::Session *session) -> void {
+  BuildRule::DoPrepare(session);
+
   Artifacts =
-      ranges::views::all(Exports) |
-      ranges::views::transform([&](const std::string &lib) {
+      Exports | ranges::views::transform([&](const std::string &lib) {
         return session->Project->ProjectRoot
             .Sub(".build", ".lib",
                  fmt::format("m{}", ToString(session->Project->Platform)),
@@ -87,6 +87,12 @@ auto ShellScript::DoPrepare(core::models::Session *session) -> void {
   for (const auto &pr : ExportBin) {
     ExportedEnvironmentVars.push_back(pr);
   }
+}
+
+auto ShellScript::ExportedFiles(core::models::Session *session,
+                                std::string_view build_type)
+    -> const std::vector<std::string> & {
+  return Artifacts;
 }
 
 }  // namespace jk::impls::rules

@@ -10,9 +10,9 @@
 namespace jk::impls::compilers::makefile {
 
 core::generators::Makefile new_makefile_with_common_commands(
-    core::models::Session *session,
-    const common::AbsolutePath &working_folder) {
-  core::generators::Makefile makefile(working_folder.Sub("build.make"),
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    std::string_view filename) {
+  core::generators::Makefile makefile(working_folder.Sub(filename),
                                       {session->WriterFactory.get()});
 
   makefile.Env("SHELL", "/bin/bash",
@@ -46,10 +46,13 @@ core::generators::Makefile new_makefile_with_common_commands(
                   ranges::views::empty<std::string>,
                   ranges::views::empty<core::builder::CustomCommandLine>);
 
-  makefile.Include(working_folder.Sub("flags.make").Path.string(),
-                   "Include the compile flags for this rule's objectes.", true);
-  makefile.Include(working_folder.Sub("toolchain.make").Path.string(),
-                   "Include used toolchains for this rule's objects.", true);
+  if (filename == "build.make") {
+    makefile.Include(working_folder.Sub("flags.make").Path.string(),
+                     "Include the compile flags for this rule's objectes.",
+                     true);
+    makefile.Include(working_folder.Sub("toolchain.make").Path.string(),
+                     "Include used toolchains for this rule's objects.", true);
+  }
 
   makefile.Target("all", ranges::views::single("DEBUG"),
                   ranges::views::empty<core::builder::CustomCommandLine>, "",

@@ -25,6 +25,7 @@ auto ShellScriptCompiler::Compile(
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     core::models::BuildRule *_rule) const -> void {
   auto rule = dynamic_cast<rules::ShellScript *>(_rule);
+  auto working_folder = session->Project->BuildRoot;
 
   auto makefile =
       new_makefile_with_common_commands(session, rule->WorkingFolder);

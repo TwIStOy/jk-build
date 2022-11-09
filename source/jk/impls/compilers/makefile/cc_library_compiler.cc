@@ -62,8 +62,7 @@ auto CCLibraryCompiler::DoCompile(
     core::models::Session *session,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     rules::CCLibrary *rule) const -> void {
-  auto working_folder =
-      session->Project->BuildRoot.Sub(rule->Base->FullQuotedQualifiedName);
+  auto working_folder = rule->WorkingFolder;
 
   logger->info("compile rule: {}:{}", rule->Package->Name, rule->Base->Name);
 
@@ -438,8 +437,11 @@ void CCLibraryCompiler::generate_build_file(
         ranges::views::concat(
             ranges::views::all(all_objects),
             ranges::views::all(lint_header_targets),
+            ranges::views::single(working_folder.Sub("build.make").Stringify()),
             ranges::views::single(
-                working_folder.Sub("build.make").Stringify())),
+                working_folder.Sub("toolchain.make").Stringify()),
+            ranges::views::single(
+                working_folder.Sub("flags.make").Stringify())),
         ranges::views::concat(
             ranges::views::single(print_stmt),
             ranges::views::single(core::builder::CustomCommandLine::Make(

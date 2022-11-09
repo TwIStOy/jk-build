@@ -39,7 +39,7 @@ auto merge_numbers(core::models::BuildRule *rule,
   visited->insert(rule->Base->ObjectId);
 
   return ranges::views::concat(
-      ranges::views::all(rule->Steps.Steps()),
+      rule->Steps.Steps(),
       rule->Dependencies | ranges::views::transform([visited](auto r) {
         return merge_numbers(r, visited);
       }) | ranges::views::join);
@@ -51,7 +51,7 @@ auto generate_targets(core::models::Session *session,
                       std::vector<std::string> *test_targets,
                       core::models::BuildRule *rule) {
   absl::flat_hash_set<uint32_t> visited;
-  auto numbers = merge_numbers(rule, &visited);
+  auto numbers = merge_numbers(rule, &visited) | ranges::to_vector;
 
   // add clean target
   if (rule->Base->Type.IsExternal()) {
@@ -149,8 +149,8 @@ auto RootCompiler::Compile(
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
     std::vector<core::models::BuildRule *> rules,
     const std::vector<std::string> &cli_arguments) const -> void {
-  auto makefile =
-      new_makefile_with_common_commands(session, session->Project->ProjectRoot);
+  auto makefile = new_makefile_with_common_commands(
+      session, session->Project->ProjectRoot, "Makefile");
 
   makefile.Target("all", ranges::views::single("debug"),
                   ranges::views::empty<core::builder::CustomCommandLine>);

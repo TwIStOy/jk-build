@@ -22,6 +22,9 @@ class ShellScript : public core::models::BuildRule {
   std::vector<std::string> LdFlags;
   std::unordered_map<std::string, std::string> ExportBin;
 
+  const std::vector<std::string> &ExportedFiles(
+      core::models::Session *session, std::string_view build_type) override;
+
  protected:
   void ExtractFieldFromArguments(const utils::Kwargs &kwargs) override;
 };

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <stack>
+#include <string>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -37,18 +38,21 @@ inline auto Tarjan(models::Session *session, auto rg) {
   std::vector<bool> in_stack(models::__CurrentObjectId(), false);
 
   auto dfs = [&](models::BuildRule *rule, auto &&dfs) -> void {
-    low[rule->Base->ObjectId] = dfn[rule->Base->ObjectId] = ++dfncnt;
+    ++dfncnt;
+
+    auto u = rule->Base->ObjectId;
+
+    low[u] = dfn[u] = dfncnt;
     stack.push(rule);
-    in_stack[rule->Base->ObjectId] = true;
+    in_stack[u] = true;
 
     for (auto n : rule->Dependencies) {
-      if (dfn[n->Base->ObjectId] == 0) {
+      auto v = n->Base->ObjectId;
+      if (dfn[v] == 0) {
         dfs(n, dfs);
-        low[n->Base->ObjectId] =
-            std::min(low[rule->Base->ObjectId], low[n->Base->ObjectId]);
+        low[u] = std::min<uint32_t>(low[u], low[v]);
       } else if (in_stack[n->Base->ObjectId]) {
-        low[n->Base->ObjectId] =
-            std::min(low[rule->Base->ObjectId], dfn[n->Base->ObjectId]);
+        low[u] = std::min<uint32_t>(low[u], dfn[v]);
       }
     }
 
@@ -67,8 +71,18 @@ inline auto Tarjan(models::Session *session, auto rg) {
       in_stack[stack.top()->Base->ObjectId] = false;
       stack.pop();
 
-      sccs.push_back(StronglyConnectedComponent{.Rules = std::move(current_scc),
-                                                .Deps  = {}});
+      absl::flat_hash_set<uint32_t> Deps;
+      for (auto r : current_scc) {
+        for (auto d : r->Dependencies) {
+          assert(d->_scc_id >= 0);
+          if (d->_scc_id != scc_id) {
+            Deps.insert(d->_scc_id);
+          }
+        }
+      }
+
+      sccs.push_back(StronglyConnectedComponent{
+          .Rules = std::move(current_scc), .Deps = Deps | ranges::to_vector});
     }
   };
 
@@ -76,26 +90,15 @@ inline auto Tarjan(models::Session *session, auto rg) {
     dfs(x, dfs);
   }
 
-  for (auto x : rg) {
-    for (auto n : x->Dependencies) {
-      if (x->_scc_id != n->_scc_id) {
-        sccs[x->_scc_id].Deps.push_back(n->_scc_id);
-      }
-    }
-  }
-
-  for (auto &scc : sccs) {
-    scc.Deps = scc.Deps | ranges::to<absl::flat_hash_set<uint32_t>> |
-               ranges::to_vector;
-  }
-
   for (auto i = 0; i < sccs.size(); i++) {
     logger->info(
         "scc[{}], rules: [{}], deps: [{}]", i,
-        absl::StrJoin(sccs[i].Rules | ranges::views::transform([](auto x) {
-                        return x->Base->ObjectId;
+        absl::StrJoin(sccs[i].Rules, ",",
+                      [](std::string *output, auto rule) {
+                        output->append(std::to_string(rule->Base->ObjectId));
+                        output->append(": ");
+                        output->append(rule->Base->FullQualifiedName);
                       }),
-                      ","),
         absl::StrJoin(sccs[i].Deps, ","));
   }
   logger->flush();
