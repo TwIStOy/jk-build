@@ -57,23 +57,22 @@ SourceFile::SourceFile(const common::ProjectRelativePath &filename,
 }
 
 SourceFile::SourceFile(std::string filename, core::models::BuildRule *rule)
-    : FileName(std::move(filename)),
-      Rule(rule),
-      FullQualifiedPath(Rule->Package->Path.Sub(FileName)),
+    : Rule(rule),
+      FullQualifiedPath(Rule->Package->Path.Sub(filename)),
       FullQualifiedObjectPath([this]() {
         auto p = FullQualifiedPath;
         p.Path = p.Path.parent_path() / (p.Path.filename().string() + ".o");
         return p;
       }()) {
   IsCSourceFile = [this]() {
-    fs::path p = FileName;
-    auto ext   = absl::AsciiStrToLower(p.extension().string());
+    auto ext =
+        absl::AsciiStrToLower(FullQualifiedPath.Path.extension().string());
     return CExtensions.contains(ext);
   }();
 
   IsCppSourceFile = [this]() {
-    fs::path p = FileName;
-    auto ext   = absl::AsciiStrToLower(p.extension().string());
+    auto ext =
+        absl::AsciiStrToLower(FullQualifiedPath.Path.extension().string());
     return CppExtensions.contains(ext);
   }();
 
@@ -82,8 +81,8 @@ SourceFile::SourceFile(std::string filename, core::models::BuildRule *rule)
   }();
 
   IsHeaderFile = [this]() {
-    fs::path p = FileName;
-    auto ext   = absl::AsciiStrToLower(p.extension().string());
+    auto ext =
+        absl::AsciiStrToLower(FullQualifiedPath.Path.extension().string());
     return HeaderExtensions.contains(ext);
   }();
 }
