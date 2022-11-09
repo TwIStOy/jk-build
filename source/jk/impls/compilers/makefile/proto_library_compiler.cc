@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "jk/core/generators/makefile.hh"
+#include "jk/core/models/build_package.hh"
 #include "jk/core/models/session.hh"
 #include "jk/impls/compilers/makefile/common.hh"
 #include "jk/impls/rules/proto_library.hh"
@@ -57,7 +58,7 @@ GeneratedPair add_proto_file_commands(
 void ProtoLibraryCompiler::generate_build_file(
     core::models::Session *session, const common::AbsolutePath &working_folder,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-    rules::CCLibrary *_rule) {
+    rules::CCLibrary *_rule) const {
   (void)scc;
   auto rule = dynamic_cast<rules::ProtoLibrary *>(_rule);
 
@@ -67,26 +68,22 @@ void ProtoLibraryCompiler::generate_build_file(
 
   std::vector<std::string> generated_sources, generated_headers;
   for (auto &filename : rule->ExpandedSourceFiles) {
-    auto [header, source] = add_proto_file_commands(session, working_folder,
-                                                    &makefile, rule, filename);
+    auto [header, source] =
+        add_proto_file_commands(session, working_folder, &makefile, rule,
+                                rule->Package->Path.Sub(filename).Stringify());
+
     generated_sources.push_back(std::move(source));
     generated_headers.push_back(std::move(header));
   }
   makefile.Comment("Gen-Headers: ", absl::StrJoin(generated_headers, ", "));
   makefile.Comment("Gen-Sources: ", absl::StrJoin(generated_sources, ", "));
 
-  auto source_files =
-      generated_sources |
-      ranges::views::transform([rule](const auto &filename) {
-        return std::make_unique<models::cc::SourceFile>(filename, rule);
-      }) |
-      ranges::to_vector;
+  std::vector<std::string> lint_header_targets;
 
-  for (const auto &build_type : session->BuildTypes) {
-    auto all_objects = add_source_files_commands(
-        session, working_folder, rule, &makefile, &lint_header_targets,
-        source_files, build_type);
-  }
+  generate_build_file_impl(session, working_folder, rule, &makefile,
+                           &lint_header_targets, generated_sources, true);
+
+  end_of_generate_build_file(&makefile, session, working_folder, rule);
 }
 
 }  // namespace jk::impls::compilers::makefile

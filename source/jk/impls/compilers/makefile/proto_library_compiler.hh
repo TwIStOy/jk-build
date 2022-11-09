@@ -7,20 +7,15 @@
 
 namespace jk::impls::compilers::makefile {
 
-struct ProtoLibraryCompiler : public CCLibraryCompiler {
+struct ProtoLibraryCompiler final : public CCLibraryCompiler {
  public:
   std::string_view Name() const override;
-
-  void Compile(
-      core::models::Session *session,
-      const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-      core::models::BuildRule *rule) const override;
 
   void generate_build_file(
       core::models::Session *session,
       const common::AbsolutePath &working_folder,
       const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-      rules::CCLibrary *rule) override;
+      rules::CCLibrary *rule) const override;
 };
 
 }  // namespace jk::impls::compilers::makefile

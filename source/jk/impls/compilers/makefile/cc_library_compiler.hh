@@ -57,10 +57,17 @@ struct CCLibraryCompiler : public core::interfaces::Compiler {
       const common::AbsolutePath &working_folder, rules::CCLibrary *rule,
       core::generators::Makefile *makefile,
       std::vector<std::string> *lint_header_targets,
-      std::vector<std::unique_ptr<models::cc::SourceFile>>& source_files,
+      std::vector<std::unique_ptr<models::cc::SourceFile>> &source_files,
       std::string_view build_type) const;
 
- private:
+  void generate_build_file_impl(
+      core::models::Session *session,
+      const common::AbsolutePath &working_folder, rules::CCLibrary *rule,
+      core::generators::Makefile *makefile,
+      std::vector<std::string> *lint_header_targets,
+      const std::vector<std::string> &source_files_raw,
+      bool never_lint = false) const;
+
   void DoCompile(
       core::models::Session *session,
       const std::vector<core::algorithms::StronglyConnectedComponent> &scc,

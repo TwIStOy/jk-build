@@ -37,8 +37,6 @@ class CCLibrary : public core::models::BuildRule {
   std::vector<std::string> Headers;
   std::vector<std::string> AlwaysCompile;
 
-  std::vector<std::string> InherentFlags;
-
   const std::vector<std::string> &ExportedFiles(
       core::models::Session *session, std::string_view build_type) override;
 

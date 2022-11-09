@@ -30,6 +30,7 @@
 #include "jk/impls/compilers/makefile/cc_binary_compiler.hh"
 #include "jk/impls/compilers/makefile/cc_library_compiler.hh"
 #include "jk/impls/compilers/makefile/cc_test_compiler.hh"
+#include "jk/impls/compilers/makefile/proto_library_compiler.hh"
 #include "jk/impls/compilers/makefile/root_compiler.hh"
 #include "jk/impls/compilers/makefile/shell_script_compiler.hh"
 #include "jk/impls/compilers/nop_compiler.hh"
@@ -87,7 +88,7 @@ void Generate(args::Subparser &parser) {
   session->Project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
   session->WriterFactory.reset(new impls::writers::FileWriterFactory());
-  session->Executor.reset(new core::executor::WorkerPool(4));
+  session->Executor.reset(new core::executor::WorkerPool(10));
   session->Executor->Start();
   session->PatternExpander =
       std::make_unique<core::filesystem::DefaultPatternExpander>();
@@ -163,10 +164,8 @@ void Generate(args::Subparser &parser) {
       "makefile", "cc_test");
   compiler_factory->Register<impls::compilers::makefile::ShellScriptCompiler>(
       "makefile", "shell_script");
-
-  // FIXME(hawtian): impl `proto_library` compiler
-  compiler_factory->Register<impls::compilers::NopCompiler>("make_file",
-                                                            "proto_library");
+  compiler_factory->Register<impls::compilers::makefile::ProtoLibraryCompiler>(
+      "makefile", "proto_library");
 
   auto interp =
       std::make_unique<core::executor::ScriptInterpreter>(session.get());

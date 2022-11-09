@@ -403,39 +403,52 @@ void CCLibraryCompiler::generate_build_file(
   makefile.Comment("ACF: ",
                    absl::StrJoin(rule->ExpandedAlwaysCompileFiles, ", "));
 
-  core::builder::CustomCommandLines clean_statements;
-
   // lint headers
   std::vector<std::string> lint_header_targets =
       lint_headers(session, working_folder, rule, &makefile);
 
+  generate_build_file_impl(session, working_folder, rule, &makefile,
+                           &lint_header_targets, rule->ExpandedSourceFiles);
+
+  end_of_generate_build_file(&makefile, session, working_folder, rule);
+}
+
+void CCLibraryCompiler::generate_build_file_impl(
+    core::models::Session *session, const common::AbsolutePath &working_folder,
+    rules::CCLibrary *rule, core::generators::Makefile *makefile,
+    std::vector<std::string> *lint_header_targets,
+    const std::vector<std::string> &source_files_raw, bool never_lint) const {
   auto library_progress_num = rule->Steps.Step(".library");
+  core::builder::CustomCommandLines clean_statements;
 
   auto source_files =
-      rule->ExpandedSourceFiles |
-      ranges::views::transform([rule](const auto &filename) {
+      source_files_raw | ranges::views::transform([rule](const auto &filename) {
         return std::make_unique<models::cc::SourceFile>(filename, rule);
       }) |
       ranges::to_vector;
 
+  if (never_lint) {
+    for (auto &sf : source_files) {
+      sf->lint = true;
+    }
+  }
+
   for (const auto &build_type : session->BuildTypes) {
-    auto all_objects = add_source_files_commands(
-        session, working_folder, rule, &makefile, &lint_header_targets,
-        source_files, build_type);
+    auto all_objects = add_source_files_commands(session, working_folder, rule,
+                                                 makefile, lint_header_targets,
+                                                 source_files, build_type);
 
-    auto library_file = working_folder.Sub(build_type, rule->LibraryFileName);
-    makefile.Target(library_file.Stringify(), ranges::views::empty<std::string>,
-                    ranges::views::empty<core::builder::CustomCommandLine>);
+    auto library_file_file =
+        working_folder.Sub(build_type, rule->LibraryFileName);
+    auto library_file = library_file_file.Stringify();
+    makefile->Target(library_file, ranges::views::empty<std::string>,
+                     ranges::views::empty<core::builder::CustomCommandLine>);
 
-    auto clean_old_library = core::builder::CustomCommandLine::Make({
-        "@$(RM)",
-        library_file.Stringify(),
-    });
+    auto clean_old_library =
+        core::builder::CustomCommandLine::Make({"@$(RM)", library_file});
 
-    auto ar_stmt = core::builder::CustomCommandLine::Make({
-        "@$(AR)",
-        library_file.Stringify(),
-    });
+    auto ar_stmt =
+        core::builder::CustomCommandLine::Make({"@$(AR)", library_file});
     std::copy(std::begin(all_objects), std::end(all_objects),
               std::back_inserter(ar_stmt));
 
@@ -445,14 +458,13 @@ void CCLibraryCompiler::generate_build_file(
                      absl::StrJoin(rule->Steps.Steps(), ",")),
          fmt::format("--progress-dir={}",
                      session->Project->BuildRoot.Stringify()),
-         fmt::format("Linking CXX static library {}",
-                     library_file.Stringify())});
+         fmt::format("Linking CXX static library {}", library_file)});
 
-    makefile.Target(
-        library_file.Stringify(),
+    makefile->Target(
+        library_file,
         ranges::views::concat(
             ranges::views::all(all_objects),
-            ranges::views::all(lint_header_targets),
+            ranges::views::all(*lint_header_targets),
             ranges::views::single(working_folder.Sub("build.make").Stringify()),
             ranges::views::single(
                 working_folder.Sub("toolchain.make").Stringify()),
@@ -461,7 +473,7 @@ void CCLibraryCompiler::generate_build_file(
         ranges::views::concat(
             ranges::views::single(print_stmt),
             ranges::views::single(core::builder::CustomCommandLine::Make(
-                {"@$(MKDIR)", library_file.Path.parent_path().string()})),
+                {"@$(MKDIR)", library_file_file.Path.parent_path().string()})),
             ranges::views::single(clean_old_library),
             ranges::views::single(ar_stmt)));
 
@@ -469,29 +481,26 @@ void CCLibraryCompiler::generate_build_file(
       return core::builder::CustomCommandLine::Make({"@$(RM)", str});
     };
 
-    clean_statements.push_back(core::builder::CustomCommandLine::Make(
-        {"@$(RM)", library_file.Stringify()}));
+    clean_statements.push_back(
+        core::builder::CustomCommandLine::Make({"@$(RM)", library_file}));
     std::transform(std::begin(all_objects), std::end(all_objects),
                    std::back_inserter(clean_statements), gen_rm);
-    std::transform(std::begin(lint_header_targets),
-                   std::end(lint_header_targets),
+    std::transform(std::begin(*lint_header_targets),
+                   std::end(*lint_header_targets),
                    std::back_inserter(clean_statements), gen_rm);
 
     auto build_target = working_folder.Sub(build_type, "build").Stringify();
-    makefile.Target(build_target,
-                    ranges::views::single(library_file.Stringify()),
-                    ranges::views::empty<core::builder::CustomCommandLine>,
-                    "Rule to build all files generated by this target.", true);
+    makefile->Target(build_target, ranges::views::single(library_file),
+                     ranges::views::empty<core::builder::CustomCommandLine>,
+                     "Rule to build all files generated by this target.", true);
 
-    makefile.Target(build_type, ranges::views::single(build_target),
-                    ranges::views::empty<core::builder::CustomCommandLine>,
-                    "Rule to build all files generated by this target.", true);
+    makefile->Target(build_type, ranges::views::single(build_target),
+                     ranges::views::empty<core::builder::CustomCommandLine>,
+                     "Rule to build all files generated by this target.", true);
   }
 
-  makefile.Target("clean", ranges::views::empty<std::string>,
-                  ranges::views::all(clean_statements), "", true);
-
-  end_of_generate_build_file(&makefile, session, working_folder, rule);
+  makefile->Target("clean", ranges::views::empty<std::string>,
+                   ranges::views::all(clean_statements), "", true);
 }
 
 }  // namespace jk::impls::compilers::makefile
