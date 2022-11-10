@@ -15,6 +15,12 @@ class CCBinary : public CCLibrary {
                core::models::RuleTypeEnum::kBinary,
                core::models::RuleTypeEnum::kCC,
            });
+
+  const std::vector<std::string> &ExportedFiles(
+      core::models::Session *session, std::string_view build_type) override;
+
+ private:
+  std::vector<std::string> _binary_tmp_file;
 };
 
 }  // namespace jk::impls::rules

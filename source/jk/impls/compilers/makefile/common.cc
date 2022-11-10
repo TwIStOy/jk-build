@@ -57,9 +57,9 @@ core::generators::Makefile new_makefile_with_common_commands(
   makefile.Target("all", ranges::views::single("DEBUG"),
                   ranges::views::empty<core::builder::CustomCommandLine>, "",
                   true);
-  makefile.Target(
-      "all", ranges::views::single(core::generators::Makefile::DEFAULT_TARGET),
-      ranges::views::empty<core::builder::CustomCommandLine>);
+  makefile.Target(core::generators::Makefile::DEFAULT_TARGET,
+                  ranges::views::single("all"),
+                  ranges::views::empty<core::builder::CustomCommandLine>);
 
   makefile.Target("jk_force", ranges::views::empty<std::string>,
                   ranges::views::empty<core::builder::CustomCommandLine>,

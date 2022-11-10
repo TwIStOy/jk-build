@@ -31,6 +31,20 @@ namespace jk::impls::compilers::makefile {
 
 static auto logger = utils::Logger("compiler.makefile.cc_library");
 
+static std::string FixCpp20Gcc2ClangFlags(const std::string &flag) {
+  if (flag == "-fcoroutines") {
+    return "-fcoroutines-ts";
+  }
+  return flag;
+}
+
+static std::string FixCpp20Clang2GccFlags(const std::string &flag) {
+  if (flag == "-fcoroutines-ts") {
+    return "-fcoroutines";
+  }
+  return flag;
+}
+
 auto CCLibraryCompiler::Name() const -> std::string_view {
   return "makefile.cc_library";
 }

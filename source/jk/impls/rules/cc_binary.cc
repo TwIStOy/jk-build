@@ -10,4 +10,11 @@ CCBinary::CCBinary(core::models::BuildPackage *package, utils::Kwargs kwargs,
     : CCLibrary(package, std::move(kwargs), std::move(type_name), type) {
 }
 
-}  // namespace jk::impls::cc
+auto CCBinary::ExportedFiles(core::models::Session *session,
+                             std::string_view build_type)
+    -> const std::vector<std::string> & {
+  _binary_tmp_file = {WorkingFolder.Sub(build_type, Base->Name).Stringify()};
+  return _binary_tmp_file;
+}
+
+}  // namespace jk::impls::rules

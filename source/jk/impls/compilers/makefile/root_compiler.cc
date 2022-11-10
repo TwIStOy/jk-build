@@ -191,6 +191,7 @@ auto RootCompiler::Compile(
   auto sorted = core::algorithms::topological_sort(scc);
   absl::flat_hash_set<uint32_t> visited;
   auto dfs = [&](uint32_t id, auto &&dfs) -> void {
+    visited.insert(id);
     for (uint32_t n : scc[id].Deps) {
       visited.insert(n);
       dfs(n, dfs);
