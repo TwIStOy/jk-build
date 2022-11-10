@@ -108,11 +108,9 @@ void CCLibraryCompiler::generate_flag_file(
                                            ranges::actions::sort,
                                        " "));
 
-  makefile.Env(
-      CXXFLAGS,
-      absl::StrJoin(ranges::views::concat(rule->CxxFlags, session->ExtraFlags) |
-                        ranges::copy | ranges::actions::sort,
-                    " "));
+  makefile.Env(CXXFLAGS, absl::StrJoin(ranges::views::concat(
+                                           rule->CxxFlags, session->ExtraFlags),
+                                       " "));
 
   makefile.Env("INHERENT_FLAGS",
                absl::StrJoin(rule->ResolvedInherentFlags | ranges::to_vector |
@@ -135,16 +133,14 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(
           ranges::views::concat(
               compile_flags, session->Project->Config().cflags,
-              session->Project->Config().debug_cflags_extra, cppincludes) |
-              ranges::to_vector | ranges::actions::sort,
+              session->Project->Config().debug_cflags_extra, cppincludes),
           " "));
   makefile.Env(
       "DEBUG" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
                         compile_flags, session->Project->Config().cxxflags,
                         session->Project->Config().debug_cxxflags_extra,
-                        cppincludes, cxxincludes) |
-                        ranges::to_vector | ranges::actions::sort,
+                        cppincludes, cxxincludes),
                     " "));
 
   makefile.Env(
@@ -152,8 +148,7 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(
           ranges::views::concat(
               compile_flags, session->Project->Config().cflags,
-              session->Project->Config().release_cflags_extra, cppincludes) |
-              ranges::to_vector | ranges::actions::sort,
+              session->Project->Config().release_cflags_extra, cppincludes),
 
           " "));
   makefile.Env(
@@ -161,8 +156,7 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(ranges::views::concat(
                         compile_flags, session->Project->Config().cxxflags,
                         session->Project->Config().release_cxxflags_extra,
-                        cppincludes, cxxincludes) |
-                        ranges::to_vector | ranges::actions::sort,
+                        cppincludes, cxxincludes),
                     " "));
 
   makefile.Env(
@@ -170,17 +164,14 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(
           ranges::views::concat(
               compile_flags, session->Project->Config().cflags,
-              session->Project->Config().profiling_cflags_extra, cppincludes)
-
-              | ranges::to_vector | ranges::actions::sort,
+              session->Project->Config().profiling_cflags_extra, cppincludes),
           " "));
   makefile.Env(
       "PROFILING" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
                         compile_flags, session->Project->Config().cxxflags,
                         session->Project->Config().profiling_cxxflags_extra,
-                        cppincludes, cxxincludes) |
-                        ranges::to_vector | ranges::actions::sort,
+                        cppincludes, cxxincludes),
                     " "));
 
   makefile.Env(CPP_DEFINES,
