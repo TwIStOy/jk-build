@@ -15,6 +15,7 @@
 #include "range/v3/view/all.hpp"
 #include "range/v3/view/any_view.hpp"
 #include "range/v3/view/concat.hpp"
+#include "range/v3/view/drop.hpp"
 #include "range/v3/view/empty.hpp"
 #include "range/v3/view/filter.hpp"
 #include "range/v3/view/for_each.hpp"
@@ -221,8 +222,9 @@ auto RootCompiler::Compile(
                   ranges::to<absl::flat_hash_set<std::string>>;
 
   auto regen_stmt = core::builder::CustomCommandLine::FromVec(
-      ranges::views::concat(ranges::views::single("-@$(JK_COMMAND)"),
-                            cli::CommandLineArguments) |
+      ranges::views::concat(
+          ranges::views::single("-@$(JK_COMMAND)"),
+          cli::CommandLineArguments | ranges::views::drop(1)) |
       ranges::to_vector);
   auto regen_touch_stmt =
       core::builder::CustomCommandLine::Make({"@touch", regen_target});
