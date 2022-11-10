@@ -5,6 +5,7 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/ascii.h"
+#include "jk/cli/cli.hh"
 #include "jk/core/algorithms/topological_sort.hh"
 #include "jk/core/builder/custom_command.hh"
 #include "jk/core/models/build_package.hh"
@@ -147,8 +148,7 @@ auto generate_targets(core::models::Session *session,
 auto RootCompiler::Compile(
     core::models::Session *session,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-    std::vector<core::models::BuildRule *> rules,
-    const std::vector<std::string> &cli_arguments) const -> void {
+    std::vector<core::models::BuildRule *> rules) const -> void {
   auto makefile = new_makefile_with_common_commands(
       session, session->Project->ProjectRoot, "Makefile", true);
 
@@ -222,7 +222,7 @@ auto RootCompiler::Compile(
 
   auto regen_stmt = core::builder::CustomCommandLine::FromVec(
       ranges::views::concat(ranges::views::single("-@$(JK_COMMAND)"),
-                            cli_arguments) |
+                            cli::CommandLineArguments) |
       ranges::to_vector);
   auto regen_touch_stmt =
       core::builder::CustomCommandLine::Make({"@touch", regen_target});

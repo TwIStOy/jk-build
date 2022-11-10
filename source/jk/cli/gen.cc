@@ -198,8 +198,7 @@ void Generate(args::Subparser &parser) {
           }) |
       ranges::views::join | ranges::to_vector;
 
-  root_compiler.Compile(session.get(), scc, arg_rules,
-                        rules_name | ranges::to_vector);
+  root_compiler.Compile(session.get(), scc, arg_rules);
 
   // waiting for all jobs finished
   session->Executor.reset();
