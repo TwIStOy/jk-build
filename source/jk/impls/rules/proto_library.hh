@@ -15,6 +15,8 @@ class ProtoLibrary : public CCLibrary {
                    core::models::RuleTypeEnum::kLibrary,
                    core::models::RuleTypeEnum::kCC,
                });
+
+  void DoPrepare(core::models::Session *session) override;
 };
 
 }  // namespace jk::impls::rules

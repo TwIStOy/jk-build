@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 
+#include "absl/strings/str_replace.h"
 #include "jk/core/generators/makefile.hh"
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/session.hh"
@@ -43,10 +44,13 @@ GeneratedPair add_proto_file_commands(
        fmt::format("-I{}", session->Project->ProjectRoot.Stringify()),
        std::string(filename)});
 
-  auto gen_cc_file = working_folder.Sub(rule->Package->Path.Path,
-                                        fmt::format("{}.cc", filename));
-  auto gen_h_file  = working_folder.Sub(rule->Package->Path.Path,
-                                        fmt::format("{}.h", filename));
+  std::map<const absl::string_view, const absl::string_view> replacements{
+      {"proto", "pb"}};
+
+  auto gen_cc_file = working_folder.Sub(
+      absl::StrReplaceAll(fmt::format("{}.cc", filename), replacements));
+  auto gen_h_file = working_folder.Sub(
+      absl::StrReplaceAll(fmt::format("{}.h", filename), replacements));
 
   makefile->Target(
       fmt::format("{} {}", gen_cc_file.Stringify(), gen_h_file.Stringify()),

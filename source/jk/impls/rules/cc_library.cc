@@ -86,6 +86,8 @@ auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
     auto artifact = WorkingFolder.Sub(tp, LibraryFileName).Stringify();
     ExportedEnvironmentVars.emplace_back("artifact_" + tp, std::move(artifact));
   }
+  ExportedEnvironmentVars.emplace_back("working_folder",
+                                       WorkingFolder.Stringify());
 
   // step 8. cache flags
   ExpandedCFileFlags.insert(ExpandedCFileFlags.end(), CFlags.begin(),
