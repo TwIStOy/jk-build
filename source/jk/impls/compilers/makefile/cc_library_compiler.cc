@@ -20,8 +20,12 @@
 #include "jk/impls/compilers/makefile/common.hh"
 #include "jk/impls/models/cc/source_file.hh"
 #include "jk/impls/rules/cc_library.hh"
+#include "range/v3/action/sort.hpp"
 #include "range/v3/algorithm/contains.hpp"
+#include "range/v3/algorithm/copy.hpp"
+#include "range/v3/algorithm/sort.hpp"
 #include "range/v3/all.hpp"
+#include "range/v3/range/conversion.hpp"
 #include "range/v3/view/all.hpp"
 #include "range/v3/view/concat.hpp"
 #include "range/v3/view/empty.hpp"
@@ -96,16 +100,24 @@ void CCLibraryCompiler::generate_flag_file(
   // environments
   makefile.Env(WORKING_FOLDER, working_folder.Stringify());
 
-  makefile.Env(CFLAGS, absl::StrJoin(rule->ExpandedCFileFlags, " "));
+  makefile.Env(CFLAGS, absl::StrJoin(rule->ExpandedCFileFlags | ranges::copy |
+                                         ranges::actions::sort,
+                                     " "));
 
-  makefile.Env(CPPFLAGS, absl::StrJoin(rule->ExpandedCFileFlags, " "));
-
-  makefile.Env(CXXFLAGS, absl::StrJoin(ranges::views::concat(
-                                           rule->CxxFlags, session->ExtraFlags),
+  makefile.Env(CPPFLAGS, absl::StrJoin(rule->ExpandedCFileFlags | ranges::copy |
+                                           ranges::actions::sort,
                                        " "));
 
+  makefile.Env(
+      CXXFLAGS,
+      absl::StrJoin(ranges::views::concat(rule->CxxFlags, session->ExtraFlags) |
+                        ranges::copy | ranges::actions::sort,
+                    " "));
+
   makefile.Env("INHERENT_FLAGS",
-               absl::StrJoin(rule->ResolvedInherentFlags, " "));
+               absl::StrJoin(rule->ResolvedInherentFlags | ranges::to_vector |
+                                 ranges::actions::sort,
+                             " "));
 
   auto cppincludes = ranges::views::concat(
       ranges::views::single("-isystem"),
@@ -123,14 +135,16 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(
           ranges::views::concat(
               compile_flags, session->Project->Config().cflags,
-              session->Project->Config().debug_cflags_extra, cppincludes),
+              session->Project->Config().debug_cflags_extra, cppincludes) |
+              ranges::to_vector | ranges::actions::sort,
           " "));
   makefile.Env(
       "DEBUG" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
                         compile_flags, session->Project->Config().cxxflags,
                         session->Project->Config().debug_cxxflags_extra,
-                        cppincludes, cxxincludes),
+                        cppincludes, cxxincludes) |
+                        ranges::to_vector | ranges::actions::sort,
                     " "));
 
   makefile.Env(
@@ -138,14 +152,17 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(
           ranges::views::concat(
               compile_flags, session->Project->Config().cflags,
-              session->Project->Config().release_cflags_extra, cppincludes),
+              session->Project->Config().release_cflags_extra, cppincludes) |
+              ranges::to_vector | ranges::actions::sort,
+
           " "));
   makefile.Env(
       "RELEASE" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
                         compile_flags, session->Project->Config().cxxflags,
                         session->Project->Config().release_cxxflags_extra,
-                        cppincludes, cxxincludes),
+                        cppincludes, cxxincludes) |
+                        ranges::to_vector | ranges::actions::sort,
                     " "));
 
   makefile.Env(
@@ -153,19 +170,28 @@ void CCLibraryCompiler::generate_flag_file(
       absl::StrJoin(
           ranges::views::concat(
               compile_flags, session->Project->Config().cflags,
-              session->Project->Config().profiling_cflags_extra, cppincludes),
+              session->Project->Config().profiling_cflags_extra, cppincludes)
+
+              | ranges::to_vector | ranges::actions::sort,
           " "));
   makefile.Env(
       "PROFILING" CXXFLAGS_SUFFIX,
       absl::StrJoin(ranges::views::concat(
                         compile_flags, session->Project->Config().cxxflags,
                         session->Project->Config().profiling_cxxflags_extra,
-                        cppincludes, cxxincludes),
+                        cppincludes, cxxincludes) |
+                        ranges::to_vector | ranges::actions::sort,
                     " "));
 
-  makefile.Env(CPP_DEFINES, absl::StrJoin(rule->ResolvedDefines, " "));
+  makefile.Env(CPP_DEFINES,
+               absl::StrJoin(rule->ResolvedDefines | ranges::to_vector |
+                                 ranges::actions::sort,
+                             " "));
 
-  makefile.Env(CPP_INCLUDES, absl::StrJoin(rule->ResolvedIncludes, " "));
+  makefile.Env(CPP_INCLUDES,
+               absl::StrJoin(rule->ResolvedIncludes | ranges::to_vector |
+                                 ranges::actions::sort,
+                             " "));
 
   absl::flat_hash_set<uint32_t> visited;
   auto dfs = [&visited, &makefile](core::models::BuildRule *rule, auto &&dfs) {
