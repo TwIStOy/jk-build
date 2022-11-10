@@ -24,10 +24,11 @@ set(CMAKE_CXX_FLAGS_DEBUG
     "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
 set(CMAKE_LINKER_FLAGS_DEBUG
     "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -g2")
-#set(CMAKE_CXX_FLAGS_DEBUG
-#    "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -g2 -fsanitize=address")
-#set(CMAKE_LINKER_FLAGS_DEBUG
-#    "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -g2 -fsanitize=address")
+
+if(CMAKE_BUILD_TYPE EQUAL "Debug")
+endif()
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 if(CMAKE_BUILD_TYPE EQUAL "Debug")
   include(CodeCoverage)

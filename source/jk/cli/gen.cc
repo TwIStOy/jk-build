@@ -202,9 +202,7 @@ void Generate(args::Subparser &parser) {
                         rules_name | ranges::to_vector);
 
   // waiting for all jobs finished
-  session->Executor->Stop();
-
-  assert(session->Executor->empty());
+  session->Executor.reset();
 
   {
     auto p = session->Project->ProjectRoot.Sub("compile_commands.json").Path;

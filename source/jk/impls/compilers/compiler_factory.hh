@@ -3,6 +3,7 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -17,7 +18,7 @@ struct CompilerFactory {
                                           std::string_view rule_type) const {
     if (auto it = compilers_.find(generator_name); it != compilers_.end()) {
       if (auto it2 = it->second.find(rule_type); it2 != it->second.end()) {
-        return it2->second;
+        return it2->second.get();
       }
     }
     return nullptr;
@@ -26,13 +27,14 @@ struct CompilerFactory {
   template<typename C>
   inline void Register(std::string_view generator_name,
                        std::string_view rule_type) {
-    compilers_[generator_name][rule_type] = new C{};
+    compilers_[generator_name][rule_type].reset(new C);
   }
 
  private:
   absl::flat_hash_map<
       std::string,
-      absl::flat_hash_map<std::string, core::interfaces::Compiler *>>
+      absl::flat_hash_map<std::string,
+                          std::unique_ptr<core::interfaces::Compiler>>>
       compilers_;
 };
 

@@ -8,9 +8,12 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <stop_token>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace jk::core::executor {
@@ -21,72 +24,84 @@ class WorkerPool {
       : number_(number) {
   }
 
-  void Stop() {
-    stop_.request_stop();
-    cond_.notify_all();
+  ~WorkerPool();
 
-    thrs_.clear();
-  }
+  void Start();
 
-  void Start() {
-    for (auto i = 0u; i < number_; i++) {
-      auto stoken = stop_.get_token();
-      auto worker = [this, stoken = std::move(stoken)] {
-        while (true) {
-          std::function<void()> func;
-          {
-            std::unique_lock lk(mutex_);
-            if (queue_.empty()) {
-              if (stoken.stop_requested()) {
-                break;
-              } else {
-                cond_.wait(lk);
-              }
-            }
+  bool is_abort() const;
 
-            if (queue_.empty() && stoken.stop_requested()) {
-              break;
-            }
+  void set_abort_flag();
 
-            func = std::move(queue_.front());
-            queue_.pop();
-          }
-
-          func();
-        }
-      };
-      thrs_.emplace_back(worker);
+  template<class F, class R = std::invoke_result_t<F>>
+  std::future<R> Push(F f) {
+    std::packaged_task<R()> task(std::move(f));
+    auto ret = task.get_future();
+    if (queue_.push(std::packaged_task<void()>(std::move(task)))) {
+      return ret;
+    } else {
+      return {};
     }
   }
 
-  template<typename F>
-  std::future<void> Push(F &&f) {
-    std::unique_lock lk(mutex_);
+ private:
+  void run();
 
-    auto p = std::make_shared<std::promise<void>>();
+  template<typename T>
+  struct threadsafe_queue {
+    [[nodiscard]] std::optional<T> pop() {
+      std::unique_lock lk(mutex_);
+      cond_.wait(lk, [this] {
+        return is_abort() || !data_.empty();
+      });
 
-    std::future<void> fur = p->get_future();
-    queue_.emplace([f = std::forward<F>(f), p]() mutable {
-      f();
-      p->set_value();
-    });
-    cond_.notify_one();
+      if (is_abort()) {
+        return {};
+      }
 
-    return fur;
-  }
+      auto r = std::move(data_.front());
+      data_.pop_front();
+      cond_.notify_all();
+      return r;
+    }
 
-  bool empty() const {
-    return queue_.empty();
-  }
+    bool push(T t) {
+      std::unique_lock lk(mutex_);
+      if (is_abort())
+        return false;
+      data_.push_back(std::move(t));
+      cond_.notify_one();
+      return true;
+    }
+
+    void set_abort_flag() {
+      std::unique_lock lk(mutex_);
+      aborted_ = true;
+      data_.clear();
+      cond_.notify_all();
+    }
+
+    bool is_abort() const {
+      return aborted_;
+    }
+
+    void wait_until_empty() {
+      std::unique_lock lk(mutex_);
+      cond_.wait(lk, [this] {
+        return data_.empty();
+      });
+    }
+
+    std::mutex mutex_;
+    std::condition_variable cond_;
+    std::atomic<bool> aborted_{false};
+    std::deque<T> data_;
+  };
 
  private:
   uint32_t number_;
   std::vector<std::jthread> thrs_;
 
-  std::mutex mutex_;
-  std::condition_variable cond_;
-  std::stop_source stop_;
-  std::queue<std::function<void()>> queue_;
+  threadsafe_queue<std::packaged_task<void()>> queue_;
 };
 
 }  // namespace jk::core::executor
