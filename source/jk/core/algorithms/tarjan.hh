@@ -91,7 +91,7 @@ inline auto Tarjan(models::Session *session, auto rg) {
   }
 
   for (auto i = 0; i < sccs.size(); i++) {
-    logger->info(
+    logger->debug(
         "scc[{}], rules: [{}], deps: [{}]", i,
         absl::StrJoin(sccs[i].Rules, ",",
                       [](std::string *output, auto rule) {

@@ -108,17 +108,12 @@ auto generate_all(core::models::Session *session,
     dfs(r, dfs);
   }
 
-  std::vector<std::future<void>> futures;
   for (auto generator_name : generator_names) {
-    auto res = CompileRules(session, generator_name, scc, compiler_factory,
-                            ranges::views::all(all_rules));
+    auto res =
+        CompileRules(session, generator_name, scc, compiler_factory, all_rules);
     for (auto &&f : res) {
-      futures.push_back(std::move(f));
+      f.wait();
     }
-  }
-
-  for (auto &f : futures) {
-    f.wait();
   }
 
   // generate progress.mark

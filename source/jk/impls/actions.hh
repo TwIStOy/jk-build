@@ -26,6 +26,7 @@
 #include "jk/core/models/session.hh"
 #include "jk/impls/compilers/compiler_factory.hh"
 #include "jk/utils/assert.hh"
+#include "jk/utils/logging.hh"
 #include "range/v3/algorithm/transform.hpp"
 #include "range/v3/range/concepts.hpp"
 #include "range/v3/range/traits.hpp"
@@ -37,11 +38,12 @@ namespace jk::impls {
 auto CompileRules(
     core::models::Session *session, std::string_view generator_name,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-    impls::compilers::CompilerFactory *factory, auto rg)
+    impls::compilers::CompilerFactory *factory, auto&& rg)
   requires ranges::range<decltype(rg)> &&
            std::same_as<ranges::range_value_t<decltype(rg)>,
                         core::models::BuildRule *>
 {
+  static auto logger = utils::Logger("generate_all");
   std::vector<std::future<void>> futures;
   for (auto rule : rg) {
     futures.push_back(session->Executor->Push(
@@ -49,6 +51,8 @@ auto CompileRules(
           core::interfaces::Compiler *c =
               factory->Find(generator_name, rule->Base->TypeName);
           if (c != nullptr) {
+            logger->debug("Compile {} use {}.{}", rule->Base->StringifyValue,
+                          generator_name, rule->Base->TypeName);
             c->Compile(session, scc, rule);
           }
         }));

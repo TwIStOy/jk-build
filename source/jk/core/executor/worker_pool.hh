@@ -24,6 +24,8 @@ class WorkerPool {
   void Stop() {
     stop_.request_stop();
     cond_.notify_all();
+
+    thrs_.clear();
   }
 
   void Start() {
@@ -31,18 +33,18 @@ class WorkerPool {
       auto stoken = stop_.get_token();
       auto worker = [this, stoken = std::move(stoken)] {
         while (true) {
-          if (stoken.stop_requested()) {
-            break;
-          }
-
           std::function<void()> func;
           {
             std::unique_lock lk(mutex_);
             if (queue_.empty()) {
-              cond_.wait(lk);
+              if (stoken.stop_requested()) {
+                break;
+              } else {
+                cond_.wait(lk);
+              }
             }
 
-            if (stoken.stop_requested()) {
+            if (queue_.empty() && stoken.stop_requested()) {
               break;
             }
 
@@ -71,6 +73,10 @@ class WorkerPool {
     cond_.notify_one();
 
     return fur;
+  }
+
+  bool empty() const {
+    return queue_.empty();
   }
 
  private:
