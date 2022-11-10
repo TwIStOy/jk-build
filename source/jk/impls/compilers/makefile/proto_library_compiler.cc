@@ -47,10 +47,11 @@ GeneratedPair add_proto_file_commands(
   std::map<const absl::string_view, const absl::string_view> replacements{
       {"proto", "pb"}};
 
-  auto gen_cc_file = working_folder.Sub(
-      absl::StrReplaceAll(fmt::format("{}.cc", filename), replacements));
-  auto gen_h_file = working_folder.Sub(
-      absl::StrReplaceAll(fmt::format("{}.h", filename), replacements));
+  fs::path p = filename;
+  p          = p.replace_extension("pb");
+
+  auto gen_cc_file = working_folder.Sub(fmt::format("{}.cc", p.string()));
+  auto gen_h_file  = working_folder.Sub(fmt::format("{}.h", p.string()));
 
   makefile->Target(
       fmt::format("{} {}", gen_cc_file.Stringify(), gen_h_file.Stringify()),

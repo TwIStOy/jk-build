@@ -71,8 +71,6 @@ auto FileWriter::flush() -> void {
     }
   }
 
-  logger->info("Update file {}.", path_);
-
   {
     std::ofstream ofs(path_);
     ofs << content;
