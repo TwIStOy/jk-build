@@ -462,8 +462,8 @@ void CCLibraryCompiler::generate_build_file_impl(
     makefile->Target(library_file, ranges::views::empty<std::string>,
                      ranges::views::empty<core::builder::CustomCommandLine>);
 
-    auto clean_old_library =
-        core::builder::CustomCommandLine::Make({"-@$(RM)", library_file});
+    auto clean_old_library = core::builder::CustomCommandLine::Make(
+        {"-@$(RM)", "--silent", library_file});
 
     auto ar_stmt =
         core::builder::CustomCommandLine::Make({"@$(AR)", library_file});
