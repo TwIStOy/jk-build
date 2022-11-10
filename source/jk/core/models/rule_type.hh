@@ -17,6 +17,7 @@ enum class RuleTypeEnum : uint8_t {
   kTest     = 1 << 2,
   kExternal = 1 << 3,
   kCC       = 1 << 4,
+  kProto    = 1 << 5,
 };
 
 #define TYPE_SET_GETTER(type)                                             \
@@ -47,6 +48,7 @@ struct RuleType final : public utils::Stringifiable {
   TYPE_SET_GETTER(Test);
   TYPE_SET_GETTER(External);
   TYPE_SET_GETTER(CC);
+  TYPE_SET_GETTER(Proto);
 
   // inherited from |utils::Stringifiable|
   std::string gen_stringify_cache() const final;
@@ -72,8 +74,11 @@ inline std::string RuleType::gen_stringify_cache() const {
   if (value_ & static_cast<uint8_t>(RuleTypeEnum::kCC)) {
     flags.push_back("cc");
   }
+  if (value_ & static_cast<uint8_t>(RuleTypeEnum::kProto)) {
+    flags.push_back("proto");
+  }
   return fmt::format("RuleType [{}]",
-                     utils::JoinString(" | ", flags.begin(), flags.end()));
+                     utils::JoinString("|", flags.begin(), flags.end()));
 }
 
 #undef TYPE_SET_GETTER

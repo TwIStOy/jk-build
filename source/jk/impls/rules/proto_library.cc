@@ -11,9 +11,6 @@ ProtoLibrary::ProtoLibrary(core::models::BuildPackage *package,
                            utils::Kwargs kwargs, std::string type_name,
                            core::models::RuleType type)
     : CCLibrary(package, std::move(kwargs), std::move(type_name), type) {
-  InherentFlags = {fmt::format(
-      "-I${{{}_WORKING_FOLDER}}",
-      absl::AsciiStrToUpper(Base->FullQuotedQualifiedNameWithoutVersion))};
 }
 
 void ProtoLibrary::DoPrepare(core::models::Session *session) {

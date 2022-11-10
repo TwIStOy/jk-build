@@ -14,6 +14,7 @@ class ProtoLibrary : public CCLibrary {
                core::models::RuleType = core::models::RuleType{
                    core::models::RuleTypeEnum::kLibrary,
                    core::models::RuleTypeEnum::kCC,
+                   core::models::RuleTypeEnum::kProto,
                });
 
   void DoPrepare(core::models::Session *session) override;

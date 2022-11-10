@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -26,6 +27,7 @@
 #include "jk/core/models/helpers.hh"
 #include "jk/core/models/session.hh"
 #include "jk/impls/actions/generate_all.hh"
+#include "jk/impls/compilers/compiledb/cc_library_compiler.hh"
 #include "jk/impls/compilers/compiler_factory.hh"
 #include "jk/impls/compilers/makefile/cc_binary_compiler.hh"
 #include "jk/impls/compilers/makefile/cc_library_compiler.hh"
@@ -92,6 +94,8 @@ void Generate(args::Subparser &parser) {
   session->Executor->Start();
   session->PatternExpander =
       std::make_unique<core::filesystem::DefaultPatternExpander>();
+  session->CompilationDatabase = std::make_unique<core::generators::Compiledb>(
+      session->Project->ProjectRoot);
 
   if (defines) {
     for (const auto &str : args::get(defines)) {
@@ -109,10 +113,6 @@ void Generate(args::Subparser &parser) {
     session->ExtraFlags = args::get(extra_flags);
   }
   auto output_format = args::get(format);
-
-  // generate global compile_commands.json
-  // TODO(hawtian): fix compiledb generate
-  // core::writer::JSONMergeWriterFactory json_merge_factory;
 
   std::vector<core::models::BuildRuleId> rules_id;
   if (args::get(old_style)) {
@@ -167,10 +167,13 @@ void Generate(args::Subparser &parser) {
   compiler_factory->Register<impls::compilers::makefile::ProtoLibraryCompiler>(
       "makefile", "proto_library");
 
+  compiler_factory->Register<impls::compilers::compiledb::CCLibraryCompiler>(
+      "compiledb", "cc_library");
+
   auto interp =
       std::make_unique<core::executor::ScriptInterpreter>(session.get());
 
-  auto generator_names = std::vector<std::string>{output_format};
+  auto generator_names = std::vector<std::string>{output_format, "compiledb"};
 
   auto scc = impls::actions::generate_all(
       session.get(), interp.get(), generator_names, compiler_factory.get(),
@@ -195,12 +198,17 @@ void Generate(args::Subparser &parser) {
           }) |
       ranges::views::join | ranges::to_vector;
 
-  // TODO(hawtian): global compiler for different output formats
-  // generate global makefile
   root_compiler.Compile(session.get(), scc, arg_rules,
                         rules_name | ranges::to_vector);
 
   session->Executor->Stop();
+
+  {
+    auto p = session->Project->ProjectRoot.Sub("compile_commands.json").Path;
+    std::ofstream ofs(p);
+    ofs << session->CompilationDatabase->dump();
+    logger->info("update compiledb at {}", p.string());
+  }
 }
 
 }  // namespace jk::cli

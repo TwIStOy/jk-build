@@ -11,6 +11,7 @@
 #include "jk/core/executor/worker_pool.hh"
 #include "jk/core/filesystem/configuration.hh"
 #include "jk/core/filesystem/project.hh"
+#include "jk/core/generators/compiledb.hh"
 #include "jk/core/interfaces/expander.hh"
 #include "jk/core/interfaces/writer.hh"
 
@@ -38,6 +39,8 @@ struct Session {
   absl::flat_hash_map<std::string, std::string> GlobalVariables;
 
   std::vector<std::string> ExtraFlags;
+
+  std::unique_ptr<generators::Compiledb> CompilationDatabase;
 };
 
 }  // namespace jk::core::models

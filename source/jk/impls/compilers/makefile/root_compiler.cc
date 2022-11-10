@@ -244,8 +244,13 @@ auto RootCompiler::Compile(
 
   for (auto rule : all_rules) {
     for (const auto &build_type : session->BuildTypes) {
-      auto tgt_name =
-          fmt::format("{}/{}", rule->Base->FullQualifiedName, build_type);
+      std::string tgt_name;
+      if (rule->Base->Type.IsCC()) {
+        tgt_name =
+            fmt::format("{}/{}", rule->Base->FullQualifiedName, build_type);
+      } else {
+        tgt_name = fmt::format("{}/build", rule->Base->FullQualifiedName);
+      }
       makefile.Target(build_type,
                       ranges::views::concat(ranges::views::single(tgt_name),
                                             ranges::views::single("pre")),

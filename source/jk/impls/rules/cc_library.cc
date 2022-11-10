@@ -196,9 +196,10 @@ auto CCLibrary::prepare_always_compile_files(core::models::Session *session)
                 absl::StrJoin(ExpandedAlwaysCompileFiles, ", "));
 }
 
-auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
+auto CCLibrary::prepare_include_flags(core::models::Session *session) -> void {
   absl::flat_hash_set<uint32_t> visisted;
-  auto dfs = [this, &visisted](core::models::BuildRule *rule, auto &&dfs) {
+  auto dfs = [this, &visisted, session](core::models::BuildRule *rule,
+                                        auto &&dfs) {
     if (visisted.contains(rule->Base->ObjectId)) {
       return;
     }
@@ -213,6 +214,15 @@ auto CCLibrary::prepare_include_flags(core::models::Session *) -> void {
       // fast-path for cc_library
       for (const auto &s : cc_rule->Includes) {
         ResolvedIncludes.insert(fmt::format("-I{}", s));
+      }
+
+      if (cc_rule->Base->Type.IsProto()) {
+        // if proto, add its 'working_folder'
+
+        ResolvedIncludes.insert(
+            fmt::format("-I{}", session->Project->BuildRoot
+                                    .Sub(cc_rule->Base->FullQuotedQualifiedName)
+                                    .Stringify()));
       }
     } else {
       static std::vector<std::string> empty;
