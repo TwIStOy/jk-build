@@ -104,8 +104,8 @@ void CCLibraryCompiler::generate_flag_file(
                                          ranges::actions::sort,
                                      " "));
 
-  makefile.Env(CPPFLAGS, absl::StrJoin(rule->ExpandedCFileFlags | ranges::copy |
-                                           ranges::actions::sort,
+  makefile.Env(CPPFLAGS, absl::StrJoin(rule->ExpandedCppFileFlags |
+                                           ranges::copy | ranges::actions::sort,
                                        " "));
 
   makefile.Env(CXXFLAGS, absl::StrJoin(ranges::views::concat(
