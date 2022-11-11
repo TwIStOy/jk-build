@@ -15,6 +15,9 @@
 #include "jk/core/models/build_package.hh"
 #include "jk/core/models/build_rule.hh"
 #include "jk/core/models/rule_type.hh"
+#include "range/v3/range/conversion.hpp"
+#include "range/v3/view/concat.hpp"
+#include "range/v3/view/filter.hpp"
 
 namespace jk::impls::rules {
 
@@ -90,15 +93,17 @@ auto CCLibrary::DoPrepare(core::models::Session *session) -> void {
                                        WorkingFolder.Stringify());
 
   // step 8. cache flags
-  ExpandedCFileFlags.insert(ExpandedCFileFlags.end(), CFlags.begin(),
-                            CFlags.end());
-  ExpandedCFileFlags.insert(ExpandedCFileFlags.end(), CxxFlags.begin(),
-                            CxxFlags.end());
+  ExpandedCFileFlags = ranges::views::concat(CFlags, CxxFlags) |
+                       ranges::views::filter([](const auto &s) {
+                         return !absl::StartsWith(s, "-I");
+                       }) |
+                       ranges::to<decltype(ExpandedCFileFlags)>();
 
-  ExpandedCppFileFlags.insert(ExpandedCppFileFlags.end(), CppFlags.begin(),
-                              CppFlags.end());
-  ExpandedCppFileFlags.insert(ExpandedCppFileFlags.end(), CxxFlags.begin(),
-                              CxxFlags.end());
+  ExpandedCppFileFlags = ranges::views::concat(CppFlags, CxxFlags) |
+                         ranges::views::filter([](const auto &s) {
+                           return !absl::StartsWith(s, "-I");
+                         }) |
+                         ranges::to<decltype(ExpandedCFileFlags)>();
 
   // step 8. construct include and define flags
   prepare_include_flags(session);
@@ -205,7 +210,8 @@ auto CCLibrary::prepare_include_flags(core::models::Session *session) -> void {
     }
     visisted.insert(rule->Base->ObjectId);
     if (auto cc_rule = dynamic_cast<CCLibrary *>(rule); cc_rule != nullptr) {
-      for (const auto &s : cc_rule->CppFlags) {
+      for (const auto &s : ranges::views::concat(
+               cc_rule->CppFlags, cc_rule->CFlags, cc_rule->CxxFlags)) {
         if (absl::StartsWith(s, "-I")) {
           ResolvedIncludes.insert(s);
         }
