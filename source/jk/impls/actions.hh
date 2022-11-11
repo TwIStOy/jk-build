@@ -25,6 +25,7 @@
 #include "jk/core/models/dependent.hh"
 #include "jk/core/models/session.hh"
 #include "jk/impls/compilers/compiler_factory.hh"
+#include "jk/impls/rules/cc_binary.hh"
 #include "jk/utils/assert.hh"
 #include "jk/utils/logging.hh"
 #include "range/v3/algorithm/transform.hpp"
@@ -38,7 +39,7 @@ namespace jk::impls {
 auto CompileRules(
     core::models::Session *session, std::string_view generator_name,
     const std::vector<core::algorithms::StronglyConnectedComponent> &scc,
-    impls::compilers::CompilerFactory *factory, auto&& rg)
+    impls::compilers::CompilerFactory *factory, auto &&rg)
   requires ranges::range<decltype(rg)> &&
            std::same_as<ranges::range_value_t<decltype(rg)>,
                         core::models::BuildRule *>
@@ -75,38 +76,70 @@ void PrepareRules(core::models::Session *session, auto rg)
 }
 
 void PrepareDependencies(core::models::Session *session,
-                         core::models::BuildPackageFactory *package, auto rules)
+                         core::models::BuildPackageFactory *package_factory,
+                         auto rules)
   requires ranges::range<decltype(rules)> &&
            std::same_as<ranges::range_value_t<decltype(rules)>,
                         core::models::BuildRule *>
 {
-  auto make_dep_str_to_rule = [package](core::models::BuildRule *rule) {
+  auto dep_str_to_rule = [package_factory](
+                             core::models::BuildRule *from,
+                             const auto &dep_str) -> core::models::BuildRule * {
+    auto dep = core::models::ParseIdString(dep_str);
+    switch (dep.Position) {
+      case core::models::RuleRelativePosition::kAbsolute: {
+        auto pkg = package_factory->PackageUnsafe(*dep.PackageName);
+        utils::assertion::boolean.expect(pkg.second == false,
+                                         dep.PackageName->c_str());
+        auto it = pkg.first->RulesMap.find(dep.RuleName);
+        return it->second.get();
+      }
+      case core::models::RuleRelativePosition::kBuiltin:
+        assert(false);
+        JK_THROW(core::JKBuildError("not supported"));
+        break;
+      case core::models::RuleRelativePosition::kRelative: {
+        auto next_name =
+            fmt::format("{}/{}", from->Package->Name, *dep.PackageName);
+        auto pkg = package_factory->PackageUnsafe(*dep.PackageName);
+        assert(pkg.second == false);
+        auto it = pkg.first->RulesMap.find(dep.RuleName);
+        return it->second.get();
+      } break;
+      case core::models::RuleRelativePosition::kThis: {
+        auto it = from->Package->RulesMap.find(dep.RuleName);
+        return it->second.get();
+      } break;
+    }
+    return nullptr;
+  };
+
+  auto make_dep_str_to_rule = [dep_str_to_rule](core::models::BuildRule *rule) {
     for (const auto &_dep : rule->Base->Dependencies) {
-      auto dep = core::models::ParseIdString(_dep);
-      switch (dep.Position) {
-        case core::models::RuleRelativePosition::kAbsolute: {
-          auto pkg = package->PackageUnsafe(*dep.PackageName);
-          utils::assertion::boolean.expect(pkg.second == false,
-                                           dep.PackageName->c_str());
-          auto it = pkg.first->RulesMap.find(dep.RuleName);
-          rule->Dependencies.emplace_back(it->second.get());
-        } break;
-        case core::models::RuleRelativePosition::kBuiltin:
-          assert(false);
-          JK_THROW(core::JKBuildError("not supported"));
-          break;
-        case core::models::RuleRelativePosition::kRelative: {
-          auto next_name =
-              fmt::format("{}/{}", rule->Package->Name, *dep.PackageName);
-          auto pkg = package->PackageUnsafe(*dep.PackageName);
-          assert(pkg.second == false);
-          auto it = pkg.first->RulesMap.find(dep.RuleName);
-          rule->Dependencies.emplace_back(it->second.get());
-        } break;
-        case core::models::RuleRelativePosition::kThis: {
-          auto it = rule->Package->RulesMap.find(dep.RuleName);
-          rule->Dependencies.emplace_back(it->second.get());
-        } break;
+      auto dep = dep_str_to_rule(_dep, rule);
+      if (dep != nullptr) {
+        rule->Dependencies.push_back(dep);
+      }
+    }
+
+    if (rule->Base->TypeName == "cc_binary") {
+      auto cc_bin = dynamic_cast<rules::CCBinary *>(rule);
+      for (const auto &[k, vs] : cc_bin->RawAddtionalDependencies) {
+        rules::CCBinary::DependentInBinary dep;
+        dep.Rule = dep_str_to_rule(k);
+        if (dep.Rule == nullptr) {
+          // TODO(hawtian): report error here
+          continue;
+        }
+
+        for (const auto &v : vs) {
+          auto v_rule = dep_str_to_rule(k);
+          if (v_rule != nullptr) {
+            dep.Dependencies.push_back(v_rule);
+          }
+        }
+
+        cc_bin->DependenciesInBinary.push_back(std::move(dep));
       }
     }
   };
