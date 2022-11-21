@@ -116,7 +116,7 @@ void PrepareDependencies(core::models::Session *session,
 
   auto make_dep_str_to_rule = [dep_str_to_rule](core::models::BuildRule *rule) {
     for (const auto &_dep : rule->Base->Dependencies) {
-      auto dep = dep_str_to_rule(_dep, rule);
+      auto dep = dep_str_to_rule(rule, _dep);
       if (dep != nullptr) {
         rule->Dependencies.push_back(dep);
       }
@@ -126,14 +126,14 @@ void PrepareDependencies(core::models::Session *session,
       auto cc_bin = dynamic_cast<rules::CCBinary *>(rule);
       for (const auto &[k, vs] : cc_bin->RawAddtionalDependencies) {
         rules::CCBinary::DependentInBinary dep;
-        dep.Rule = dep_str_to_rule(k);
+        dep.Rule = dep_str_to_rule(rule, k);
         if (dep.Rule == nullptr) {
           // TODO(hawtian): report error here
           continue;
         }
 
         for (const auto &v : vs) {
-          auto v_rule = dep_str_to_rule(k);
+          auto v_rule = dep_str_to_rule(rule, k);
           if (v_rule != nullptr) {
             dep.Dependencies.push_back(v_rule);
           }
