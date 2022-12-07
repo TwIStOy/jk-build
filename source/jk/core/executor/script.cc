@@ -20,12 +20,11 @@ auto ScriptInterpreter::AddFunc(const std::string &name) -> void {
   func_names_.insert(name);
 }
 
-ScriptInterpreter::ScriptInterpreter(models::Session *session) {
+ScriptInterpreter::ScriptInterpreter(models::Session *session)
+    : interpreter_(std::make_unique<pybind11::scoped_interpreter>()) {
   Py_NoSiteFlag            = 1;
   Py_IgnoreEnvironmentFlag = 1;
   Py_NoUserSiteDirectory   = 1;
-
-  interpreter_ = std::make_unique<pybind11::scoped_interpreter>();
 
   for (const auto &func : func_names_) {
     locals_[func.c_str()] =
