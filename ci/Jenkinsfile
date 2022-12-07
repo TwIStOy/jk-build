@@ -38,7 +38,6 @@ pipeline {
           branch: "${SOURCE_CODE_BRANCH}"
 
           sh "git checkout ${SOURCE_CODE_BRANCH}"
-          sh "git config url.\"https://hub.fastgit.xyz/\".insteadOf https://github.com/"
           sh "git submodule update --init --recursive"
         }
       }
