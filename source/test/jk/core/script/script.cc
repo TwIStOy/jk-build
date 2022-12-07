@@ -10,10 +10,10 @@
 #include <list>
 
 #include "fmt/core.h"
-#include "jk/core/script/script.hh"
+#include "jk/core/executor/script.hh"
 #include "jk/utils/str.hh"
 
-namespace jk::core::script::test {
+namespace jk::core::executor::test {
 
 static std::string FunctionCall(
     const std::string &name,
@@ -34,7 +34,7 @@ static std::string StringList(std::initializer_list<std::string> args) {
 }
 
 TEST_CASE("Script", "[core][script]") {
-  auto interp = ScriptInterpreter::Instance();
+  auto interp = ScriptInterpreter(nullptr);
 
   SECTION("simple cc_library only") {
     auto content =
@@ -50,21 +50,13 @@ TEST_CASE("Script", "[core][script]") {
                                                  ":bar",
                                              })}});
 
-    rules::BuildPackage pkg("test", common::ProjectRelativePath{""});
+    auto result = interp.Eval(content);
 
-    filesystem::JKProject dummy(common::AbsolutePath(""));
-    interp->EvalScriptContent(&dummy, &pkg, content);
+    REQUIRE(result.size() == 1);
+    const auto &r = result[0];
 
-    REQUIRE(pkg.Rules.size() == 1);
-    auto it = pkg.Rules.find("base");
-    REQUIRE(it != pkg.Rules.end());
-    auto rule = it->second.get();
-
-    REQUIRE(rule->Type.HasType(rules::RuleTypeEnum::kLibrary));
-    REQUIRE(rule->TypeName == "cc_library");
-    REQUIRE(rule->Name == "base");
-    REQUIRE(rule->Package == &pkg);
-    REQUIRE(rule->dependencies_str_.size() == 7);
+    REQUIRE(r.FuncName == "cc_library");
+    // TODO(hawtian): add test
   }
 
   SECTION("no name") {
@@ -80,11 +72,8 @@ TEST_CASE("Script", "[core][script]") {
                                                  ":bar",
                                              })}});
 
-    rules::BuildPackage pkg("test", common::ProjectRelativePath{""});
-
-    filesystem::JKProject dummy(common::AbsolutePath(""));
-    REQUIRE_THROWS(interp->EvalScriptContent(&dummy, &pkg, content));
+    REQUIRE_THROWS(interp.Eval(content));
   }
 }
 
-}  // namespace jk::core::script::test
+}  // namespace jk::core::executor::test

@@ -6,18 +6,17 @@
 #include <stdexcept>
 #include <string_view>
 
+#include "fmt/core.h"
 #include "fmt/format.h"
+#include "jk/utils/cpp_features.hh"
 
-namespace jk {
-namespace core {
+namespace jk::core {
 
 class JKBuildError : public std::runtime_error {
  public:
-  template<typename... Args>
-  explicit JKBuildError(std::string_view fmt, const Args &...args)
-      : std::runtime_error(fmt::format(fmt, args...)) {
+  explicit JKBuildError(std::string_view fmt, auto &&...args)
+      : std::runtime_error(fmt::format(fmt::runtime(fmt), __JK_FWD(args)...)) {
   }
 };
 
-}  // namespace core
-}  // namespace jk
+}  // namespace jk::core

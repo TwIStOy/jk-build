@@ -9,9 +9,12 @@ FakeBufferWriter::~FakeBufferWriter() {
   MyFactory->Files[Key] = Buffer();
 }
 
-std::unique_ptr<core::writer::Writer> FakeBufferWriterFactory::Build(
-    const std::string &key) {
-  return std::unique_ptr<core::writer::Writer>{new FakeBufferWriter{this, key}};
+std::unique_ptr<core::interfaces::Writer> FakeBufferWriterFactory::Create() {
+  return std::unique_ptr<core::interfaces::Writer>{new FakeBufferWriter{this}};
+}
+
+void FakeBufferWriter::open(const common::AbsolutePath &k) {
+  Key = k.Stringify();
 }
 
 void FakeBufferWriterFactory::DebugPrint(std::ostream &oss) const {

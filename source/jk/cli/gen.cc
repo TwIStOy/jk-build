@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -13,20 +15,42 @@
 #include "args.hxx"
 #include "jk/common/counter.hh"
 #include "jk/common/path.hh"
-#include "jk/core/compile/compile.hh"
-#include "jk/core/compile/makefile_global_compiler.hh"
 #include "jk/core/error.h"
+#include "jk/core/executor/script.hh"
+#include "jk/core/executor/worker_pool.hh"
+#include "jk/core/filesystem/expander.hh"
 #include "jk/core/filesystem/project.hh"
-#include "jk/core/rules/build_rule.hh"
-#include "jk/core/rules/dependent.hh"
-#include "jk/core/rules/package.hh"
-#include "jk/core/script/script.hh"
-#include "jk/core/writer/file_writer.hh"
-#include "jk/core/writer/json_merge_writer.hh"
-#include "jk/rules/cc/compiler/cc_library.hh"
+#include "jk/core/models/build_package.hh"
+#include "jk/core/models/build_package_factory.hh"
+#include "jk/core/models/build_rule_factory.hh"
+#include "jk/core/models/dependent.hh"
+#include "jk/core/models/helpers.hh"
+#include "jk/core/models/session.hh"
+#include "jk/impls/actions/generate_all.hh"
+#include "jk/impls/compilers/compiledb/cc_library_compiler.hh"
+#include "jk/impls/compilers/compiler_factory.hh"
+#include "jk/impls/compilers/makefile/cc_binary_compiler.hh"
+#include "jk/impls/compilers/makefile/cc_library_compiler.hh"
+#include "jk/impls/compilers/makefile/cc_test_compiler.hh"
+#include "jk/impls/compilers/makefile/proto_library_compiler.hh"
+#include "jk/impls/compilers/makefile/root_compiler.hh"
+#include "jk/impls/compilers/makefile/shell_script_compiler.hh"
+#include "jk/impls/compilers/nop_compiler.hh"
+#include "jk/impls/rules/cc_binary.hh"
+#include "jk/impls/rules/cc_library.hh"
+#include "jk/impls/rules/cc_test.hh"
+#include "jk/impls/rules/proto_library.hh"
+#include "jk/impls/rules/shell_script.hh"
+#include "jk/impls/writers/file_writer.hh"
+#include "jk/utils/assert.hh"
 #include "jk/utils/logging.hh"
 #include "jk/utils/str.hh"
 #include "jk/version.h"
+#include "range/v3/range/conversion.hpp"
+#include "range/v3/view/any_view.hpp"
+#include "range/v3/view/join.hpp"
+#include "range/v3/view/single.hpp"
+#include "range/v3/view/transform.hpp"
 
 namespace jk::cli {
 
@@ -45,8 +69,8 @@ static auto release_git_version_file_content = R"(
 
 void Generate(args::Subparser &parser) {
   args::ValueFlag<std::string> format(parser, "FORMAT",
-                                      "Output format. 'Makefile' or 'Ninja'",
-                                      {"format"}, "Makefile");
+                                      "Output format. 'makefile' or 'ninja'",
+                                      {"format"}, "makefile");
   args::ValueFlag<uint32_t> platform(parser, "platform", "Only 32 or 64",
                                      {'m', "platform"}, 64);
   args::ValueFlagList<std::string> defines(
@@ -61,160 +85,130 @@ void Generate(args::Subparser &parser) {
 
   parser.Parse();
 
-  auto project = core::filesystem::JKProject::ResolveFrom(
+  auto session = std::make_unique<core::models::Session>();
+
+  session->Project = core::filesystem::JKProject::ResolveFrom(
       common::AbsolutePath{fs::current_path()});
-  core::writer::FileWriterFactory writer_factory;
+  session->WriterFactory.reset(new impls::writers::FileWriterFactory());
+  session->Executor.reset(new core::executor::WorkerPool(10));
+  session->Executor->Start();
+  session->PatternExpander =
+      std::make_unique<core::filesystem::DefaultPatternExpander>();
+  session->CompilationDatabase = std::make_unique<core::generators::Compiledb>(
+      session->Project->ProjectRoot);
 
   if (defines) {
     for (const auto &str : args::get(defines)) {
       std::vector<std::string> parts;
       utils::SplitString(str, std::back_inserter(parts), '=');
       if (parts.size() == 1) {
-        core::script::GlobalVariables[parts[0]] = "";
+        session->GlobalVariables[parts[0]] = "";
       } else {
-        core::script::GlobalVariables[parts[0]] = parts[1];
+        session->GlobalVariables[parts[0]] = parts[1];
       }
     }
   }
 
   if (extra_flags) {
-    rules::cc::GlobalDefines = args::get(extra_flags);
+    session->ExtraFlags = args::get(extra_flags);
   }
-
-  // check if python39.zip exists
-  if (fs::exists(project.BuildRoot.Sub(".jk_req")
-                     .Sub("lib")
-                     .Sub("python39.zip")
-                     .Path)) {
-  }
-
-  // generate global compile_commands.json
-  core::writer::JSONMergeWriterFactory json_merge_factory;
-
-  std::vector<core::rules::BuildRuleId> rules_id;
-  if (args::get(old_style)) {
-    // old style
-    std::transform(
-        std::begin(rules_name), std::end(rules_name),
-        std::back_inserter(rules_id), [](const std::string &str) {
-          if (!utils::StringEndsWith(str, "BUILD")) {
-            JK_THROW(
-                core::JKBuildError("Only support rule file named 'BUILD'."));
-          }
-
-          auto id = core::rules::ParseIdString("//{}:..."_format(str));
-          assert(id.Position == core::rules::RuleRelativePosition::kAbsolute);
-          return id;
-        });
-  } else {
-    // new style
-    std::transform(
-        std::begin(rules_name), std::end(rules_name),
-        std::back_inserter(rules_id), [](const std::string &str) {
-          auto id = core::rules::ParseIdString(str);
-          if (id.Position != core::rules::RuleRelativePosition::kAbsolute) {
-            JK_THROW(core::JKBuildError(
-                "Only absolute rule is allowed in command-line."));
-          }
-          return id;
-        });
-  }
-
-  core::rules::BuildPackageFactory package_factory;
-
-  // all rules will be generated
-  std::vector<core::rules::BuildRule *> rules;
-  for (const auto &id : rules_id) {
-    auto pkg = package_factory.Package(id.PackageName.value());
-    utils::CollisionNameStack stk;
-    pkg->Initialize(&project);
-
-    if (id.RuleName == "...") {
-      // "..." means all rules
-      for (const auto &[_, rule] : pkg->Rules) {
-        rule->BuildDependencies(&project, &package_factory);
-        rules.push_back(rule.get());
-      }
-    } else {
-      auto rule = pkg->Rules[id.RuleName].get();
-      if (!rule) {
-        JK_THROW(core::JKBuildError("No rule named '{}' in package '{}'",
-                                    id.RuleName, id.PackageName.value()));
-      }
-      rule->BuildDependencies(&project, &package_factory);
-      rules.push_back(rule);
-    }
-  }
-
-  auto compiler_factory = core::compile::CompilerFactory::Instance();
-
   auto output_format = args::get(format);
 
-  std::unordered_set<std::string> compiled;
-  auto compile_rule = [&compiled, compiler_factory, &output_format, &project,
-                       &writer_factory,
-                       &json_merge_factory](core::rules::BuildRule *rule) {
-    auto it = compiled.find(rule->FullQualifiedName());
-    if (it != compiled.end()) {
-      return;
-    }
-    compiled.insert(rule->FullQualifiedName());
-    logger->info("compile_rule: {}, now: [{}]", rule->FullQualifiedName(),
-        utils::JoinString(", ", compiled));
+  std::vector<core::models::BuildRuleId> rules_id;
+  if (args::get(old_style)) {
+    session->ProjectMarker = "BLADE_ROOT";
 
-    {
-      // output_format
-      auto compiler =
-          compiler_factory->FindCompiler(output_format, rule->TypeName.data());
-      if (!compiler) {
-        JK_THROW(
-            core::JKBuildError("No compiler for (format: {}, TypeName: {})",
-                               output_format, rule->TypeName));
+    for (const auto &str : rules_name) {
+      if (!utils::StringEndsWith(str, "BUILD")) {
+        JK_THROW(core::JKBuildError("Only support rule file named 'BUILD'."));
       }
 
-      compiler->Compile(&project, &writer_factory, rule);
+      auto id = core::models::ParseIdString(fmt::format("//{}:...", str));
+      utils::assertion::boolean.expect(
+          id.Position == core::models::RuleRelativePosition::kAbsolute,
+          "Only absolute rule is allowed in command-line.");
+      assert(id.Position == core::models::RuleRelativePosition::kAbsolute);
+      rules_id.push_back(std::move(id));
     }
-    {
-      // compile_commands.json
-      auto compiler = compiler_factory->FindCompiler("CompileDatabase",
-                                                     rule->TypeName.data());
-      if (compiler) {
-        compiler->Compile(&project, &json_merge_factory, rule);
-      }
+  } else {
+    for (const auto &str : rules_name) {
+      auto id = core::models::ParseIdString(str);
+      utils::assertion::boolean.expect(
+          id.Position == core::models::RuleRelativePosition::kAbsolute,
+          "Only absolute rule is allowed in command-line.");
+      rules_id.push_back(std::move(id));
     }
-  };
-
-  std::unordered_set<std::string> recorder;
-  for (const auto &rule : rules) {
-    rule->RecursiveExecute(compile_rule, &recorder);
   }
+
+  auto package_factory  = std::make_unique<core::models::BuildPackageFactory>();
+  auto rule_factory     = std::make_unique<core::models::BuildRuleFactory>();
+  auto compiler_factory = std::make_unique<impls::compilers::CompilerFactory>();
+
+  rule_factory->AddSimpleCreator<impls::rules::CCLibrary>("cc_library");
+  rule_factory->AddSimpleCreator<impls::rules::CCBinary>("cc_binary");
+  rule_factory->AddSimpleCreator<impls::rules::CCTest>("cc_test");
+  rule_factory->AddSimpleCreator<impls::rules::ShellScript>("shell_script");
+  rule_factory->AddSimpleCreator<impls::rules::ProtoLibrary>("proto_library");
+
+  core::executor::ScriptInterpreter::AddFunc("cc_library");
+  core::executor::ScriptInterpreter::AddFunc("cc_binary");
+  core::executor::ScriptInterpreter::AddFunc("cc_test");
+  core::executor::ScriptInterpreter::AddFunc("proto_library");
+  core::executor::ScriptInterpreter::AddFunc("shell_script");
+
+  compiler_factory->Register<impls::compilers::makefile::CCLibraryCompiler>(
+      "makefile", "cc_library");
+  compiler_factory->Register<impls::compilers::makefile::CCBinaryCompiler>(
+      "makefile", "cc_binary");
+  compiler_factory->Register<impls::compilers::makefile::CCTestCompiler>(
+      "makefile", "cc_test");
+  compiler_factory->Register<impls::compilers::makefile::ShellScriptCompiler>(
+      "makefile", "shell_script");
+  compiler_factory->Register<impls::compilers::makefile::ProtoLibraryCompiler>(
+      "makefile", "proto_library");
+
+  compiler_factory->Register<impls::compilers::compiledb::CCLibraryCompiler>(
+      "compiledb", "cc_library");
+
+  auto interp =
+      std::make_unique<core::executor::ScriptInterpreter>(session.get());
+
+  auto generator_names = std::vector<std::string>{output_format, "compiledb"};
+
+  auto scc = impls::actions::generate_all(
+      session.get(), interp.get(), generator_names, compiler_factory.get(),
+      package_factory.get(), rule_factory.get(), rules_id);
+  auto all_rules =
+      core::models::IterAllRules(package_factory.get()) | ranges::to_vector;
+
+  impls::compilers::makefile::RootCompiler root_compiler;
+
+  auto arg_rules =
+      rules_id |
+      ranges::views::transform(
+          [&](const core::models::BuildRuleId &id)
+              -> ranges::any_view<core::models::BuildRule *> {
+            auto [pkg, new_pkg] =
+                package_factory->PackageUnsafe(*id.PackageName);
+            if (id.RuleName == "...") {
+              // all
+              return pkg->IterRules();
+            }
+            return ranges::views::single(pkg->RulesMap[id.RuleName].get());
+          }) |
+      ranges::views::join | ranges::to_vector;
+
+  root_compiler.Compile(session.get(), scc, arg_rules);
+
+  // waiting for all jobs finished
+  session->Executor.reset();
 
   {
-    std::ofstream ofs(project.BuildRoot.Sub("progress.mark").Stringify());
-    if (ofs) {
-      ofs << common::Counter()->Now();
-    } else {
-      logger->error("Could not write progress count file to {}.",
-                    project.BuildRoot.Sub("progress.mark"));
-      JK_THROW(core::JKBuildError("Could not write progress count file to {}.",
-                                  project.BuildRoot.Sub("/progress.mark")));
-    }
+    auto p = session->Project->ProjectRoot.Sub("compile_commands.json").Path;
+    std::ofstream ofs(p);
+    ofs << session->CompilationDatabase->dump();
+    logger->info("update compiledb at {}", p.string());
   }
-
-  // generate 'release/git_version.h'
-  {
-    auto folder =
-        project.ProjectRoot.Sub(".build").Sub("include").Sub("release");
-    common::AssumeFolder(folder.Path);
-    std::ofstream ofs(folder.Sub("git_version.h").Stringify());
-    ofs << release_git_version_file_content;
-    ofs.flush();
-  }
-
-  // TODO(hawtian): global compiler for different output formats
-  // generate global makefile
-  core::compile::MakefileGlobalCompiler global;
-  global.Compile(&project, &writer_factory, rules);
 }
 
 }  // namespace jk::cli

@@ -28,7 +28,7 @@
 
 namespace jk::core::gnu {
 
-std::string MM::Stringify() const {
+std::string MM::gen_stringify_cache() const {
   return fmt::format("MM(target: '{}', deps: {})", Target,
                      utils::JoinString(", ", Dependencies));
 }

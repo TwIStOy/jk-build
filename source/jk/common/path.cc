@@ -12,11 +12,11 @@
 
 namespace jk::common {
 
-std::string ProjectRelativePath::Stringify() const {
+std::string ProjectRelativePath::gen_stringify_cache() const {
   return Path.string();
 }
 
-std::string AbsolutePath::Stringify() const {
+std::string AbsolutePath::gen_stringify_cache() const {
   return Path.string();
 }
 

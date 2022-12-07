@@ -6,12 +6,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_join.h"
 #include "fmt/format.h"
 #include "jk/utils/str.hh"
 
 namespace jk::core::builder {
 
-std::string CustomArgument::Stringify() const {
+std::string CustomArgument::gen_stringify_cache() const {
   return Argument;
 }
 
@@ -32,7 +33,7 @@ CustomCommandLine CustomCommandLine::FromVec(std::vector<std::string> ilist) {
   return res;
 }
 
-std::string CustomCommandLine::Stringify() const {
+std::string CustomCommandLine::gen_stringify_cache() const {
   return utils::JoinString(" ", begin(), end(), [](const CustomArgument &s) {
     if (s.Raw) {
       return s.Argument;
@@ -49,7 +50,7 @@ CustomCommandLines CustomCommandLines::Single(
   return res;
 }
 
-std::string CustomCommandLines::Stringify() const {
+std::string CustomCommandLines::gen_stringify_cache() const {
   return utils::JoinString("\n", begin(), end(), [](const auto &s) {
     return s.Stringify();
   });

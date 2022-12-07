@@ -66,16 +66,16 @@ set(PYTHON_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_b
 set(PYTHON_SHA256 da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814)
 include(BuildPython)
 
-set(OPENSSL_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/openssl-1.1.1i.tar.gz)
-set(OPENSSL_SHA256 e8be6a35fe41d10603c3cc635e93289ed00bf34b79671a3a4de64fcee00d5242)
+set(OPENSSL_URL https://www.openssl.org/source/openssl-1.1.1s.tar.gz)
+set(OPENSSL_SHA256 c5ac01e760ee6ff0dab61d6b2bbd30146724d063eb322180c6f18a6f74e4b6aa)
 include(BuildOpenssl)
 
 set(CURL_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/curl-7.74.0.tar.gz)
 set(CURL_SHA256 e56b3921eeb7a2951959c02db0912b5fcd5fdba5aca071da819e1accf338bbd7)
 include(BuildCurl)
 
-set(BOOST_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/boost_1_75_0.tar.gz)
-set(BOOST_SHA256 aeb26f80e80945e82ee93e5939baebdca47b9dee80a07d3144be1e1a6a66dd6a)
+set(BOOST_URL https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz)
+set(BOOST_SHA256 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847)
 include(BuildBoost)
 
 add_custom_target(third-party ALL

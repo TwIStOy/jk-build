@@ -3,9 +3,11 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
+#include <concepts>
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 #include "jk/common/path.hh"
 #include "jk/core/filesystem/configuration.hh"
@@ -28,7 +30,8 @@ inline std::string ToString(TargetPlatform plt) {
 
 struct JKProject {
   //! Returns the project from current working directory
-  static JKProject ResolveFrom(const common::AbsolutePath &cwd);
+  static std::unique_ptr<JKProject> ResolveFrom(
+      const common::AbsolutePath &cwd);
 
   explicit JKProject(common::AbsolutePath ProjectRoot,
                      TargetPlatform Platform = TargetPlatform::k64,
@@ -46,10 +49,26 @@ struct JKProject {
   common::AbsolutePath ExternalInstalledPrefix;
 
   //! Resolve relative path to absolute from **ProjectRoot**
-  common::AbsolutePath Resolve(const common::ProjectRelativePath &rp);
+  template<typename... Args>
+  common::AbsolutePath Resolve(Args &&...args) {
+    static auto to_str = [](auto &&arg) {
+      if constexpr (std::same_as<std::remove_cvref_t<decltype(arg)>,
+                                 common::ProjectRelativePath>) {
+        return arg.Stringify();
+      } else {
+        return std::forward<decltype(arg)>(arg);
+      }
+    };
+
+    return common::AbsolutePath{
+        (ProjectRoot.Path / ... / to_str(std::forward<Args>(args)))};
+  }
 
   //! Resolve relative path to absolute from **BuildRoot**
-  common::AbsolutePath ResolveBuild(const common::ProjectRelativePath &rp);
+  template<typename... Args>
+  common::AbsolutePath ResolveBuild(Args &&...args) {
+    return (BuildRoot.Path / ... / std::forward<Args>(args));
+  }
 
   //! Returns configuration loaded from project root.
   const Configuration &Config() const;

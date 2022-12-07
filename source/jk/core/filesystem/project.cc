@@ -4,6 +4,7 @@
 #include "jk/core/filesystem/project.hh"
 
 #include <filesystem>
+#include <memory>
 #include <string>
 
 #include "jk/common/path.hh"
@@ -13,7 +14,7 @@
 
 namespace jk::core::filesystem {
 
-static constexpr auto ROOT_MARKER = "JK_ROOT";
+static constexpr auto ROOT_MARKER           = "JK_ROOT";
 static constexpr auto OLD_STYLE_ROOT_MARKER = "BLADE_ROOT";
 
 std::string ToPathSpec(TargetPlatform plt) {
@@ -56,15 +57,6 @@ JKProject::JKProject(common::AbsolutePath ProjectRoot, TargetPlatform Platform,
           ProjectRoot.Sub(".build", ".lib", ToExternalPathSpec(Platform))) {
 }
 
-common::AbsolutePath JKProject::Resolve(const common::ProjectRelativePath &rp) {
-  return ProjectRoot.Sub(rp.Path);
-}
-
-common::AbsolutePath JKProject::ResolveBuild(
-    const common::ProjectRelativePath &rp) {
-  return BuildRoot.Sub(rp.Path);
-}
-
 const Configuration &JKProject::Config() const {
   if (config_) {
     return config_.value();
@@ -80,20 +72,20 @@ const Configuration &JKProject::Config() const {
   return config_.value();
 }
 
-JKProject JKProject::ResolveFrom(const common::AbsolutePath &cwd) {
+std::unique_ptr<JKProject> JKProject::ResolveFrom(
+    const common::AbsolutePath &cwd) {
   auto current = cwd.Path;
   while (current.parent_path() != current) {
     utils::Logger("jk")->debug(R"(Checking folder "{}"...)", current.string());
     if (HasRootMarker(current, ROOT_MARKER)) {
       utils::Logger("jk")->info("Project Root: {}", current.string());
-      JKProject project(common::AbsolutePath{current});
-      return project;
+      return std::make_unique<JKProject>(common::AbsolutePath{current});
     } else if (HasRootMarker(current, OLD_STYLE_ROOT_MARKER)) {
       // backward compatibility
       utils::Logger("jk")->info("Project Root(Old Style): {}",
                                 current.string());
-      JKProject project(common::AbsolutePath{current});
-      project.old_style_ = true;
+      auto project = std::make_unique<JKProject>(common::AbsolutePath{current});
+      project->old_style_ = true;
       return project;
     }
     current = current.parent_path();

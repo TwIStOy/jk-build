@@ -13,3 +13,12 @@
 [submodule "third-party/toml11"]
 	path = third-party/toml11
 	url = https://github.com/ToruNiina/toml11
+[submodule "third-party/abseil-cpp"]
+	path = third-party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
+[submodule "third-party/range-v3"]
+	path = third-party/range-v3
+	url = https://github.com/ericniebler/range-v3.git
+[submodule "third-party/gperftools"]
+	path = third-party/gperftools
+	url = https://github.com/gperftools/gperftools.git

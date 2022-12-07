@@ -1,15 +1,12 @@
 // Copyright (c) 2020 Hawtian Wang
 //
 
-#include "jk/core/rules/dependent.hh"
+#include "jk/core/models/dependent.hh"
 
 #include <boost/optional/optional_io.hpp>
 #include <catch.hpp>
 
-namespace jk {
-namespace core {
-namespace rules {
-namespace test {
+namespace jk::core::models::test {
 
 #define DEP_PARSE(dep, pkg, rule, pos)                  \
   do {                                                  \
@@ -48,7 +45,4 @@ TEST_CASE("Parse Builtin Id", "[core][rules][dependent]") {
             "base", kBuiltin);
 }
 
-}  // namespace test
-}  // namespace rules
-}  // namespace core
-}  // namespace jk
+}  // namespace jk::core::models::test

@@ -34,7 +34,7 @@ struct ProjectRelativePath final : public utils::Stringifiable {
   }
 
   // inherited from |utils::Stringifiable|
-  std::string Stringify() const;
+  std::string gen_stringify_cache() const;
 };
 
 struct AbsolutePath final : public utils::Stringifiable {
@@ -42,16 +42,28 @@ struct AbsolutePath final : public utils::Stringifiable {
 
   fs::path Path;
 
+  explicit AbsolutePath() : Path() {
+  }
+
   explicit AbsolutePath(fs::path p) : Path(std::move(p)) {
   }
 
   template<typename... Ts>
   inline AbsolutePath Sub(const Ts &...rhs) const {
-    return AbsolutePath{(Path / ... / rhs)};
+    static auto to_str = [](auto &&arg) {
+      if constexpr (std::same_as<std::remove_cvref_t<decltype(arg)>,
+                                 common::ProjectRelativePath>) {
+        return arg.Stringify();
+      } else {
+        return std::forward<decltype(arg)>(arg);
+      }
+    };
+
+    return AbsolutePath{(Path / ... / to_str(rhs))};
   }
 
   // inherited from |utils::Stringifiable|
-  std::string Stringify() const final;
+  std::string gen_stringify_cache() const;
 };
 
 struct AbsolutePathHasher {

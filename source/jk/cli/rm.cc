@@ -13,6 +13,7 @@
 namespace jk::cli {
 
 void RmFiles(args::Subparser &parser) {
+  args::Flag silent(parser, "silent", "silent ver", {"silent"});
   args::PositionalList<std::string> files_args(parser, "FILES",
                                                "Files to be deleted.");
 
@@ -29,12 +30,16 @@ void RmFiles(args::Subparser &parser) {
     if (fs::exists(fp)) {
       if (fs::is_directory(fp)) {
         fs::remove_all(fp);
-        std::cout << fmt::format("Deleted directory {}", fp.string())
-                  << std::endl;
+        if (!args::get(silent)) {
+          std::cout << fmt::format("Deleted directory {}", fp.string())
+                    << std::endl;
+        }
       } else {
         fs::remove(fp);
-        std::cout << fmt::format("Deleted regular file {}", fp.string())
-                  << std::endl;
+        if (!args::get(silent)) {
+          std::cout << fmt::format("Deleted regular file {}", fp.string())
+                    << std::endl;
+        }
       }
     }
   }

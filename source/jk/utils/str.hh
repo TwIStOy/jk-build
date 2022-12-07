@@ -3,8 +3,6 @@
 
 #pragma once  // NOLINT(build/header_guard)
 
-#include <fmt/format.h>
-
 #include <algorithm>
 #include <cctype>
 #include <iterator>
@@ -17,34 +15,39 @@
 #include <vector>
 
 #include "boost/optional.hpp"
+#include "fmt/format.h"
 #include "jk/utils/cpp_features.hh"
+#include "range/v3/range/concepts.hpp"
+#include "range/v3/view/single.hpp"
 #include "semver.hpp"
 
 namespace jk {
-
-using fmt::operator"" _format;
 
 namespace utils {
 
 struct Stringifiable {
   //! Returns the result of stringify current object
-  virtual std::string Stringify() const = 0;
-
-  operator std::string() const;
+  std::string Stringify() const;
 
   virtual ~Stringifiable() = default;
-};
 
-__JK_ALWAYS_INLINE Stringifiable::operator std::string() const {
-  return Stringify();
-}
+ protected:
+  virtual std::string gen_stringify_cache() const = 0;
+
+  inline void reset_stringify_cache() {
+    return _cached_to_string.reset();
+  }
+
+ private:
+  mutable std::optional<std::string> _cached_to_string;
+};
 
 /**
  * Returns the result of stringify object `v`
  */
 template<typename T, typename = std::enable_if<
                          std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
-__JK_ALWAYS_INLINE std::string ToString(const T &v) {
+__JK_ALWAYS_INLINE const std::string &ToString(const T &v) {
   return v.Stringify();
 }
 
@@ -53,7 +56,7 @@ __JK_ALWAYS_INLINE std::string ToString(const T &v) {
  */
 template<typename T, typename = std::enable_if<
                          std::is_base_of_v<Stringifiable, std::decay_t<T>>>>
-__JK_ALWAYS_INLINE std::string ToString(T *v) {
+__JK_ALWAYS_INLINE const std::string &ToString(T *v) {
   return v->Stringify();
 }
 
@@ -76,6 +79,28 @@ template<typename InputIterator>
 typename InputIterator::value_type __DefaultUnary(
     const typename InputIterator::value_type &v) {
   return v;
+}
+
+std::string StrJoin(auto &&rg, std::string_view sep)
+  requires ranges::range<std::remove_cvref_t<decltype(rg)>>
+{
+  std::string output;
+  auto __end = ranges::end(rg);
+  for (auto it = ranges::begin(rg); it != __end; ++it) {
+    output.append(*it);
+  }
+  return output;
+}
+
+std::string StrJoin(auto &&rg, std::string_view sep, auto &&formatter)
+  requires ranges::range<std::remove_cvref_t<decltype(rg)>>
+{
+  std::string output;
+  auto __end = ranges::end(rg);
+  for (auto it = ranges::begin(rg); it != __end; ++it) {
+    formatter(&output, *it);
+  }
+  return output;
 }
 
 /**
