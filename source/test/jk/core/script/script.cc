@@ -34,7 +34,7 @@ static std::string StringList(std::initializer_list<std::string> args) {
 }
 
 TEST_CASE("Script", "[core][script]") {
-  auto interp = ScriptInterpreter::ThreadInstance();
+  auto interp = ScriptInterpreter(nullptr);
 
   SECTION("simple cc_library only") {
     auto content =
@@ -50,7 +50,7 @@ TEST_CASE("Script", "[core][script]") {
                                                  ":bar",
                                              })}});
 
-    auto result = interp->Eval(content);
+    auto result = interp.Eval(content);
 
     REQUIRE(result.size() == 1);
     const auto &r = result[0];
@@ -72,7 +72,7 @@ TEST_CASE("Script", "[core][script]") {
                                                  ":bar",
                                              })}});
 
-    REQUIRE_THROWS(interp->Eval(content));
+    REQUIRE_THROWS(interp.Eval(content));
   }
 }
 

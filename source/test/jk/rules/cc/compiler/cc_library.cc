@@ -34,6 +34,7 @@ namespace jk::impls::cc::test {
 static std::unique_ptr<core::models::BuildPackageFactory> SimpleProject() {
   auto factory = std::make_unique<core::models::BuildPackageFactory>();
 
+  /*
   {
     auto [package, new_package] = factory->Package("library/base");
     utils::Kwargs kwargs;
@@ -61,6 +62,7 @@ static std::unique_ptr<core::models::BuildPackageFactory> SimpleProject() {
                        "sub/memory1.cpp"};
     memory->CppFlags.push_back("-Dmemory_only_defie_flag");
   }
+  */
 
   return factory;
 }
