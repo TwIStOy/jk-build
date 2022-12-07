@@ -62,8 +62,8 @@ if(MINGW AND CMAKE_GENERATOR MATCHES "Ninja")
   endif()
 endif()
 
-set(PYTHON_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/Python-3.6.0.tgz)
-set(PYTHON_SHA256 aa472515800d25a3739833f76ca3735d9f4b2fe77c3cb21f69275e0cce30cb2b)
+set(PYTHON_URL https://agora-devops-public-2.oss-cn-beijing.aliyuncs.com/media_build/Python-3.11.1.tgz)
+set(PYTHON_SHA256 baed518e26b337d4d8105679caf68c5c32630d702614fc174e98cb95c46bdfa4)
 include(BuildPython)
 
 set(OPENSSL_URL https://www.openssl.org/source/openssl-1.1.1s.tar.gz)

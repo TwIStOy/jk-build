@@ -78,7 +78,7 @@ find_package(PkgConfig REQUIRED)
 
 # bundled python3
 pkg_search_module(PKG_python3 REQUIRED IMPORTED_TARGET python3)
-set(PKG_python3_STATIC_LIBRARIES "${DEPS_PREFIX}/lib/libpython3.6.a")
+set(PKG_python3_STATIC_LIBRARIES "${DEPS_PREFIX}/lib/libpython3.11.a")
 add_library(BundledPython3 INTERFACE)
 set_property(
   TARGET BundledPython3
