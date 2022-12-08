@@ -14,7 +14,7 @@ spec:
         cpu: 0.8
         memory: 600Mi
   - name: jkalphine
-    image: twistoywang/jk-build-build:v1
+    image: twistoywang/jk-build-build:v2
     imagePullPolicy: IfNotPresent
     resources:
       limits:
